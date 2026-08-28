@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime.version": "Lua 5.2",
+  "workspace.library": [
+    "types/cc-tweaked/library",
+    "types/avionics"
+  ],
+  "workspace.checkThirdParty": false,
+  "diagnostics.globals": ["sleep", "printError", "read", "write"],
+  "diagnostics.disable": ["lowercase-global"]
+}

@@ -1,0 +1,13 @@
+# CraftOS-PC emulation
+.craftos/
+.craftos-test/
+
+# mise override
+mise.local.toml
+
+# editor nonsense
+# add anything I missed, please
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store

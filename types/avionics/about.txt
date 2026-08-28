@@ -1,0 +1,10 @@
+Avionics type definitions for LSP completion and type checking due to lack of published definitions.
+
+Built by claude using online documentation. If mod updates or drifts, these definitions may regress. Any differences between these definitions and in game behavior should be addressed as they are found.
+
+Cast annotation at the call site for downstream completion/checking:
+
+---@type gas_provider
+local burner = peripheral.find("gas_provider")
+
+Missing peripherals can be added manually by copying the pattern and transcribing the missing type from the peripherals doc page.

@@ -1,0 +1,6 @@
+[tools]
+lua = "5.2.4"
+
+[tasks.sim]
+description = "Launch with emulation at project root"
+run = "craftos --directory .craftos --mount /repo=$PWD"
