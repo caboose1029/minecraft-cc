@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "source": {
+    "base_url": "https://raw.githubusercontent.com/caboose1029/minecraft/main/src"
+  },
+  "files": {
+    "players/ryan/test.lua": {
+      "dependencies": []
+    },
+    "shared/test/sharetest.lua": {
+      "dependencies": []
+    }
+  },
+  "pkgs": {
+    "test_package": {
+      "entry": "main.lua",
+      "files": [
+        "pkg/test_package/main.lua"
+      ],
+      "dependencies": []
+    }
+  }
+}
