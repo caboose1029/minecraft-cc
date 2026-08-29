@@ -4,10 +4,10 @@
     "base_url": "https://raw.githubusercontent.com/caboose1029/minecraft-cc/refs/heads/main/src"
   },
   "files": {
-    "players/caboose/test.lua": {
+    "player/caboose/test.lua": {
       "dependencies": []
     },
-    "shared/test/sharetest.lua": {
+    "share/test/sharetest.lua": {
       "dependencies": []
     }
   },
