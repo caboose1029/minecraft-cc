@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": {
-    "base_url": "https://raw.githubusercontent.com/caboose1029/minecraft-cc/refs/heads/main/dist/manifest.json"
+    "base_url": "https://raw.githubusercontent.com/caboose1029/minecraft-cc/refs/heads/main/"
   },
   "files": {
     "players/ryan/test.lua": {
