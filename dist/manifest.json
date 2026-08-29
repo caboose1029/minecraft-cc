@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "source": {
-    "base_url": "https://raw.githubusercontent.com/caboose1029/minecraft-cc/refs/heads/main/"
+    "base_url": "https://raw.githubusercontent.com/caboose1029/minecraft-cc/refs/heads/main/src"
   },
   "files": {
-    "players/ryan/test.lua": {
+    "players/caboose/test.lua": {
       "dependencies": []
     },
     "shared/test/sharetest.lua": {

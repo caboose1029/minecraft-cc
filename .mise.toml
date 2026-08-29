@@ -4,3 +4,7 @@ lua = "5.2.4"
 [tasks.sim]
 description = "Launch with emulation at project root"
 run = "craftos --directory .craftos --mount /repo=$PWD"
+
+[tasks.bootstrap]
+description = "Launch emulation with moonman bootstrapped"
+run = "craftos --directory .craftos --mount /moonman=$PWD/moonman/"
