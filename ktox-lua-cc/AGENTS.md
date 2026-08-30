@@ -1,0 +1,40 @@
+# AGENTS.md
+
+## Workflow preference
+
+For any non-trivial task in this repo:
+
+1. **Plan first.** Before writing code, produce a concrete implementation plan.
+2. **Ask questions proactively, before finalizing the plan.** Do not guess at requirements, library APIs, folder layout, or tool behavior. If something is unverified or ambiguous, either research it to ground the plan in fact, or ask the user directly — do not present assumptions as decided facts.
+3. **Do not make assumptions.** If a detail matters and isn't known, ask for more info rather than picking a default silently.
+4. **Implement only after alignment** on the plan.
+
+This applies to build/tooling changes, new turtle programs, and changes to the CC/turtle API headers alike.
+
+## Project summary
+
+Kotlin sources are transpiled to Lua via the `ktox-lua` Gradle plugin (`com.isycat.ktox.lua`) for use with Minecraft ComputerCraft/CC:Tweaked — turtles and Create-mod automation. Kotlin is the source of truth; generated `.lua` output is committed so it can be inspected/deployed without rebuilding.
+
+**This is a subproject of [caboose1029/minecraft-cc](https://github.com/caboose1029/minecraft-cc)**, living at `ktox-lua-cc/` alongside his `moonman` package manager. The Gradle build writes generated Lua straight into the monorepo's shared `src/pkg/player/8durt/` tree (not a local `outputDir/`) — moonman's manifest already serves everything under `src/` via a single `raw.githubusercontent.com` base URL, so this needs no changes to `moonman.lua` to be servable. See the PR description / commit history for why (a git submodule was considered and rejected: `raw.githubusercontent.com` and jsDelivr both 404 on paths inside a submodule directory, since the parent repo's tree only stores a commit-SHA pointer there, not the actual blobs — verified empirically before choosing the monorepo-copy approach instead).
+
+Known gap, deliberately not addressed by this PR: moonman's `sync` command flattens every downloaded file to the CC computer's root (`fs.getName(sourcePath)`, basename only), discarding directory structure. That would break `require("lib/Movement")`-style calls the moment someone actually runs `sync` against a multi-file package here (ours or his `test_package`). Raised with the moonman author separately; out of scope for this PR.
+
+- `src/main/kotlin/common/` — header declarations binding to CC/turtle Lua globals that already exist at runtime (`turtle`, `os`, `term`, `fs`, `gps`, ...) via the `@NativeName` + `externalSource()` idiom. ktox has no built-in knowledge of these APIs, so these headers are hand-maintained. Functions that return multiple Lua values (`gps.locate()`, `turtle.inspect()`) bind through a hand-written shim instead — see below.
+- `src/main/kotlin/lib/` — shared hand-written Kotlin logic (real generated code, not native bindings): position/movement tracking, parsing helpers, etc. Reusable across programs.
+- `src/main/kotlin/programs/` — actual turtle/computer programs, one file per program, each with its own `main()` (or `main(args: Array<String>)` for programs that take shell arguments — see the ktox quirks below for how args actually get wired up).
+- `src/main/lua/` — hand-written Lua that ships alongside the transpiled output: `ktox-cc-shim.lua` (multi-return native-call wrappers) and `startup.lua` (loads the shim at boot; will grow into the GitHub-sync startup script from the roadmap). Copied into the output tree by a Gradle task, not ktox-generated.
+- `../src/pkg/player/8durt/` — generated Lua output (committed), one level up in the monorepo's shared source tree, not under this subproject.
+- `scripts/` — local tooling, e.g. CraftOS-PC validation helper.
+
+## ktox quirks (found by inspecting real transpiled output — verify empirically before writing more code that might hit these)
+
+- **`?: return` breaks codegen.** `foo() ?: return null` transpiles to invalid Lua (`ktox_elvis(foo(), return nil)` — `return` isn't a valid expression there). Use an explicit `if (x == null) { return null }` block instead.
+- **Same-class method calls need an explicit `this.` prefix.** Calling a sibling method from within another method of the same class without `this.` transpiles to a bare global call (e.g. `turnRight()` instead of `self:turnRight()`), which fails at runtime with "attempt to call a nil value". Always write `this.otherMethod()` for intra-class calls.
+- **`List`/`Array` `[]` indexing is not offset-corrected.** Kotlin is 0-indexed, Lua tables are 1-indexed, but ktox transpiles `list[i]` to the literal Lua index `list[i]` with no adjustment — `list[0]` is always `nil`, and `list[1]` gets Kotlin's `list[0]` element. Write indices as 1-based on purpose when directly indexing (`list[1]` for the first element), and comment why.
+- **String literals containing `[` or `]` produce invalid Lua and fail to load entirely** (`invalid escape sequence near '\['`). Never use square brackets in a Kotlin string literal that gets transpiled — rephrase (e.g. parens instead of brackets in usage messages).
+- **CC shell args need manual wiring.** `fun main()` (zero-arg) is special-cased: ktox makes it `local function main()` and auto-appends a call. `fun main(args: Array<String>)` transpiles to a plain **global** `function main(args)` with no auto-invocation — CC's shell args arrive via `...` at the top of the file. A Gradle task (`wireProgramEntryPoints` in `build.gradle.kts`) appends `main({...})` after transpilation for any entry point using this signature.
+
+## Roadmap (not yet built)
+
+- A startup script that auto-loads/syncs all Lua scripts from a GitHub host onto a turtle/computer at boot, so scripts don't need to be manually copied on each device.
+- Real turtle.* validation in CraftOS-PC. The [craftos2-turtle](https://github.com/MCJack123/craftos2-turtle) plugin has no precompiled release and no build script (C++ source only) — building it means reverse-engineering CraftOS-PC's internal plugin SDK. Until that's done, `scripts/validate.sh` validates everything except live turtle.* calls (syntax, ktox-lib runtime, `os.*`/`term.*`/`fs.*` bindings against real CC:Tweaked Lua 5.1).
