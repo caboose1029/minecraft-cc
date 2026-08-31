@@ -6,9 +6,15 @@ import common.turtleGetItemCount
 import common.turtleRefuel
 import common.turtleSelect
 import common.turtleSuck
+import lib.IntSpan
 import lib.Movement
 import lib.calibrateMovement
 import lib.gpsLocate
+import lib.headingDx
+import lib.headingDz
+import lib.navigateTo
+import lib.pastEnd
+import lib.stepFor
 
 // Coordinate-driven excavator. Named "digsite" (not "excavate") to avoid
 // clashing with CC:Tweaked's built-in turtle/excavate.lua program.
@@ -32,8 +38,6 @@ import lib.gpsLocate
 // flip if wrong — see OVERFLOW_SIDE below): overflow chests extend toward
 // the turtle's original right-hand side.
 
-data class IntSpan(val start: Int, val finish: Int)
-
 // ktox does not offset List/Array [] indexing — indices below are 1-based
 // on purpose. See AGENTS.md.
 //
@@ -44,27 +48,6 @@ fun parseSpan(raw: String): IntSpan {
     val a = parts[1].toInt()
     val b = parts[2].toInt()
     return IntSpan(a, b)
-}
-
-fun stepFor(span: IntSpan): Int {
-    return if (span.start <= span.finish) 1 else -1
-}
-
-// True once `current` has moved past `limit` while stepping by `step`
-// (whose sign gives the direction of travel).
-//
-// Written as an if/else block, NOT `return if (cond) A else B` — ktox
-// compiles that single-expression form to Lua's `(cond and A or B)`
-// idiom, which is broken here: A (`current > limit`) is itself a
-// boolean, and whenever it's false, `cond and false` is false, so Lua
-// falls through to B regardless of cond. That made every ascending span
-// (step > 0) report "past end" on almost every call, terminating
-// digsiteRoom/digsiteLayer after ~0 iterations. See AGENTS.md.
-fun pastEnd(current: Int, limit: Int, step: Int): Boolean {
-    if (step > 0) {
-        return current > limit
-    }
-    return current < limit
 }
 
 // +1 = turtle's original right is "sideways toward the overflow row".
@@ -107,53 +90,6 @@ fun main(args: Array<String>) {
     navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
     movement.faceHeading(movement.homeHeading)
     println("Home.")
-}
-
-// -- Movement helpers --
-
-fun headingDx(h: Int): Int {
-    return if (h == 1) {
-        1
-    } else if (h == 3) {
-        -1
-    } else {
-        0
-    }
-}
-
-fun headingDz(h: Int): Int {
-    return if (h == 2) {
-        1
-    } else if (h == 0) {
-        -1
-    } else {
-        0
-    }
-}
-
-// Axis-aligned navigation to an absolute world position: Y first, then X,
-// then Z. Digs through anything in the way (via Movement's forward/up/down).
-fun navigateTo(m: Movement, targetX: Int, targetY: Int, targetZ: Int) {
-    while (m.y < targetY) {
-        m.up()
-    }
-    while (m.y > targetY) {
-        m.down()
-    }
-    if (m.x != targetX) {
-        val toward = if (targetX > m.x) 1 else 3
-        m.faceHeading(toward)
-        while (m.x != targetX) {
-            m.forward()
-        }
-    }
-    if (m.z != targetZ) {
-        val toward = if (targetZ > m.z) 2 else 0
-        m.faceHeading(toward)
-        while (m.z != targetZ) {
-            m.forward()
-        }
-    }
 }
 
 // -- Base servicing (fuel + item disposal) --

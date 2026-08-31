@@ -10,9 +10,15 @@ import common.turtleRefuel
 import common.turtleSelect
 import common.turtleSuck
 import common.turtleTransferTo
+import lib.IntSpan
 import lib.Movement
 import lib.calibrateMovement
 import lib.gpsLocate
+import lib.headingDx
+import lib.headingDz
+import lib.navigateTo
+import lib.pastEnd
+import lib.stepFor
 
 // Straight-down excavator (like CC's built-in excavate) that also lines
 // the shaft with a spiral staircase and torches as it descends.
@@ -48,67 +54,6 @@ import lib.gpsLocate
 // stock; every other slot (except INTAKE_SLOT) is general cargo, dumped
 // to overflow chests exactly like Digsite.
 
-data class EpSpan(val start: Int, val finish: Int)
-
-fun epStepFor(span: EpSpan): Int {
-    return if (span.start <= span.finish) 1 else -1
-}
-
-// See AGENTS.md: single-expression `if (cond) A else B` returning a
-// Boolean is unsafe under ktox's `(cond and A or B)` compilation — this
-// is a real if/else block on purpose.
-fun epPastEnd(current: Int, limit: Int, step: Int): Boolean {
-    if (step > 0) {
-        return current > limit
-    }
-    return current < limit
-}
-
-fun epHeadingDx(h: Int): Int {
-    return if (h == 1) {
-        1
-    } else if (h == 3) {
-        -1
-    } else {
-        0
-    }
-}
-
-fun epHeadingDz(h: Int): Int {
-    return if (h == 2) {
-        1
-    } else if (h == 0) {
-        -1
-    } else {
-        0
-    }
-}
-
-// Axis-aligned navigation to an absolute world position: Y first, then X,
-// then Z. Digs through anything in the way (via Movement's forward/up/down).
-fun epNavigateTo(m: Movement, targetX: Int, targetY: Int, targetZ: Int) {
-    while (m.y < targetY) {
-        m.up()
-    }
-    while (m.y > targetY) {
-        m.down()
-    }
-    if (m.x != targetX) {
-        val toward = if (targetX > m.x) 1 else 3
-        m.faceHeading(toward)
-        while (m.x != targetX) {
-            m.forward()
-        }
-    }
-    if (m.z != targetZ) {
-        val toward = if (targetZ > m.z) 2 else 0
-        m.faceHeading(toward)
-        while (m.z != targetZ) {
-            m.forward()
-        }
-    }
-}
-
 // +1 = turtle's original right is "sideways toward the overflow row".
 // Flip to -1 if the chests turn out to be laid out the other way in-game.
 const val EP_OVERFLOW_SIDE = 1
@@ -143,18 +88,18 @@ fun main(args: Array<String>) {
     }
     println("Home at x=${movement.homeX} y=${movement.homeY} z=${movement.homeZ}")
 
-    val fwdDx = epHeadingDx(movement.homeHeading)
-    val fwdDz = epHeadingDz(movement.homeHeading)
+    val fwdDx = headingDx(movement.homeHeading)
+    val fwdDz = headingDz(movement.homeHeading)
     val rightHeading = (movement.homeHeading + 1) % 4
-    val rgtDx = epHeadingDx(rightHeading)
-    val rgtDz = epHeadingDz(rightHeading)
+    val rgtDx = headingDx(rightHeading)
+    val rgtDz = headingDz(rightHeading)
 
     val xOther = movement.homeX + rgtDx * (width - 1) + fwdDx * (length - 1)
     val zOther = movement.homeZ + rgtDz * (width - 1) + fwdDz * (length - 1)
-    val xSpan = EpSpan(movement.homeX, xOther)
-    val zSpan = EpSpan(movement.homeZ, zOther)
-    val xStep = epStepFor(xSpan)
-    val zStep = epStepFor(zSpan)
+    val xSpan = IntSpan(movement.homeX, xOther)
+    val zSpan = IntSpan(movement.homeZ, zOther)
+    val xStep = stepFor(xSpan)
+    val zStep = stepFor(zSpan)
 
     val hasStaircase = width >= 2 && length >= 2
 
@@ -175,7 +120,7 @@ fun main(args: Array<String>) {
             val cell = perimeterCell(step, width, length)
             val cellX = xSpan.start + cell.dx * xStep
             val cellZ = zSpan.start + cell.dz * zStep
-            epNavigateTo(movement, cellX, y, cellZ)
+            navigateTo(movement, cellX, y, cellZ)
 
             levelsSinceTorch += 1
             if (levelsSinceTorch >= TORCH_INTERVAL) {
@@ -210,7 +155,7 @@ fun main(args: Array<String>) {
     }
 
     println("Excavation complete. Returning home...")
-    epNavigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
+    navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
     movement.faceHeading(movement.homeHeading)
     println("Home.")
 }
@@ -248,27 +193,27 @@ fun perimeterCell(step: Int, width: Int, length: Int): Cell {
 
 // -- Full-layer excavation, with one column optionally preserved --
 
-fun digLayer(m: Movement, xSpan: EpSpan, zSpan: EpSpan, y: Int, skipX: Int, skipZ: Int, hasSkip: Boolean) {
-    val xStep = epStepFor(xSpan)
-    val zStep = epStepFor(zSpan)
+fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int, skipX: Int, skipZ: Int, hasSkip: Boolean) {
+    val xStep = stepFor(xSpan)
+    val zStep = stepFor(zSpan)
     var x = xSpan.start
     var forwardZ = true
-    while (!epPastEnd(x, xSpan.finish, xStep)) {
+    while (!pastEnd(x, xSpan.finish, xStep)) {
         if (forwardZ) {
             var z = zSpan.start
-            while (!epPastEnd(z, zSpan.finish, zStep)) {
+            while (!pastEnd(z, zSpan.finish, zStep)) {
                 if (!(hasSkip && x == skipX && z == skipZ)) {
                     epEnsureFuelAndSpace(m)
-                    epNavigateTo(m, x, y, z)
+                    navigateTo(m, x, y, z)
                 }
                 z += zStep
             }
         } else {
             var z = zSpan.finish
-            while (!epPastEnd(z, zSpan.start, -zStep)) {
+            while (!pastEnd(z, zSpan.start, -zStep)) {
                 if (!(hasSkip && x == skipX && z == skipZ)) {
                     epEnsureFuelAndSpace(m)
-                    epNavigateTo(m, x, y, z)
+                    navigateTo(m, x, y, z)
                 }
                 z -= zStep
             }
@@ -343,7 +288,7 @@ fun epServiceAtBase(m: Movement) {
     epDumpInventoryAtBase(m)
     restockAtChest(m)
 
-    epNavigateTo(m, returnX, returnY, returnZ)
+    navigateTo(m, returnX, returnY, returnZ)
 
     // Drift safety check after the round trip.
     val checked = gpsLocate()
@@ -360,9 +305,9 @@ fun epServiceAtBase(m: Movement) {
 // row back from the turtle's home line. Must be called with m at home.
 fun epGoToChest(m: Movement, n: Int) {
     val sideways = (m.homeHeading + EP_OVERFLOW_SIDE + 4) % 4
-    val targetX = m.homeX + epHeadingDx(sideways) * n
-    val targetZ = m.homeZ + epHeadingDz(sideways) * n
-    epNavigateTo(m, targetX, m.homeY, targetZ)
+    val targetX = m.homeX + headingDx(sideways) * n
+    val targetZ = m.homeZ + headingDz(sideways) * n
+    navigateTo(m, targetX, m.homeY, targetZ)
     m.faceHeading((m.homeHeading + 2) % 4)
 }
 
@@ -396,7 +341,7 @@ fun epDumpInventoryAtBase(m: Movement) {
         slot += 1
     }
 
-    epNavigateTo(m, m.homeX, m.homeY, m.homeZ)
+    navigateTo(m, m.homeX, m.homeY, m.homeZ)
     m.faceHeading(m.homeHeading)
 }
 
@@ -439,6 +384,6 @@ fun restockAtChest(m: Movement) {
         }
         attempts += 1
     }
-    epNavigateTo(m, m.homeX, m.homeY, m.homeZ)
+    navigateTo(m, m.homeX, m.homeY, m.homeZ)
     m.faceHeading(m.homeHeading)
 }

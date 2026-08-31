@@ -1,98 +1,10 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-43"]=1,["44-51"]=54,["52"]=61,["53-54"]=62,["55-60"]=64,["61-66"]=68,["67-74"]=78,["75"]=90,["76-77"]=91,["78"]=93,["79-80"]=94,["81"]=96,["82"]=97,["83"]=98,["84"]=99,["85-87"]=100,["88"]=103,["89"]=104,["90"]=105,["91"]=106,["92-114"]=107,["115"]=125,["116"]=126,["117-118"]=127,["119"]=130,["120"]=131,["121"]=132,["122"]=133,["123"]=134,["124-125"]=135,["126"]=138,["127"]=139,["128"]=140,["129"]=141,["130-131"]=142,["132"]=144,["133"]=146,["134"]=147,["135"]=148,["136"]=149,["137"]=150,["138"]=152,["139"]=153,["140"]=154,["141"]=155,["142"]=156,["143"]=157,["144"]=159,["145"]=161,["146"]=162,["147"]=163,["148"]=164,["149"]=165,["150"]=166,["151"]=167,["152"]=169,["153"]=170,["154"]=171,["155"]=173,["156"]=174,["157"]=175,["158"]=176,["159"]=177,["160"]=178,["161"]=180,["162"]=181,["163"]=182,["164"]=183,["165"]=184,["166"]=185,["167-168"]=186,["169"]=188,["170"]=189,["171"]=190,["172-173"]=191,["174"]=194,["175"]=195,["176"]=196,["177-178"]=197,["179"]=200,["180-181"]=201,["182"]=203,["183"]=204,["184"]=205,["185"]=206,["186-189"]=207,["190"]=212,["191"]=213,["192"]=214,["193-232"]=215,["233-240"]=228,["241"]=232,["242"]=233,["243"]=234,["244-245"]=235,["246"]=237,["247"]=238,["248-249"]=239,["250"]=241,["251"]=242,["252-253"]=243,["254"]=245,["255-265"]=246,["266"]=252,["267"]=253,["268"]=254,["269"]=255,["270"]=256,["271"]=257,["272"]=258,["273"]=259,["274"]=260,["275"]=261,["276-277"]=262,["278-280"]=264,["281"]=267,["282"]=268,["283"]=269,["284"]=270,["285-286"]=271,["287-289"]=273,["290"]=276,["291-297"]=277,["298"]=284,["299-300"]=285,["301"]=287,["302-303"]=288,["304"]=290,["305-306"]=291,["307-312"]=293,["313"]=297,["314"]=298,["315"]=299,["316-317"]=300,["318-322"]=302,["323"]=306,["324"]=307,["325"]=308,["326"]=309,["327"]=310,["328-330"]=311,["331-332"]=314,["333-337"]=316,["338"]=320,["339-344"]=321,["345"]=326,["346-351"]=327,["352"]=332,["353-358"]=333,["359"]=338,["360"]=339,["361"]=340,["362"]=341,["363"]=343,["364"]=344,["365"]=346,["366"]=349,["367"]=350,["368"]=351,["369"]=352,["370-371"]=353,["372-377"]=355,["378"]=362,["379"]=363,["380"]=364,["381"]=365,["382-386"]=366,["387"]=373,["388"]=374,["389"]=376,["390"]=377,["391"]=378,["392"]=379,["393"]=380,["394"]=381,["395"]=382,["396"]=383,["397"]=384,["398"]=385,["399"]=386,["400"]=387,["401-402"]=388,["403"]=390,["404-408"]=391,["409-410"]=396,["411"]=399,["412-417"]=400,["418"]=407,["419-423"]=408,["424"]=415,["425"]=416,["426"]=417,["427"]=418,["428"]=419,["429"]=420,["430"]=421,["431-432"]=422,["433"]=424,["434"]=425,["435"]=426,["436-437"]=427,["438"]=430,["439-440"]=431,["441"]=432,["442"]=433,["443-444"]=434,["445"]=436,["446-449"]=437,["450-451"]=440,["452"]=442,["453-455"]=443}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-26"]=1,["27"]=70,["28"]=71,["29-30"]=72,["31"]=75,["32"]=76,["33"]=77,["34"]=78,["35"]=79,["36-37"]=80,["38"]=83,["39"]=84,["40"]=85,["41"]=86,["42-43"]=87,["44"]=89,["45"]=91,["46"]=92,["47"]=93,["48"]=94,["49"]=95,["50"]=97,["51"]=98,["52"]=99,["53"]=100,["54"]=101,["55"]=102,["56"]=104,["57"]=106,["58"]=107,["59"]=108,["60"]=109,["61"]=110,["62"]=111,["63"]=112,["64"]=114,["65"]=115,["66"]=116,["67"]=118,["68"]=119,["69"]=120,["70"]=121,["71"]=122,["72"]=123,["73"]=125,["74"]=126,["75"]=127,["76"]=128,["77"]=129,["78"]=130,["79-80"]=131,["81"]=133,["82"]=134,["83"]=135,["84-85"]=136,["86"]=139,["87"]=140,["88"]=141,["89-90"]=142,["91"]=145,["92-93"]=146,["94"]=148,["95"]=149,["96"]=150,["97"]=151,["98-101"]=152,["102"]=157,["103"]=158,["104"]=159,["105-144"]=160,["145-152"]=173,["153"]=177,["154"]=178,["155"]=179,["156-157"]=180,["158"]=182,["159"]=183,["160-161"]=184,["162"]=186,["163"]=187,["164-165"]=188,["166"]=190,["167-177"]=191,["178"]=197,["179"]=198,["180"]=199,["181"]=200,["182"]=201,["183"]=202,["184"]=203,["185"]=204,["186"]=205,["187"]=206,["188-189"]=207,["190-192"]=209,["193"]=212,["194"]=213,["195"]=214,["196"]=215,["197-198"]=216,["199-201"]=218,["202"]=221,["203-209"]=222,["210"]=229,["211-212"]=230,["213"]=232,["214-215"]=233,["216"]=235,["217-218"]=236,["219-224"]=238,["225"]=242,["226"]=243,["227"]=244,["228-229"]=245,["230-234"]=247,["235"]=251,["236"]=252,["237"]=253,["238"]=254,["239"]=255,["240-242"]=256,["243-244"]=259,["245-249"]=261,["250"]=265,["251-256"]=266,["257"]=271,["258-263"]=272,["264"]=277,["265-270"]=278,["271"]=283,["272"]=284,["273"]=285,["274"]=286,["275"]=288,["276"]=289,["277"]=291,["278"]=294,["279"]=295,["280"]=296,["281"]=297,["282-283"]=298,["284-289"]=300,["290"]=307,["291"]=308,["292"]=309,["293"]=310,["294-298"]=311,["299"]=318,["300"]=319,["301"]=321,["302"]=322,["303"]=323,["304"]=324,["305"]=325,["306"]=326,["307"]=327,["308"]=328,["309"]=329,["310"]=330,["311"]=331,["312"]=332,["313-314"]=333,["315"]=335,["316-320"]=336,["321-322"]=341,["323"]=344,["324-329"]=345,["330"]=352,["331-335"]=353,["336"]=360,["337"]=361,["338"]=362,["339"]=363,["340"]=364,["341"]=365,["342"]=366,["343-344"]=367,["345"]=369,["346"]=370,["347"]=371,["348-349"]=372,["350"]=375,["351-352"]=376,["353"]=377,["354"]=378,["355-356"]=379,["357"]=381,["358-361"]=382,["362-363"]=385,["364"]=387,["365-367"]=388}, "programs")
+ktox_require("lib/Span")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
-
----@class EpSpan
----@field start number
----@field finish number
-EpSpan = {}
-EpSpan.__index = EpSpan
-
-function EpSpan:new(start, finish)
-    local self = setmetatable({}, EpSpan)
-    self.start = start
-    self.finish = finish
-    return self
-end
-
-function EpSpan:equals(other)
-    return self.start == other.start and self.finish == other.finish
-end
-EpSpan.__eq = function(a, b) return a:equals(b) end
-function EpSpan:toString()
-    return "EpSpan(" .. "start=" .. tostring(self.start) .. ", " .. "finish=" .. tostring(self.finish) .. ")"
-end
-EpSpan.__tostring = function(a) return a:toString() end
-function EpSpan:copy(start, finish)
-    if start == nil then start = self.start end
-    if finish == nil then finish = self.finish end
-    return EpSpan:new(start, finish)
-end
-function EpSpan:component1()
-    return self.start
-end
-function EpSpan:component2()
-    return self.finish
-end
-
----@param span EpSpan
----@return number
-function epStepFor(span)
-    return (span.start <= span.finish and 1 or -1)
-end
-
----@param current number
----@param limit number
----@param step number
----@return boolean
-function epPastEnd(current, limit, step)
-    if step > 0 then
-        return current > limit
-    end
-    return current < limit
-end
-
----@param h number
----@return number
-function epHeadingDx(h)
-    return (h == 1 and 1 or (h == 3 and -1 or 0))
-end
-
----@param h number
----@return number
-function epHeadingDz(h)
-    return (h == 2 and 1 or (h == 0 and -1 or 0))
-end
-
----@param m Movement
----@param targetX number
----@param targetY number
----@param targetZ number
-function epNavigateTo(m, targetX, targetY, targetZ)
-    while m.y < targetY do
-        m:up()
-    end
-    while m.y > targetY do
-        m:down()
-    end
-    if m.x ~= targetX then
-        local toward = (targetX > m.x and 1 or 3)
-        m:faceHeading(toward)
-        while m.x ~= targetX do
-            m:forward()
-        end
-    end
-    if m.z ~= targetZ then
-        local toward = (targetZ > m.z and 2 or 0)
-        m:faceHeading(toward)
-        while m.z ~= targetZ do
-            m:forward()
-        end
-    end
-end
 
 EP_OVERFLOW_SIDE = 1
 
@@ -130,17 +42,17 @@ function main(args)
         return
     end
     println("Home at x=" .. tostring(movement.homeX) .. " y=" .. tostring(movement.homeY) .. " z=" .. tostring(movement.homeZ))
-    local fwdDx = epHeadingDx(movement.homeHeading)
-    local fwdDz = epHeadingDz(movement.homeHeading)
+    local fwdDx = headingDx(movement.homeHeading)
+    local fwdDz = headingDz(movement.homeHeading)
     local rightHeading = (movement.homeHeading + 1) % 4
-    local rgtDx = epHeadingDx(rightHeading)
-    local rgtDz = epHeadingDz(rightHeading)
+    local rgtDx = headingDx(rightHeading)
+    local rgtDz = headingDz(rightHeading)
     local xOther = movement.homeX + rgtDx * (width - 1) + fwdDx * (length - 1)
     local zOther = movement.homeZ + rgtDz * (width - 1) + fwdDz * (length - 1)
-    local xSpan = EpSpan:new(movement.homeX, xOther)
-    local zSpan = EpSpan:new(movement.homeZ, zOther)
-    local xStep = epStepFor(xSpan)
-    local zStep = epStepFor(zSpan)
+    local xSpan = IntSpan:new(movement.homeX, xOther)
+    local zSpan = IntSpan:new(movement.homeZ, zOther)
+    local xStep = stepFor(xSpan)
+    local zStep = stepFor(zSpan)
     local hasStaircase = width >= 2 and length >= 2
     local y = movement.homeY
     local step = 0
@@ -157,7 +69,7 @@ function main(args)
             local cell = perimeterCell(step, width, length)
             local cellX = xSpan.start + cell.dx * xStep
             local cellZ = zSpan.start + cell.dz * zStep
-            epNavigateTo(movement, cellX, y, cellZ)
+            navigateTo(movement, cellX, y, cellZ)
             levelsSinceTorch = ktox_plusAssign(levelsSinceTorch, 1)
             if levelsSinceTorch >= TORCH_INTERVAL then
                 ensureTorchSupply(movement)
@@ -188,7 +100,7 @@ function main(args)
         end
     end
     println("Excavation complete. Returning home...")
-    epNavigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
+    navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
     movement:faceHeading(movement.homeHeading)
     println("Home.")
 end
@@ -256,33 +168,33 @@ function perimeterCell(step, width, length)
 end
 
 ---@param m Movement
----@param xSpan EpSpan
----@param zSpan EpSpan
+---@param xSpan IntSpan
+---@param zSpan IntSpan
 ---@param y number
 ---@param skipX number
 ---@param skipZ number
 ---@param hasSkip boolean
 function digLayer(m, xSpan, zSpan, y, skipX, skipZ, hasSkip)
-    local xStep = epStepFor(xSpan)
-    local zStep = epStepFor(zSpan)
+    local xStep = stepFor(xSpan)
+    local zStep = stepFor(zSpan)
     local x = xSpan.start
     local forwardZ = true
-    while not epPastEnd(x, xSpan.finish, xStep) do
+    while not pastEnd(x, xSpan.finish, xStep) do
         if forwardZ then
             local z = zSpan.start
-            while not epPastEnd(z, zSpan.finish, zStep) do
+            while not pastEnd(z, zSpan.finish, zStep) do
                 if not (hasSkip and x == skipX and z == skipZ) then
                     epEnsureFuelAndSpace(m)
-                    epNavigateTo(m, x, y, z)
+                    navigateTo(m, x, y, z)
                 end
                 z = ktox_plusAssign(z, zStep)
             end
         else
             local z = zSpan.finish
-            while not epPastEnd(z, zSpan.start, -zStep) do
+            while not pastEnd(z, zSpan.start, -zStep) do
                 if not (hasSkip and x == skipX and z == skipZ) then
                     epEnsureFuelAndSpace(m)
-                    epNavigateTo(m, x, y, z)
+                    navigateTo(m, x, y, z)
                 end
                 z = ktox_minusAssign(z, zStep)
             end
@@ -362,7 +274,7 @@ function epServiceAtBase(m)
     local returnZ = m.z
     epDumpInventoryAtBase(m)
     restockAtChest(m)
-    epNavigateTo(m, returnX, returnY, returnZ)
+    navigateTo(m, returnX, returnY, returnZ)
     local checked = gpsLocate()
     if checked ~= nil then
         m.x = checked.x
@@ -376,9 +288,9 @@ end
 ---@param n number
 function epGoToChest(m, n)
     local sideways = (m.homeHeading + EP_OVERFLOW_SIDE + 4) % 4
-    local targetX = m.homeX + epHeadingDx(sideways) * n
-    local targetZ = m.homeZ + epHeadingDz(sideways) * n
-    epNavigateTo(m, targetX, m.homeY, targetZ)
+    local targetX = m.homeX + headingDx(sideways) * n
+    local targetZ = m.homeZ + headingDz(sideways) * n
+    navigateTo(m, targetX, m.homeY, targetZ)
     m:faceHeading((m.homeHeading + 2) % 4)
 end
 
@@ -408,7 +320,7 @@ function epDumpInventoryAtBase(m)
         end
         slot = ktox_plusAssign(slot, 1)
     end
-    epNavigateTo(m, m.homeX, m.homeY, m.homeZ)
+    navigateTo(m, m.homeX, m.homeY, m.homeZ)
     m:faceHeading(m.homeHeading)
 end
 
@@ -449,7 +361,7 @@ function restockAtChest(m)
         end
         attempts = ktox_plusAssign(attempts, 1)
     end
-    epNavigateTo(m, m.homeX, m.homeY, m.homeZ)
+    navigateTo(m, m.homeX, m.homeY, m.homeZ)
     m:faceHeading(m.homeHeading)
 end
 

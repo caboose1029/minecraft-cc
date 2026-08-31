@@ -1,42 +1,10 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-43"]=1,["44"]=43,["45"]=44,["46"]=45,["47-52"]=46,["53-60"]=50,["61"]=64,["62-63"]=65,["64-76"]=67,["77"]=82,["78"]=83,["79-80"]=84,["81"]=87,["82"]=88,["83"]=89,["84"]=91,["85"]=92,["86"]=93,["87"]=94,["88-89"]=95,["90"]=97,["91"]=99,["92"]=100,["93-94"]=101,["95-96"]=103,["97"]=106,["98"]=107,["99"]=108,["100-105"]=109,["106-111"]=115,["112-119"]=125,["120"]=137,["121-122"]=138,["123"]=140,["124-125"]=141,["126"]=143,["127"]=144,["128"]=145,["129"]=146,["130-132"]=147,["133"]=150,["134"]=151,["135"]=152,["136"]=153,["137-144"]=154,["145"]=162,["146"]=163,["147"]=164,["148-149"]=165,["150-154"]=167,["155"]=171,["156"]=172,["157"]=173,["158"]=174,["159-160"]=175,["161-162"]=177,["163-167"]=179,["168"]=183,["169-174"]=184,["175"]=189,["176"]=190,["177"]=191,["178"]=192,["179"]=194,["180"]=195,["181"]=197,["182"]=198,["183"]=200,["184"]=203,["185"]=204,["186"]=205,["187"]=206,["188-189"]=207,["190-195"]=209,["196"]=216,["197"]=217,["198"]=218,["199"]=219,["200-204"]=220,["205"]=228,["206"]=229,["207"]=231,["208"]=232,["209"]=233,["210"]=234,["211"]=235,["212"]=236,["213"]=237,["214"]=238,["215"]=239,["216"]=240,["217"]=241,["218-219"]=242,["220"]=244,["221-224"]=245,["225-226"]=249,["227"]=252,["228-232"]=253,["233"]=257,["234"]=258,["235"]=259,["236"]=260,["237"]=261,["238"]=262,["239"]=263,["240"]=264,["241-242"]=265,["243-245"]=267,["246-253"]=270,["254"]=276,["255"]=277,["256"]=278,["257"]=279,["258-266"]=280,["267"]=285,["268"]=286,["269"]=287,["270"]=288,["271"]=289,["272"]=290,["273"]=291,["274"]=292,["275"]=293,["276"]=294,["277-279"]=295,["280"]=298,["281"]=299,["282"]=300,["283"]=301,["284-286"]=302,["287"]=305,["288-295"]=306,["296"]=320,["297"]=321,["298-300"]=322}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-11"]=1,["12"]=47,["13"]=48,["14"]=49,["15-27"]=50,["28"]=65,["29"]=66,["30-31"]=67,["32"]=70,["33"]=71,["34"]=72,["35"]=74,["36"]=75,["37"]=76,["38"]=77,["39-40"]=78,["41"]=80,["42"]=82,["43"]=83,["44-45"]=84,["46-47"]=86,["48"]=89,["49"]=90,["50"]=91,["51-56"]=92,["57"]=98,["58"]=99,["59"]=100,["60-61"]=101,["62-66"]=103,["67"]=107,["68"]=108,["69"]=109,["70"]=110,["71-72"]=111,["73-74"]=113,["75-79"]=115,["80"]=119,["81-86"]=120,["87"]=125,["88"]=126,["89"]=127,["90"]=128,["91"]=130,["92"]=131,["93"]=133,["94"]=134,["95"]=136,["96"]=139,["97"]=140,["98"]=141,["99"]=142,["100-101"]=143,["102-107"]=145,["108"]=152,["109"]=153,["110"]=154,["111"]=155,["112-116"]=156,["117"]=164,["118"]=165,["119"]=167,["120"]=168,["121"]=169,["122"]=170,["123"]=171,["124"]=172,["125"]=173,["126"]=174,["127"]=175,["128"]=176,["129"]=177,["130-131"]=178,["132"]=180,["133-136"]=181,["137-138"]=185,["139"]=188,["140-144"]=189,["145"]=193,["146"]=194,["147"]=195,["148"]=196,["149"]=197,["150"]=198,["151"]=199,["152"]=200,["153-154"]=201,["155-157"]=203,["158-165"]=206,["166"]=212,["167"]=213,["168"]=214,["169"]=215,["170-178"]=216,["179"]=221,["180"]=222,["181"]=223,["182"]=224,["183"]=225,["184"]=226,["185"]=227,["186"]=228,["187"]=229,["188"]=230,["189-191"]=231,["192"]=234,["193"]=235,["194"]=236,["195"]=237,["196-198"]=238,["199"]=241,["200-207"]=242,["208"]=256,["209"]=257,["210-212"]=258}, "programs")
+ktox_require("lib/Span")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
-
----@class IntSpan
----@field start number
----@field finish number
-IntSpan = {}
-IntSpan.__index = IntSpan
-
-function IntSpan:new(start, finish)
-    local self = setmetatable({}, IntSpan)
-    self.start = start
-    self.finish = finish
-    return self
-end
-
-function IntSpan:equals(other)
-    return self.start == other.start and self.finish == other.finish
-end
-IntSpan.__eq = function(a, b) return a:equals(b) end
-function IntSpan:toString()
-    return "IntSpan(" .. "start=" .. tostring(self.start) .. ", " .. "finish=" .. tostring(self.finish) .. ")"
-end
-IntSpan.__tostring = function(a) return a:toString() end
-function IntSpan:copy(start, finish)
-    if start == nil then start = self.start end
-    if finish == nil then finish = self.finish end
-    return IntSpan:new(start, finish)
-end
-function IntSpan:component1()
-    return self.start
-end
-function IntSpan:component2()
-    return self.finish
-end
 
 ---@param raw string
 ---@return IntSpan
@@ -45,23 +13,6 @@ function parseSpan(raw)
     local a = ktox_toInt(parts[1])
     local b = ktox_toInt(parts[2])
     return IntSpan:new(a, b)
-end
-
----@param span IntSpan
----@return number
-function stepFor(span)
-    return (span.start <= span.finish and 1 or -1)
-end
-
----@param current number
----@param limit number
----@param step number
----@return boolean
-function pastEnd(current, limit, step)
-    if step > 0 then
-        return current > limit
-    end
-    return current < limit
 end
 
 OVERFLOW_SIDE = 1
@@ -98,45 +49,6 @@ function main(args)
     navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
     movement:faceHeading(movement.homeHeading)
     println("Home.")
-end
-
----@param h number
----@return number
-function headingDx(h)
-    return (h == 1 and 1 or (h == 3 and -1 or 0))
-end
-
----@param h number
----@return number
-function headingDz(h)
-    return (h == 2 and 1 or (h == 0 and -1 or 0))
-end
-
----@param m Movement
----@param targetX number
----@param targetY number
----@param targetZ number
-function navigateTo(m, targetX, targetY, targetZ)
-    while m.y < targetY do
-        m:up()
-    end
-    while m.y > targetY do
-        m:down()
-    end
-    if m.x ~= targetX then
-        local toward = (targetX > m.x and 1 or 3)
-        m:faceHeading(toward)
-        while m.x ~= targetX do
-            m:forward()
-        end
-    end
-    if m.z ~= targetZ then
-        local toward = (targetZ > m.z and 2 or 0)
-        m:faceHeading(toward)
-        while m.z ~= targetZ do
-            m:forward()
-        end
-    end
 end
 
 ---@param m Movement
