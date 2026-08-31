@@ -3,7 +3,6 @@ package programs
 import common.turtleDrop
 import common.turtleGetFuelLevel
 import common.turtleGetItemCount
-import common.turtleInspectUpName
 import common.turtleRefuel
 import common.turtleSelect
 import common.turtleSuck
@@ -16,29 +15,45 @@ import lib.gpsLocate
 //
 // Usage: digsite x1:x2 z1:z2 (y1:y2 optional)
 //   - x/z ranges are absolute world (GPS) coordinates for two corners of
-//     the horizontal footprint.
+//     the horizontal footprint. Each pair is a literal start:end, not a
+//     sorted min:max — the turtle sweeps from the first value to the
+//     second, so "100:150" climbs and "150:100" descends, on both x and z.
 //   - If a y-range is given: "room" mode — hollows out that exact bounded
-//     x/y/z volume.
+//     x/y/z volume, one full horizontal layer at a time.
 //   - If no y-range is given: "clear cut" mode — the turtle's own starting
-//     Y is the FLOOR (never dug below); each column is cleared upward
-//     until there's no block above (natural terrain top for that column,
-//     following only what's attached to the ground — floating structures
-//     above open air are left untouched).
+//     Y is the FLOOR (never dug below); it sweeps full layers upward from
+//     there through CLEAR_CUT_HEIGHT blocks. Full-layer sweeps (not
+//     per-column "dig until first gap") so overhangs/floating terrain get
+//     cleared too — GPS keeps positioning reliable enough that clearing a
+//     generous fixed height is cheap insurance rather than a real cost.
 //
 // Fueling/storage: assumes a fuel chest directly behind the turtle's start
 // position, with overflow chests extending from there. ASSUMPTION (easy to
 // flip if wrong — see OVERFLOW_SIDE below): overflow chests extend toward
 // the turtle's original right-hand side.
 
-data class IntSpan(val lo: Int, val hi: Int)
+data class IntSpan(val start: Int, val finish: Int)
 
 // ktox does not offset List/Array [] indexing — indices below are 1-based
 // on purpose. See AGENTS.md.
+//
+// Order is preserved as given (no min/max sorting) — the two values define
+// a literal start->end sweep direction, not just a bounding pair.
 fun parseSpan(raw: String): IntSpan {
     val parts = raw.split(":")
     val a = parts[1].toInt()
     val b = parts[2].toInt()
-    return if (a <= b) IntSpan(a, b) else IntSpan(b, a)
+    return IntSpan(a, b)
+}
+
+fun stepFor(span: IntSpan): Int {
+    return if (span.start <= span.finish) 1 else -1
+}
+
+// True once `current` has moved past `limit` while stepping by `step`
+// (whose sign gives the direction of travel).
+fun pastEnd(current: Int, limit: Int, step: Int): Boolean {
+    return if (step > 0) current > limit else current < limit
 }
 
 // +1 = turtle's original right is "sideways toward the overflow row".
@@ -47,6 +62,10 @@ const val OVERFLOW_SIDE = 1
 
 const val FUEL_SAFETY_MARGIN = 20
 const val MAX_OVERFLOW_CHESTS = 20
+
+// Blocks swept upward from the floor in clear-cut mode. Raise this if your
+// terrain runs taller than this above the turtle's starting position.
+const val CLEAR_CUT_HEIGHT = 32
 
 fun main(args: Array<String>) {
     if (args.size < 2) {
@@ -73,7 +92,10 @@ fun main(args: Array<String>) {
         clearCut(movement, xSpan, zSpan)
     }
 
-    println("Excavation complete.")
+    println("Excavation complete. Returning home...")
+    navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
+    movement.faceHeading(movement.homeHeading)
+    println("Home.")
 }
 
 // -- Movement helpers --
@@ -233,76 +255,54 @@ fun refuelAtBase(m: Movement) {
     m.faceHeading(m.homeHeading)
 }
 
-// -- Room mode: bounded x/y/z box excavation --
+// -- Room mode: bounded x/y/z box excavation, one full layer at a time --
 
 fun digsiteRoom(m: Movement, xSpan: IntSpan, ySpan: IntSpan, zSpan: IntSpan) {
-    var y = ySpan.lo
-    while (y <= ySpan.hi) {
+    val yStep = stepFor(ySpan)
+    var y = ySpan.start
+    while (!pastEnd(y, ySpan.finish, yStep)) {
         digsiteLayer(m, xSpan, zSpan, y)
-        y += 1
+        y += yStep
     }
 }
 
 fun digsiteLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int) {
-    var x = xSpan.lo
+    val xStep = stepFor(xSpan)
+    val zStep = stepFor(zSpan)
+    var x = xSpan.start
     var forwardZ = true
-    while (x <= xSpan.hi) {
+    while (!pastEnd(x, xSpan.finish, xStep)) {
         if (forwardZ) {
-            var z = zSpan.lo
-            while (z <= zSpan.hi) {
+            var z = zSpan.start
+            while (!pastEnd(z, zSpan.finish, zStep)) {
                 ensureFuelAndSpace(m)
                 navigateTo(m, x, y, z)
-                z += 1
+                z += zStep
             }
         } else {
-            var z = zSpan.hi
-            while (z >= zSpan.lo) {
+            var z = zSpan.finish
+            while (!pastEnd(z, zSpan.start, -zStep)) {
                 ensureFuelAndSpace(m)
                 navigateTo(m, x, y, z)
-                z -= 1
+                z -= zStep
             }
         }
         forwardZ = !forwardZ
-        x += 1
+        x += xStep
     }
 }
 
-// -- Clear-cut mode: x/z footprint, floor = home Y, terrain-following --
+// -- Clear-cut mode: x/z footprint, floor = home Y, full layers upward --
+//
+// Just digsiteRoom with an auto-computed y-range: home Y as the floor,
+// CLEAR_CUT_HEIGHT blocks of full-layer sweeps above it. Sweeping every
+// layer in full (rather than following each column up until the first
+// gap) is what actually clears overhangs/floating terrain — a gap below
+// a column no longer stops that column's higher blocks from being dug,
+// since every other column at that same height gets visited regardless.
 
 fun clearCut(m: Movement, xSpan: IntSpan, zSpan: IntSpan) {
     val floorY = m.homeY
-    var x = xSpan.lo
-    var forwardZ = true
-    while (x <= xSpan.hi) {
-        if (forwardZ) {
-            var z = zSpan.lo
-            while (z <= zSpan.hi) {
-                ensureFuelAndSpace(m)
-                clearColumn(m, x, floorY, z)
-                z += 1
-            }
-        } else {
-            var z = zSpan.hi
-            while (z >= zSpan.lo) {
-                ensureFuelAndSpace(m)
-                clearColumn(m, x, floorY, z)
-                z -= 1
-            }
-        }
-        forwardZ = !forwardZ
-        x += 1
-    }
-}
-
-fun clearColumn(m: Movement, x: Int, floorY: Int, z: Int) {
-    navigateTo(m, x, floorY, z)
-    var clearing = true
-    while (clearing) {
-        val above = turtleInspectUpName()
-        if (above == null) {
-            clearing = false
-        } else {
-            m.up()
-        }
-    }
+    val ySpan = IntSpan(floorY, floorY + CLEAR_CUT_HEIGHT)
+    digsiteRoom(m, xSpan, ySpan, zSpan)
 }

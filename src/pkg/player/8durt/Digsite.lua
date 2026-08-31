@@ -1,41 +1,41 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-43"]=1,["44"]=38,["45"]=39,["46"]=40,["47-57"]=41,["58"]=52,["59"]=53,["60-61"]=54,["62"]=57,["63"]=58,["64"]=59,["65"]=61,["66"]=62,["67"]=63,["68"]=64,["69-70"]=65,["71"]=67,["72"]=69,["73"]=70,["74-75"]=71,["76-77"]=73,["78-83"]=76,["84-89"]=82,["90-97"]=92,["98"]=104,["99-100"]=105,["101"]=107,["102-103"]=108,["104"]=110,["105"]=111,["106"]=112,["107"]=113,["108-110"]=114,["111"]=117,["112"]=118,["113"]=119,["114"]=120,["115-122"]=121,["123"]=129,["124"]=130,["125"]=131,["126-127"]=132,["128-132"]=134,["133"]=138,["134"]=139,["135"]=140,["136"]=141,["137-138"]=142,["139-140"]=144,["141-145"]=146,["146"]=150,["147-152"]=151,["153"]=156,["154"]=157,["155"]=158,["156"]=159,["157"]=161,["158"]=162,["159"]=164,["160"]=165,["161"]=167,["162"]=170,["163"]=171,["164"]=172,["165"]=173,["166-167"]=174,["168-173"]=176,["174"]=183,["175"]=184,["176"]=185,["177"]=186,["178-182"]=187,["183"]=191,["184"]=192,["185"]=194,["186"]=195,["187"]=196,["188"]=197,["189"]=198,["190"]=199,["191"]=200,["192"]=201,["193"]=202,["194"]=203,["195"]=204,["196-197"]=205,["198"]=207,["199-202"]=208,["203-204"]=212,["205"]=215,["206-210"]=216,["211"]=220,["212"]=221,["213"]=222,["214"]=223,["215"]=224,["216"]=225,["217"]=226,["218"]=227,["219-220"]=228,["221-223"]=230,["224-231"]=233,["232"]=239,["233"]=240,["234"]=241,["235-243"]=242,["244"]=247,["245"]=248,["246"]=249,["247"]=250,["248"]=251,["249"]=252,["250"]=253,["251"]=254,["252-254"]=255,["255"]=258,["256"]=259,["257"]=260,["258"]=261,["259-261"]=262,["262"]=265,["263-270"]=266,["271"]=273,["272"]=274,["273"]=275,["274"]=276,["275"]=277,["276"]=278,["277"]=279,["278"]=280,["279"]=281,["280-282"]=282,["283"]=285,["284"]=286,["285"]=287,["286"]=288,["287-289"]=289,["290"]=292,["291-299"]=293,["300"]=298,["301"]=299,["302"]=300,["303"]=301,["304"]=302,["305-306"]=303,["307-311"]=305}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-43"]=1,["44"]=43,["45"]=44,["46"]=45,["47-52"]=46,["53-60"]=50,["61-73"]=56,["74"]=71,["75"]=72,["76-77"]=73,["78"]=76,["79"]=77,["80"]=78,["81"]=80,["82"]=81,["83"]=82,["84"]=83,["85-86"]=84,["87"]=86,["88"]=88,["89"]=89,["90-91"]=90,["92-93"]=92,["94"]=95,["95"]=96,["96"]=97,["97-102"]=98,["103-108"]=104,["109-116"]=114,["117"]=126,["118-119"]=127,["120"]=129,["121-122"]=130,["123"]=132,["124"]=133,["125"]=134,["126"]=135,["127-129"]=136,["130"]=139,["131"]=140,["132"]=141,["133"]=142,["134-141"]=143,["142"]=151,["143"]=152,["144"]=153,["145-146"]=154,["147-151"]=156,["152"]=160,["153"]=161,["154"]=162,["155"]=163,["156-157"]=164,["158-159"]=166,["160-164"]=168,["165"]=172,["166-171"]=173,["172"]=178,["173"]=179,["174"]=180,["175"]=181,["176"]=183,["177"]=184,["178"]=186,["179"]=187,["180"]=189,["181"]=192,["182"]=193,["183"]=194,["184"]=195,["185-186"]=196,["187-192"]=198,["193"]=205,["194"]=206,["195"]=207,["196"]=208,["197-201"]=209,["202"]=213,["203"]=214,["204"]=216,["205"]=217,["206"]=218,["207"]=219,["208"]=220,["209"]=221,["210"]=222,["211"]=223,["212"]=224,["213"]=225,["214"]=226,["215-216"]=227,["217"]=229,["218-221"]=230,["222-223"]=234,["224"]=237,["225-229"]=238,["230"]=242,["231"]=243,["232"]=244,["233"]=245,["234"]=246,["235"]=247,["236"]=248,["237"]=249,["238-239"]=250,["240-242"]=252,["243-250"]=255,["251"]=261,["252"]=262,["253"]=263,["254"]=264,["255-263"]=265,["264"]=270,["265"]=271,["266"]=272,["267"]=273,["268"]=274,["269"]=275,["270"]=276,["271"]=277,["272"]=278,["273"]=279,["274-276"]=280,["277"]=283,["278"]=284,["279"]=285,["280"]=286,["281-283"]=287,["284"]=290,["285-292"]=291,["293"]=305,["294"]=306,["295-297"]=307}, "programs")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
 
 ---@class IntSpan
----@field lo number
----@field hi number
+---@field start number
+---@field finish number
 IntSpan = {}
 IntSpan.__index = IntSpan
 
-function IntSpan:new(lo, hi)
+function IntSpan:new(start, finish)
     local self = setmetatable({}, IntSpan)
-    self.lo = lo
-    self.hi = hi
+    self.start = start
+    self.finish = finish
     return self
 end
 
 function IntSpan:equals(other)
-    return self.lo == other.lo and self.hi == other.hi
+    return self.start == other.start and self.finish == other.finish
 end
 IntSpan.__eq = function(a, b) return a:equals(b) end
 function IntSpan:toString()
-    return "IntSpan(" .. "lo=" .. tostring(self.lo) .. ", " .. "hi=" .. tostring(self.hi) .. ")"
+    return "IntSpan(" .. "start=" .. tostring(self.start) .. ", " .. "finish=" .. tostring(self.finish) .. ")"
 end
 IntSpan.__tostring = function(a) return a:toString() end
-function IntSpan:copy(lo, hi)
-    if lo == nil then lo = self.lo end
-    if hi == nil then hi = self.hi end
-    return IntSpan:new(lo, hi)
+function IntSpan:copy(start, finish)
+    if start == nil then start = self.start end
+    if finish == nil then finish = self.finish end
+    return IntSpan:new(start, finish)
 end
 function IntSpan:component1()
-    return self.lo
+    return self.start
 end
 function IntSpan:component2()
-    return self.hi
+    return self.finish
 end
 
 ---@param raw string
@@ -44,7 +44,21 @@ function parseSpan(raw)
     local parts = ktox_split(raw, ":")
     local a = ktox_toInt(parts[1])
     local b = ktox_toInt(parts[2])
-    return (a <= b and IntSpan:new(a, b) or IntSpan:new(b, a))
+    return IntSpan:new(a, b)
+end
+
+---@param span IntSpan
+---@return number
+function stepFor(span)
+    return (span.start <= span.finish and 1 or -1)
+end
+
+---@param current number
+---@param limit number
+---@param step number
+---@return boolean
+function pastEnd(current, limit, step)
+    return (step > 0 and current > limit or current < limit)
 end
 
 OVERFLOW_SIDE = 1
@@ -52,6 +66,8 @@ OVERFLOW_SIDE = 1
 FUEL_SAFETY_MARGIN = 20
 
 MAX_OVERFLOW_CHESTS = 20
+
+CLEAR_CUT_HEIGHT = 32
 
 ---@param args table
 function main(args)
@@ -75,7 +91,10 @@ function main(args)
     else
         clearCut(movement, xSpan, zSpan)
     end
-    println("Excavation complete.")
+    println("Excavation complete. Returning home...")
+    navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
+    movement:faceHeading(movement.homeHeading)
+    println("Home.")
 end
 
 ---@param h number
@@ -229,10 +248,11 @@ end
 ---@param ySpan IntSpan
 ---@param zSpan IntSpan
 function digsiteRoom(m, xSpan, ySpan, zSpan)
-    local y = ySpan.lo
-    while y <= ySpan.hi do
+    local yStep = stepFor(ySpan)
+    local y = ySpan.start
+    while not pastEnd(y, ySpan.finish, yStep) do
         digsiteLayer(m, xSpan, zSpan, y)
-        y = ktox_plusAssign(y, 1)
+        y = ktox_plusAssign(y, yStep)
     end
 end
 
@@ -241,26 +261,28 @@ end
 ---@param zSpan IntSpan
 ---@param y number
 function digsiteLayer(m, xSpan, zSpan, y)
-    local x = xSpan.lo
+    local xStep = stepFor(xSpan)
+    local zStep = stepFor(zSpan)
+    local x = xSpan.start
     local forwardZ = true
-    while x <= xSpan.hi do
+    while not pastEnd(x, xSpan.finish, xStep) do
         if forwardZ then
-            local z = zSpan.lo
-            while z <= zSpan.hi do
+            local z = zSpan.start
+            while not pastEnd(z, zSpan.finish, zStep) do
                 ensureFuelAndSpace(m)
                 navigateTo(m, x, y, z)
-                z = ktox_plusAssign(z, 1)
+                z = ktox_plusAssign(z, zStep)
             end
         else
-            local z = zSpan.hi
-            while z >= zSpan.lo do
+            local z = zSpan.finish
+            while not pastEnd(z, zSpan.start, -zStep) do
                 ensureFuelAndSpace(m)
                 navigateTo(m, x, y, z)
-                z = ktox_minusAssign(z, 1)
+                z = ktox_minusAssign(z, zStep)
             end
         end
         forwardZ = not forwardZ
-        x = ktox_plusAssign(x, 1)
+        x = ktox_plusAssign(x, xStep)
     end
 end
 
@@ -269,44 +291,8 @@ end
 ---@param zSpan IntSpan
 function clearCut(m, xSpan, zSpan)
     local floorY = m.homeY
-    local x = xSpan.lo
-    local forwardZ = true
-    while x <= xSpan.hi do
-        if forwardZ then
-            local z = zSpan.lo
-            while z <= zSpan.hi do
-                ensureFuelAndSpace(m)
-                clearColumn(m, x, floorY, z)
-                z = ktox_plusAssign(z, 1)
-            end
-        else
-            local z = zSpan.hi
-            while z >= zSpan.lo do
-                ensureFuelAndSpace(m)
-                clearColumn(m, x, floorY, z)
-                z = ktox_minusAssign(z, 1)
-            end
-        end
-        forwardZ = not forwardZ
-        x = ktox_plusAssign(x, 1)
-    end
-end
-
----@param m Movement
----@param x number
----@param floorY number
----@param z number
-function clearColumn(m, x, floorY, z)
-    navigateTo(m, x, floorY, z)
-    local clearing = true
-    while clearing do
-        local above = ktoxInspectUpName()
-        if above == nil then
-            clearing = false
-        else
-            m:up()
-        end
-    end
+    local ySpan = IntSpan:new(floorY, floorY + CLEAR_CUT_HEIGHT)
+    digsiteRoom(m, xSpan, ySpan, zSpan)
 end
 
 
