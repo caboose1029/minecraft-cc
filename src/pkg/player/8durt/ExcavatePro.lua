@@ -1,22 +1,17 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-24"]=1,["25"]=77,["26"]=78,["27-28"]=79,["29"]=82,["30"]=83,["31"]=84,["32"]=85,["33"]=86,["34-35"]=87,["36"]=90,["37"]=91,["38"]=92,["39"]=93,["40-41"]=94,["42"]=96,["43"]=98,["44"]=99,["45"]=100,["46"]=101,["47"]=102,["48"]=104,["49"]=105,["50"]=106,["51"]=107,["52"]=109,["53"]=111,["54"]=112,["55"]=113,["56"]=114,["57"]=115,["58"]=117,["59"]=118,["60"]=119,["61"]=122,["62"]=123,["63"]=133,["64"]=134,["65"]=135,["66"]=137,["67"]=138,["68"]=139,["69"]=140,["70"]=141,["71"]=142,["72-73"]=143,["74"]=145,["75"]=146,["76-77"]=147,["78"]=149,["79"]=150,["80-82"]=151,["83-84"]=155,["85"]=157,["86"]=159,["87-88"]=160,["89"]=162,["90"]=163,["91"]=164,["92"]=165,["93-96"]=166,["97"]=171,["98"]=172,["99"]=173,["100-139"]=174,["140-147"]=187,["148"]=191,["149"]=192,["150"]=193,["151-152"]=194,["153"]=196,["154"]=197,["155-156"]=198,["157"]=200,["158"]=201,["159-160"]=202,["161"]=204,["162-169"]=205,["170"]=211,["171"]=212,["172"]=213,["173"]=214,["174"]=215,["175"]=216,["176"]=217,["177"]=218,["178"]=219,["179"]=220,["180-182"]=221,["183"]=224,["184"]=225,["185"]=226,["186"]=227,["187-189"]=228,["190"]=231,["191-197"]=232,["198-203"]=239,["204"]=258,["205-206"]=259,["207"]=261,["208-209"]=262,["210"]=264,["211-212"]=265,["213"]=267,["214-215"]=268,["216"]=270,["217-218"]=271,["219-224"]=273,["225-230"]=277,["231"]=293,["232-233"]=294,["234"]=296,["235"]=297,["236-237"]=298,["238"]=300,["239-240"]=301,["241-246"]=303,["247"]=307,["248"]=308,["249"]=309,["250-251"]=310,["252-256"]=312,["257"]=316,["258"]=317,["259"]=318,["260"]=319,["261"]=320,["262-264"]=321,["265-266"]=324,["267-271"]=326,["272"]=330,["273-278"]=331,["279"]=336,["280"]=337,["281"]=338,["282-287"]=339,["288"]=348,["289"]=349,["290"]=350,["291"]=351,["292"]=352,["293"]=353,["294-296"]=354,["297-298"]=357,["299-303"]=359,["304"]=363,["305"]=364,["306"]=365,["307"]=366,["308"]=368,["309"]=369,["310"]=371,["311"]=374,["312"]=375,["313"]=376,["314"]=377,["315-316"]=378,["317-322"]=380,["323"]=387,["324"]=388,["325"]=389,["326"]=390,["327-331"]=391,["332"]=397,["333"]=398,["334"]=400,["335"]=401,["336"]=402,["337"]=403,["338"]=404,["339"]=405,["340"]=406,["341"]=407,["342"]=408,["343"]=409,["344"]=410,["345"]=411,["346-347"]=412,["348"]=414,["349-353"]=415,["354-355"]=420,["356"]=423,["357-361"]=424,["362"]=441,["363"]=442,["364"]=443,["365"]=444,["366"]=445,["367"]=446,["368"]=447,["369"]=448,["370-371"]=449,["372"]=451,["373"]=452,["374"]=453,["375"]=454,["376"]=455,["377"]=456,["378"]=457,["379"]=458,["380-382"]=459,["383"]=462,["384"]=463,["385-387"]=464,["388"]=467,["389"]=468,["390"]=469,["391"]=470,["392-394"]=471,["395-396"]=474,["397"]=476,["398-400"]=477}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-19"]=1,["20"]=73,["21"]=74,["22-23"]=75,["24"]=78,["25"]=79,["26"]=80,["27"]=81,["28"]=82,["29-30"]=83,["31"]=86,["32"]=87,["33"]=88,["34"]=89,["35-36"]=90,["37"]=92,["38"]=94,["39"]=95,["40"]=96,["41"]=97,["42"]=98,["43"]=100,["44"]=101,["45"]=102,["46"]=103,["47"]=105,["48"]=107,["49"]=108,["50"]=109,["51"]=110,["52"]=111,["53"]=113,["54"]=114,["55"]=115,["56"]=118,["57"]=119,["58"]=129,["59"]=130,["60"]=131,["61"]=133,["62"]=134,["63"]=135,["64"]=136,["65"]=137,["66"]=138,["67-68"]=139,["69"]=141,["70"]=142,["71-72"]=143,["73"]=145,["74"]=146,["75-77"]=147,["78-79"]=151,["80"]=153,["81"]=155,["82-83"]=156,["84"]=158,["85"]=159,["86"]=160,["87"]=161,["88-91"]=162,["92"]=167,["93"]=168,["94"]=169,["95-134"]=170,["135-142"]=183,["143"]=187,["144"]=188,["145"]=189,["146-147"]=190,["148"]=192,["149"]=193,["150-151"]=194,["152"]=196,["153"]=197,["154-155"]=198,["156"]=200,["157-164"]=201,["165"]=207,["166"]=208,["167"]=209,["168"]=210,["169"]=211,["170"]=212,["171"]=213,["172"]=214,["173"]=215,["174"]=216,["175-177"]=217,["178"]=220,["179"]=221,["180"]=222,["181"]=223,["182-184"]=224,["185"]=227,["186-192"]=228,["193-198"]=235,["199"]=251,["200-201"]=252,["202"]=254,["203"]=255,["204-205"]=256,["206"]=258,["207-208"]=259,["209-214"]=261,["215"]=265,["216"]=266,["217"]=267,["218-219"]=268,["220-226"]=270,["227"]=274,["228-233"]=275,["234"]=280,["235"]=281,["236"]=282,["237-242"]=283,["243"]=292,["244"]=293,["245"]=294,["246"]=295,["247"]=296,["248"]=297,["249-251"]=298,["252-253"]=301,["254-258"]=303,["259"]=307,["260"]=308,["261"]=309,["262"]=310,["263-265"]=312,["266"]=313,["267"]=315,["268"]=318,["269"]=319,["270"]=320,["271"]=321,["272-273"]=322,["274-278"]=324,["279-289"]=334}, "programs")
+ktox_require("lib/Chest")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
 
-EP_OVERFLOW_SIDE = 1
-
 EP_FUEL_SAFETY_MARGIN = 20
-
-EP_MAX_OVERFLOW_CHESTS = 20
 
 TORCH_INTERVAL = 6
 
 TORCH_SLOT = 3
-
-INTAKE_SLOT = 16
 
 RESTOCK_ATTEMPTS = 32
 
@@ -198,37 +193,10 @@ function isTorchItem(name)
     return name == "minecraft:torch"
 end
 
----@param name string
----@return number
-function fuelValue(name)
-    if name == "minecraft:charcoal" then
-        return 80
-    end
-    if name == "minecraft:coal" then
-        return 80
-    end
-    if name == "minecraft:coal_block" then
-        return 800
-    end
-    if name == "minecraft:lava_bucket" then
-        return 1000
-    end
-    if name == "minecraft:dried_kelp_block" then
-        return 4000
-    end
-    return 0
-end
-
----@param name string
----@return boolean
-function isAllowedFuel(name)
-    return fuelValue(name) > 0
-end
-
 ---@param slot number
 ---@return boolean
 function shouldKeepSlot(slot)
-    if slot == INTAKE_SLOT then
+    if slot == CHEST_INTAKE_SLOT then
         return turtle.getItemCount(slot) == 0
     end
     local name = ktoxGetItemName(slot)
@@ -249,22 +217,9 @@ function epNeedsService(m)
     if fuel < distance + EP_FUEL_SAFETY_MARGIN then
         return true
     end
-    return epInventoryFull()
-end
-
----@return boolean
-function epInventoryFull()
-    local slot = 1
-    local full = true
-    while slot <= 16 do
-        if not shouldKeepSlot(slot) then
-            if turtle.getItemCount(slot) == 0 then
-                full = false
-            end
-        end
-        slot = ktox_plusAssign(slot, 1)
-    end
-    return full
+    return cargoFull(function(slot)
+        return shouldKeepSlot(slot)
+    end)
 end
 
 ---@param m Movement
@@ -305,7 +260,9 @@ function epServiceAtBase(m)
     local returnX = m.x
     local returnY = m.y
     local returnZ = m.z
-    epDumpInventoryAtBase(m)
+    dumpCargo(m, function(slot)
+        return shouldKeepSlot(slot)
+    end)
     restockAtChest(m)
     navigateTo(m, returnX, returnY, returnZ)
     local checked = gpsLocate()
@@ -318,84 +275,16 @@ function epServiceAtBase(m)
 end
 
 ---@param m Movement
----@param n number
-function epGoToChest(m, n)
-    local sideways = (m.homeHeading + EP_OVERFLOW_SIDE + 4) % 4
-    local targetX = m.homeX + headingDx(sideways) * n
-    local targetZ = m.homeZ + headingDz(sideways) * n
-    navigateTo(m, targetX, m.homeY, targetZ)
-    m:faceHeading((m.homeHeading + 2) % 4)
-end
-
----@param m Movement
-function epDumpInventoryAtBase(m)
-    local chestIndex = 1
-    epGoToChest(m, chestIndex)
-    local slot = 1
-    local giveUp = false
-    while slot <= 16 and not giveUp do
-        if not shouldKeepSlot(slot) then
-            local count = turtle.getItemCount(slot)
-            if count > 0 then
-                turtle.select(slot)
-                local dropped = turtle.drop(64)
-                while not dropped and not giveUp do
-                    chestIndex = ktox_plusAssign(chestIndex, 1)
-                    if chestIndex > EP_MAX_OVERFLOW_CHESTS then
-                        println("All overflow chests full, stopping dump early.")
-                        giveUp = true
-                    else
-                        epGoToChest(m, chestIndex)
-                        dropped = turtle.drop(64)
-                    end
-                end
-            end
-        end
-        slot = ktox_plusAssign(slot, 1)
-    end
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m:faceHeading(m.homeHeading)
-end
-
----@param m Movement
 function restockAtChest(m)
-    epGoToChest(m, 0)
-    local attempts = 0
-    local chestEmpty = false
-    local stuck = false
-    while attempts < RESTOCK_ATTEMPTS and not chestEmpty and not stuck do
-        turtle.select(INTAKE_SLOT)
-        local pulled = turtle.suck(64)
-        if not pulled then
-            chestEmpty = true
-        else
-            local name = ktoxGetItemName(INTAKE_SLOT)
-            local handled = false
-            if name ~= nil then
-                if isAllowedFuel(name) then
-                    local headroom = turtle.getFuelLimit() - turtle.getFuelLevel()
-                    if headroom >= fuelValue(name) then
-                        turtle.select(INTAKE_SLOT)
-                        turtle.refuel(64)
-                        handled = true
-                    end
-                elseif isTorchItem(name) then
-                    turtle.select(INTAKE_SLOT)
-                    turtle.transferTo(TORCH_SLOT, 64)
-                    handled = true
-                end
-            end
-            if not handled then
-                turtle.select(INTAKE_SLOT)
-                turtle.drop(64)
-                stuck = true
-                println("Chest\'s next item isn\'t usable right now (unrecognized, or would waste a high-value fuel item near the cap) - stopping restock early.")
-            end
+    restockChest(m, RESTOCK_ATTEMPTS, function(name)
+        local handled = false
+        if isTorchItem(name) then
+            turtle.select(CHEST_INTAKE_SLOT)
+            turtle.transferTo(TORCH_SLOT, 64)
+            handled = true
         end
-        attempts = ktox_plusAssign(attempts, 1)
-    end
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m:faceHeading(m.homeHeading)
+        return handled
+    end)
 end
 
 

@@ -1,19 +1,16 @@
 package programs
 
-import common.turtleDrop
 import common.turtleGetFuelLevel
-import common.turtleGetItemCount
-import common.turtleRefuel
-import common.turtleSelect
-import common.turtleSuck
+import lib.CHEST_INTAKE_SLOT
 import lib.IntSpan
 import lib.Movement
 import lib.calibrateMovement
+import lib.cargoFull
+import lib.dumpCargo
 import lib.gpsLocate
-import lib.headingDx
-import lib.headingDz
 import lib.navigateTo
 import lib.pastEnd
+import lib.restockChest
 import lib.stepFor
 
 // Coordinate-driven excavator. Named "digsite" (not "excavate") to avoid
@@ -35,8 +32,10 @@ import lib.stepFor
 //
 // Fueling/storage: assumes a fuel chest directly behind the turtle's start
 // position, with overflow chests extending from there. ASSUMPTION (easy to
-// flip if wrong — see OVERFLOW_SIDE below): overflow chests extend toward
-// the turtle's original right-hand side.
+// flip if wrong — see CHEST_OVERFLOW_SIDE in lib/Chest.kt): overflow chests
+// extend toward the turtle's original right-hand side. Chest logic itself
+// (dumping, restocking, the fuel allowlist) is shared with ExcavatePro via
+// lib/Chest.kt — this file only decides which slot(s) to keep off-limits.
 
 // ktox does not offset List/Array [] indexing — indices below are 1-based
 // on purpose. See AGENTS.md.
@@ -50,12 +49,7 @@ fun parseSpan(raw: String): IntSpan {
     return IntSpan(a, b)
 }
 
-// +1 = turtle's original right is "sideways toward the overflow row".
-// Flip to -1 if the chests turn out to be laid out the other way in-game.
-const val OVERFLOW_SIDE = 1
-
 const val FUEL_SAFETY_MARGIN = 20
-const val MAX_OVERFLOW_CHESTS = 20
 
 // Blocks swept upward from the floor in clear-cut mode. Raise this if your
 // terrain runs taller than this above the turtle's starting position.
@@ -94,25 +88,21 @@ fun main(args: Array<String>) {
 
 // -- Base servicing (fuel + item disposal) --
 
+// Only the shared restock scratch slot needs protecting — unlike
+// ExcavatePro, there's no stock (torches, step material) to reserve a
+// slot for, since fuel is consumed immediately by restockChest() rather
+// than stockpiled.
+fun keepSlot(slot: Int): Boolean {
+    return slot == CHEST_INTAKE_SLOT
+}
+
 fun needsService(m: Movement): Boolean {
     val fuel = turtleGetFuelLevel()
     val distance = m.distanceHome()
     if (fuel < distance + FUEL_SAFETY_MARGIN) {
         return true
     }
-    return inventoryFull()
-}
-
-fun inventoryFull(): Boolean {
-    var slot = 1
-    var full = true
-    while (slot <= 16) {
-        if (turtleGetItemCount(slot) == 0) {
-            full = false
-        }
-        slot += 1
-    }
-    return full
+    return cargoFull { slot -> keepSlot(slot) }
 }
 
 fun ensureFuelAndSpace(m: Movement) {
@@ -127,11 +117,11 @@ fun serviceAtBase(m: Movement) {
     val returnY = m.y
     val returnZ = m.z
 
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m.faceHeading(m.homeHeading)
-
-    dumpInventoryAtBase(m)
-    refuelAtBase(m)
+    dumpCargo(m) { slot -> keepSlot(slot) }
+    // Nothing else to sort here (no torches/stairs like ExcavatePro) —
+    // any non-fuel item just means the chest doesn't hold what this
+    // program expects, and restockChest will stop on it rather than spin.
+    restockChest(m, 16) { name -> false }
 
     navigateTo(m, returnX, returnY, returnZ)
 
@@ -143,67 +133,6 @@ fun serviceAtBase(m: Movement) {
         m.z = checked.z
     }
     println("Resuming excavation.")
-}
-
-// Chest N (N=0 is the fuel chest itself, N>=1 are overflow chests) sits
-// N blocks from the fuel chest, sideways along OVERFLOW_SIDE, one row back
-// from the turtle's home line. Must be called with m at the home position.
-fun goToChest(m: Movement, n: Int) {
-    val sideways = (m.homeHeading + OVERFLOW_SIDE + 4) % 4
-    val targetX = m.homeX + headingDx(sideways) * n
-    val targetZ = m.homeZ + headingDz(sideways) * n
-    navigateTo(m, targetX, m.homeY, targetZ)
-    m.faceHeading((m.homeHeading + 2) % 4)
-}
-
-// Slot 1 is reserved for fuel (see refuelAtBase) — skipped here so leftover
-// unburned charcoal (turtle.refuel() only consumes enough to top off the
-// tank, and leaves the rest sitting in the slot) doesn't get hauled off to
-// the overflow chest as if it were loot.
-fun dumpInventoryAtBase(m: Movement) {
-    var chestIndex = 1
-    goToChest(m, chestIndex)
-
-    var slot = 2
-    var giveUp = false
-    while (slot <= 16 && !giveUp) {
-        val count = turtleGetItemCount(slot)
-        if (count > 0) {
-            turtleSelect(slot)
-            var dropped = turtleDrop(64)
-            while (!dropped && !giveUp) {
-                chestIndex += 1
-                if (chestIndex > MAX_OVERFLOW_CHESTS) {
-                    println("All overflow chests full, stopping dump early.")
-                    giveUp = true
-                } else {
-                    goToChest(m, chestIndex)
-                    dropped = turtleDrop(64)
-                }
-            }
-        }
-        slot += 1
-    }
-
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m.faceHeading(m.homeHeading)
-}
-
-fun refuelAtBase(m: Movement) {
-    m.faceHeading((m.homeHeading + 2) % 4)
-    var attempts = 0
-    var chestEmpty = false
-    while (attempts < 16 && !chestEmpty) {
-        turtleSelect(1)
-        val pulled = turtleSuck(64)
-        if (pulled) {
-            turtleRefuel(64)
-            attempts += 1
-        } else {
-            chestEmpty = true
-        }
-    }
-    m.faceHeading(m.homeHeading)
 }
 
 // -- Room mode: bounded x/y/z box excavation, one full layer at a time --

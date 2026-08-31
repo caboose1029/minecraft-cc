@@ -1,7 +1,8 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-11"]=1,["12"]=47,["13"]=48,["14"]=49,["15-27"]=50,["28"]=65,["29"]=66,["30-31"]=67,["32"]=70,["33"]=71,["34"]=72,["35"]=74,["36"]=75,["37"]=76,["38"]=77,["39-40"]=78,["41"]=80,["42"]=82,["43"]=83,["44-45"]=84,["46-47"]=86,["48"]=89,["49"]=90,["50"]=91,["51-56"]=92,["57"]=98,["58"]=99,["59"]=100,["60-61"]=101,["62-66"]=103,["67"]=107,["68"]=108,["69"]=109,["70"]=110,["71-72"]=111,["73-74"]=113,["75-79"]=115,["80"]=119,["81-86"]=120,["87"]=125,["88"]=126,["89"]=127,["90"]=128,["91"]=130,["92"]=131,["93"]=133,["94"]=134,["95"]=136,["96"]=139,["97"]=140,["98"]=141,["99"]=142,["100-101"]=143,["102-107"]=145,["108"]=152,["109"]=153,["110"]=154,["111"]=155,["112-116"]=156,["117"]=164,["118"]=165,["119"]=167,["120"]=168,["121"]=169,["122"]=170,["123"]=171,["124"]=172,["125"]=173,["126"]=174,["127"]=175,["128"]=176,["129"]=177,["130-131"]=178,["132"]=180,["133-136"]=181,["137-138"]=185,["139"]=188,["140-144"]=189,["145"]=193,["146"]=194,["147"]=195,["148"]=196,["149"]=197,["150"]=198,["151"]=199,["152"]=200,["153-154"]=201,["155-157"]=203,["158-165"]=206,["166"]=212,["167"]=213,["168"]=214,["169"]=215,["170-178"]=216,["179"]=221,["180"]=222,["181"]=223,["182"]=224,["183"]=225,["184"]=226,["185"]=227,["186"]=228,["187"]=229,["188"]=230,["189-191"]=231,["192"]=234,["193"]=235,["194"]=236,["195"]=237,["196-198"]=238,["199"]=241,["200-207"]=242,["208"]=256,["209"]=257,["210-212"]=258}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-12"]=1,["13"]=46,["14"]=47,["15"]=48,["16-24"]=49,["25"]=59,["26"]=60,["27-28"]=61,["29"]=64,["30"]=65,["31"]=66,["32"]=68,["33"]=69,["34"]=70,["35"]=71,["36-37"]=72,["38"]=74,["39"]=76,["40"]=77,["41-42"]=78,["43-44"]=80,["45"]=83,["46"]=84,["47"]=85,["48-53"]=86,["54-59"]=96,["60"]=100,["61"]=101,["62"]=102,["63-64"]=103,["65-71"]=105,["72"]=109,["73-78"]=110,["79"]=115,["80"]=116,["81"]=117,["82"]=118,["83-85"]=120,["86-88"]=124,["89"]=126,["90"]=129,["91"]=130,["92"]=131,["93"]=132,["94-95"]=133,["96-103"]=135,["104"]=141,["105"]=142,["106"]=143,["107"]=144,["108-116"]=145,["117"]=150,["118"]=151,["119"]=152,["120"]=153,["121"]=154,["122"]=155,["123"]=156,["124"]=157,["125"]=158,["126"]=159,["127-129"]=160,["130"]=163,["131"]=164,["132"]=165,["133"]=166,["134-136"]=167,["137"]=170,["138-145"]=171,["146"]=185,["147"]=186,["148-150"]=187}, "programs")
+ktox_require("lib/Chest")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
@@ -15,11 +16,7 @@ function parseSpan(raw)
     return IntSpan:new(a, b)
 end
 
-OVERFLOW_SIDE = 1
-
 FUEL_SAFETY_MARGIN = 20
-
-MAX_OVERFLOW_CHESTS = 20
 
 CLEAR_CUT_HEIGHT = 32
 
@@ -51,6 +48,12 @@ function main(args)
     println("Home.")
 end
 
+---@param slot number
+---@return boolean
+function keepSlot(slot)
+    return slot == CHEST_INTAKE_SLOT
+end
+
 ---@param m Movement
 ---@return boolean
 function needsService(m)
@@ -59,20 +62,9 @@ function needsService(m)
     if fuel < distance + FUEL_SAFETY_MARGIN then
         return true
     end
-    return inventoryFull()
-end
-
----@return boolean
-function inventoryFull()
-    local slot = 1
-    local full = true
-    while slot <= 16 do
-        if turtle.getItemCount(slot) == 0 then
-            full = false
-        end
-        slot = ktox_plusAssign(slot, 1)
-    end
-    return full
+    return cargoFull(function(slot)
+        return keepSlot(slot)
+    end)
 end
 
 ---@param m Movement
@@ -88,10 +80,12 @@ function serviceAtBase(m)
     local returnX = m.x
     local returnY = m.y
     local returnZ = m.z
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m:faceHeading(m.homeHeading)
-    dumpInventoryAtBase(m)
-    refuelAtBase(m)
+    dumpCargo(m, function(slot)
+        return keepSlot(slot)
+    end)
+    restockChest(m, 16, function(name)
+        return false
+    end)
     navigateTo(m, returnX, returnY, returnZ)
     local checked = gpsLocate()
     if checked ~= nil then
@@ -100,62 +94,6 @@ function serviceAtBase(m)
         m.z = checked.z
     end
     println("Resuming excavation.")
-end
-
----@param m Movement
----@param n number
-function goToChest(m, n)
-    local sideways = (m.homeHeading + OVERFLOW_SIDE + 4) % 4
-    local targetX = m.homeX + headingDx(sideways) * n
-    local targetZ = m.homeZ + headingDz(sideways) * n
-    navigateTo(m, targetX, m.homeY, targetZ)
-    m:faceHeading((m.homeHeading + 2) % 4)
-end
-
----@param m Movement
-function dumpInventoryAtBase(m)
-    local chestIndex = 1
-    goToChest(m, chestIndex)
-    local slot = 2
-    local giveUp = false
-    while slot <= 16 and not giveUp do
-        local count = turtle.getItemCount(slot)
-        if count > 0 then
-            turtle.select(slot)
-            local dropped = turtle.drop(64)
-            while not dropped and not giveUp do
-                chestIndex = ktox_plusAssign(chestIndex, 1)
-                if chestIndex > MAX_OVERFLOW_CHESTS then
-                    println("All overflow chests full, stopping dump early.")
-                    giveUp = true
-                else
-                    goToChest(m, chestIndex)
-                    dropped = turtle.drop(64)
-                end
-            end
-        end
-        slot = ktox_plusAssign(slot, 1)
-    end
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m:faceHeading(m.homeHeading)
-end
-
----@param m Movement
-function refuelAtBase(m)
-    m:faceHeading((m.homeHeading + 2) % 4)
-    local attempts = 0
-    local chestEmpty = false
-    while attempts < 16 and not chestEmpty do
-        turtle.select(1)
-        local pulled = turtle.suck(64)
-        if pulled then
-            turtle.refuel(64)
-            attempts = ktox_plusAssign(attempts, 1)
-        else
-            chestEmpty = true
-        end
-    end
-    m:faceHeading(m.homeHeading)
 end
 
 ---@param m Movement

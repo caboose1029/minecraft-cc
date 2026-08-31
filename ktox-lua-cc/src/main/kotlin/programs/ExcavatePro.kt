@@ -2,23 +2,23 @@ package programs
 
 import common.turtleGetItemName
 import common.turtleDigUp
-import common.turtleDrop
 import common.turtleGetFuelLevel
-import common.turtleGetFuelLimit
 import common.turtleGetItemCount
 import common.turtlePlaceUp
-import common.turtleRefuel
 import common.turtleSelect
-import common.turtleSuck
 import common.turtleTransferTo
+import lib.CHEST_INTAKE_SLOT
 import lib.IntSpan
 import lib.Movement
 import lib.calibrateMovement
+import lib.cargoFull
+import lib.dumpCargo
 import lib.gpsLocate
 import lib.headingDx
 import lib.headingDz
 import lib.navigateTo
 import lib.pastEnd
+import lib.restockChest
 import lib.stepFor
 
 // Straight-down excavator (like CC's built-in excavate) that also lines
@@ -57,20 +57,16 @@ import lib.stepFor
 //
 // Supply: a chest at the turtle's start position holds charcoal and
 // torches ("minecraft:torch") mixed together — sucked one item at a
-// time into INTAKE_SLOT and sorted by name. TORCH_SLOT holds torch
+// time into CHEST_INTAKE_SLOT and sorted by name. TORCH_SLOT holds torch
 // stock; cobblestone is never dumped as cargo (kept for steps, see
 // shouldKeepSlot); everything else is general cargo, dumped to overflow
-// chests exactly like Digsite.
-
-// +1 = turtle's original right is "sideways toward the overflow row".
-// Flip to -1 if the chests turn out to be laid out the other way in-game.
-const val EP_OVERFLOW_SIDE = 1
+// chests. Chest logic itself (dumping, restocking, the fuel allowlist)
+// is shared with Digsite via lib/Chest.kt — this file only decides
+// which slots to keep off-limits and what to do with a non-fuel item.
 
 const val EP_FUEL_SAFETY_MARGIN = 20
-const val EP_MAX_OVERFLOW_CHESTS = 20
 const val TORCH_INTERVAL = 6
 const val TORCH_SLOT = 3
-const val INTAKE_SLOT = 16
 const val RESTOCK_ATTEMPTS = 32
 
 fun main(args: Array<String>) {
@@ -239,58 +235,20 @@ fun isTorchItem(name: String): Boolean {
     return name == "minecraft:torch"
 }
 
-// Deliberately restrictive, not exhaustive: turtle.refuel() itself
-// already accepts anything CC:Tweaked considers valid fuel (any wood
-// variant included) for free, via its own return value — this allowlist
-// exists to burn LESS than that, not more, so wood/planks/logs never get
-// consumed as fuel even though they're technically valid, without having
-// to enumerate every wood variant to exclude it. No blaze rod, per
-// explicit request.
-//
-// Values are fuel level gained per single item burned. These match
-// commonly-documented CC:Tweaked numbers but aren't verified against
-// this pack/version — to confirm one yourself: hold one item, note
-// turtleGetFuelLevel(), run turtle.refuel(1), and the difference is the
-// exact value for your setup. Worth spot-checking coal_block and
-// dried_kelp_block especially, since a wrong number there is exactly
-// the near-cap waste this exists to prevent.
-fun fuelValue(name: String): Int {
-    if (name == "minecraft:charcoal") {
-        return 80
-    }
-    if (name == "minecraft:coal") {
-        return 80
-    }
-    if (name == "minecraft:coal_block") {
-        return 800
-    }
-    if (name == "minecraft:lava_bucket") {
-        return 1000
-    }
-    if (name == "minecraft:dried_kelp_block") {
-        return 4000
-    }
-    return 0
-}
-
-fun isAllowedFuel(name: String): Boolean {
-    return fuelValue(name) > 0
-}
-
 // A slot's current content is worth keeping — never dumped as cargo —
 // when: it's the transient intake slot and happens to be empty right
 // now; it's the torch slot and actually holds a torch; or it holds
 // cobblestone, kept around as step material regardless of which slot it
 // landed in (mining always produces some, so there's no dedicated slot
 // to protect — see findCobblestoneSlot()). Checking by content rather
-// than just slot number matters: a slot ktoxGetItemName doesn't
-// recognize as its intended item (e.g. TORCH_SLOT holding ordinary
-// mined cobblestone, because it happened to be the first empty slot the
-// very first time the turtle mined something, before any chest visit
-// ever occurred) is NOT protected — it's ordinary cargo that needs to
-// get dumped so the slot is actually empty for the real item next visit.
+// than just slot number matters: a slot that doesn't hold its intended
+// item (e.g. TORCH_SLOT holding ordinary mined cobblestone, because it
+// happened to be the first empty slot the very first time the turtle
+// mined something, before any chest visit ever occurred) is NOT
+// protected — it's ordinary cargo that needs to get dumped so the slot
+// is actually empty for the real item next visit.
 fun shouldKeepSlot(slot: Int): Boolean {
-    if (slot == INTAKE_SLOT) {
+    if (slot == CHEST_INTAKE_SLOT) {
         return turtleGetItemCount(slot) == 0
     }
     val name = turtleGetItemName(slot)
@@ -309,21 +267,7 @@ fun epNeedsService(m: Movement): Boolean {
     if (fuel < distance + EP_FUEL_SAFETY_MARGIN) {
         return true
     }
-    return epInventoryFull()
-}
-
-fun epInventoryFull(): Boolean {
-    var slot = 1
-    var full = true
-    while (slot <= 16) {
-        if (!shouldKeepSlot(slot)) {
-            if (turtleGetItemCount(slot) == 0) {
-                full = false
-            }
-        }
-        slot += 1
-    }
-    return full
+    return cargoFull { slot -> shouldKeepSlot(slot) }
 }
 
 fun epEnsureFuelAndSpace(m: Movement) {
@@ -365,7 +309,7 @@ fun epServiceAtBase(m: Movement) {
     val returnY = m.y
     val returnZ = m.z
 
-    epDumpInventoryAtBase(m)
+    dumpCargo(m) { slot -> shouldKeepSlot(slot) }
     restockAtChest(m)
 
     navigateTo(m, returnX, returnY, returnZ)
@@ -380,99 +324,20 @@ fun epServiceAtBase(m: Movement) {
     println("Resuming excavation.")
 }
 
-// Chest N (N=0 is the fuel/supply chest itself, N>=1 are overflow chests)
-// sits N blocks from the supply chest, sideways along EP_OVERFLOW_SIDE, one
-// row back from the turtle's home line. Must be called with m at home.
-fun epGoToChest(m: Movement, n: Int) {
-    val sideways = (m.homeHeading + EP_OVERFLOW_SIDE + 4) % 4
-    val targetX = m.homeX + headingDx(sideways) * n
-    val targetZ = m.homeZ + headingDz(sideways) * n
-    navigateTo(m, targetX, m.homeY, targetZ)
-    m.faceHeading((m.homeHeading + 2) % 4)
-}
-
-// See shouldKeepSlot() — torch stock, cobblestone (step material), and
-// the empty intake slot are never dumped as cargo.
-fun epDumpInventoryAtBase(m: Movement) {
-    var chestIndex = 1
-    epGoToChest(m, chestIndex)
-
-    var slot = 1
-    var giveUp = false
-    while (slot <= 16 && !giveUp) {
-        if (!shouldKeepSlot(slot)) {
-            val count = turtleGetItemCount(slot)
-            if (count > 0) {
-                turtleSelect(slot)
-                var dropped = turtleDrop(64)
-                while (!dropped && !giveUp) {
-                    chestIndex += 1
-                    if (chestIndex > EP_MAX_OVERFLOW_CHESTS) {
-                        println("All overflow chests full, stopping dump early.")
-                        giveUp = true
-                    } else {
-                        epGoToChest(m, chestIndex)
-                        dropped = turtleDrop(64)
-                    }
-                }
-            }
-        }
-        slot += 1
-    }
-
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m.faceHeading(m.homeHeading)
-}
-
-// Sucks from the mixed supply chest one item at a time, sorting by name:
-// allowed fuel (see fuelValue()) is burned, torches go to TORCH_SLOT,
-// anything else — including any wood variant, and any allowed fuel that
-// would waste value by pushing past the fuel cap — gets put back.
-//
-// turtle.suck() always pulls whatever's in the chest's lowest-indexed
-// non-empty slot — there's no way to ask for a specific item, and
-// turtle.drop() puts an unwanted item right back into that same slot.
-// So if the chest's front item can't be used *right now* dropping it
-// back just re-surfaces the identical stack on the next suck() — an
-// unwinnable loop, not a transient hiccup. Detect that and stop this
-// visit early rather than burning the whole attempt budget spinning on
-// one stuck stack.
+// Anything restockChest's fuel allowlist doesn't already claim — a
+// torch goes to TORCH_SLOT; anything else is left for restockChest to
+// drop back and stop on. Written with an explicit `handled` local, not
+// as an if/else expression — see AGENTS.md on why a multi-statement
+// if/else branch used as a lambda's implicit return can transpile to
+// invalid Lua.
 fun restockAtChest(m: Movement) {
-    epGoToChest(m, 0)
-    var attempts = 0
-    var chestEmpty = false
-    var stuck = false
-    while (attempts < RESTOCK_ATTEMPTS && !chestEmpty && !stuck) {
-        turtleSelect(INTAKE_SLOT)
-        val pulled = turtleSuck(64)
-        if (!pulled) {
-            chestEmpty = true
-        } else {
-            val name = turtleGetItemName(INTAKE_SLOT)
-            var handled = false
-            if (name != null) {
-                if (isAllowedFuel(name)) {
-                    val headroom = turtleGetFuelLimit() - turtleGetFuelLevel()
-                    if (headroom >= fuelValue(name)) {
-                        turtleSelect(INTAKE_SLOT)
-                        turtleRefuel(64)
-                        handled = true
-                    }
-                } else if (isTorchItem(name)) {
-                    turtleSelect(INTAKE_SLOT)
-                    turtleTransferTo(TORCH_SLOT, 64)
-                    handled = true
-                }
-            }
-            if (!handled) {
-                turtleSelect(INTAKE_SLOT)
-                turtleDrop(64)
-                stuck = true
-                println("Chest's next item isn't usable right now (unrecognized, or would waste a high-value fuel item near the cap) - stopping restock early.")
-            }
+    restockChest(m, RESTOCK_ATTEMPTS) { name ->
+        var handled = false
+        if (isTorchItem(name)) {
+            turtleSelect(CHEST_INTAKE_SLOT)
+            turtleTransferTo(TORCH_SLOT, 64)
+            handled = true
         }
-        attempts += 1
+        handled
     }
-    navigateTo(m, m.homeX, m.homeY, m.homeZ)
-    m.faceHeading(m.homeHeading)
 }
