@@ -1,0 +1,311 @@
+package programs
+
+import common.turtleGetFuelLevel
+import common.turtleInspectDownName
+import common.turtleInspectName
+import common.turtleInspectUpName
+import lib.CHEST_INTAKE_SLOT
+import lib.Movement
+import lib.calibrateMovement
+import lib.cargoFull
+import lib.dumpCargo
+import lib.gpsLocate
+import lib.headingDx
+import lib.headingDz
+import lib.navigateTo
+import lib.restockChest
+
+// Branch-mining ore finder: bores parallel 1-wide, 1-tall tunnels at
+// three fixed depths favorable for diamonds, and chases any valuable ore
+// (diamond, redstone, gold, and other metals — see isValuableOre) found
+// along the way to clear out its whole vein before resuming.
+//
+// Usage: diamondfinder <branchLength> <branchCount> (<spacing>)
+//   - branchLength: how many blocks long each borehole tunnel is.
+//   - branchCount: how many parallel boreholes to bore per tier.
+//   - spacing (optional, default 3): blocks of unmined stone left
+//     between adjacent boreholes within a tier. Small enough that ore
+//     roughly in the middle of the gap is still within inspection range
+//     (up/down/left/right, 1 block) of at least one borehole wall.
+//
+// Depth: three fixed tiers, Y = -51, -55, -59 — straddles Y=-54, a
+// commonly lava-heavy layer in modern world gen (turtles don't care
+// about lava, but there's no point tunneling through it if a level
+// just above/below is nearly as rich and drier). Vertical spacing of 4
+// between tiers leaves exactly 1 block per gap that isn't directly
+// reached by either tier's up/down inspection — accepted on the
+// assumption that a real vein commonly spans more than one Y level, so
+// it's still very likely to be caught by an adjacent tier even where
+// the single gap block itself is missed. Not currently configurable —
+// see tierY() to adjust.
+//
+// Each borehole is bored one block at a time; at every position, the
+// turtle checks up, down, left, and right (never behind — that's
+// already-mined air) for valuable ore, and follows any found vein via
+// recursive backtracking (see followVein) before resuming the bore.
+// Fuel/cargo servicing reuses the same lib/Chest.kt machinery as
+// Digsite/ExcavatePro — this file only supplies its own keep/onOther
+// policy (charcoal only, no torches/stairs/step-material concept here)
+// and its own thin df-prefixed wrapper (named distinctly from Digsite's
+// existing needsService/ensureFuelAndSpace/serviceAtBase — same package,
+// see AGENTS.md on why that collision would be a real compile error).
+//
+// Return trip: like ExcavatePro, the direct path home could be blocked
+// by a local bedrock pocket (most likely on the return from deep inside
+// a vein chase near the lowest tier). Unlike ExcavatePro there's no
+// always-open "center column" to retreat to — each borehole is its own
+// isolated 1-wide tunnel — so recovery just climbs straight up and
+// retries toward home directly; ordinary stone digs through fine via
+// Movement's own auto-dig, so climbing only matters for escaping an
+// actual bedrock formation, which is typically a small local pocket, not
+// a full impassable layer.
+
+fun isValuableOre(name: String): Boolean {
+    if (name == "minecraft:diamond_ore") {
+        return true
+    }
+    if (name == "minecraft:deepslate_diamond_ore") {
+        return true
+    }
+    if (name == "minecraft:redstone_ore") {
+        return true
+    }
+    if (name == "minecraft:deepslate_redstone_ore") {
+        return true
+    }
+    if (name == "minecraft:gold_ore") {
+        return true
+    }
+    if (name == "minecraft:deepslate_gold_ore") {
+        return true
+    }
+    if (name == "minecraft:iron_ore") {
+        return true
+    }
+    if (name == "minecraft:deepslate_iron_ore") {
+        return true
+    }
+    if (name == "minecraft:copper_ore") {
+        return true
+    }
+    if (name == "minecraft:deepslate_copper_ore") {
+        return true
+    }
+    if (name == "minecraft:lapis_ore") {
+        return true
+    }
+    if (name == "minecraft:deepslate_lapis_ore") {
+        return true
+    }
+    if (name == "minecraft:emerald_ore") {
+        return true
+    }
+    if (name == "minecraft:deepslate_emerald_ore") {
+        return true
+    }
+    return false
+}
+
+const val DF_FUEL_SAFETY_MARGIN = 20
+const val DF_RESTOCK_ATTEMPTS = 16
+const val MAX_VEIN_DEPTH = 24
+const val MAX_RETURN_ASCENTS = 32
+
+fun main(args: Array<String>) {
+    if (args.size < 2) {
+        println("Usage: diamondfinder <branchLength> <branchCount> (<spacing>)")
+        return
+    }
+
+    val branchLength = args[1].toInt()
+    val branchCount = args[2].toInt()
+    val spacing = if (args.size >= 3) args[3].toInt() else 3
+
+    println("Calibrating position via GPS...")
+    val movement = calibrateMovement()
+    if (movement == null) {
+        println("GPS calibration failed - check the wireless/ender modem and GPS host coverage.")
+        return
+    }
+    println("Home at x=${movement.homeX} y=${movement.homeY} z=${movement.homeZ}")
+
+    val fwdDx = headingDx(movement.homeHeading)
+    val fwdDz = headingDz(movement.homeHeading)
+    val rightHeading = (movement.homeHeading + 1) % 4
+    val rgtDx = headingDx(rightHeading)
+    val rgtDz = headingDz(rightHeading)
+
+    var tierIndex = 1
+    while (tierIndex <= 3) {
+        val tierY = tierY(tierIndex)
+        println("Moving to tier ${tierIndex} (y=${tierY})...")
+        navigateTo(movement, movement.homeX, tierY, movement.homeZ)
+
+        var branch = 0
+        while (branch < branchCount) {
+            val lateralOffset = branch * (spacing + 1)
+            val startX = movement.homeX + rgtDx * lateralOffset
+            val startZ = movement.homeZ + rgtDz * lateralOffset
+            dfEnsureFuelAndSpace(movement)
+            navigateTo(movement, startX, tierY, startZ)
+            movement.faceHeading(movement.homeHeading)
+            boreBranch(movement, branchLength)
+            branch += 1
+        }
+
+        tierIndex += 1
+    }
+
+    println("Diamond survey complete. Returning home...")
+    if (!returnHomeWithRecovery(movement)) {
+        println("Could not fully reach home - staying put.")
+    } else {
+        movement.faceHeading(movement.homeHeading)
+        println("Home.")
+    }
+}
+
+fun tierY(tierIndex: Int): Int {
+    if (tierIndex == 1) {
+        return -51
+    }
+    if (tierIndex == 2) {
+        return -55
+    }
+    return -59
+}
+
+// -- Boring + vein-following --
+
+fun boreBranch(m: Movement, length: Int) {
+    var i = 0
+    var blocked = false
+    while (i < length && !blocked) {
+        dfEnsureFuelAndSpace(m)
+        if (!m.forward()) {
+            println("Blocked while boring at x=${m.x} y=${m.y} z=${m.z} - stopping this branch.")
+            blocked = true
+        } else {
+            followVein(m, 0)
+            i += 1
+        }
+    }
+}
+
+// Checks up/down/left/right/forward from the turtle's current position
+// and chases any valuable ore found (digs in, recurses one level
+// deeper, then backs out the same way) before returning — so by the
+// time this returns, the turtle is back exactly where this call found
+// it, regardless of how far the vein wandered. Bounded by
+// MAX_VEIN_DEPTH so an unusually large vein (or, in principle, a loop of
+// ore doubling back on itself) can't wander indefinitely and burn
+// through fuel chasing it.
+//
+// Called with depth=0 after every step of the main bore (checking
+// "forward" there just means the next not-yet-dug tunnel block — a
+// harmless early check, since the bore loop was about to dig it anyway).
+fun followVein(m: Movement, depth: Int) {
+    if (depth >= MAX_VEIN_DEPTH) {
+        return
+    }
+    dfEnsureFuelAndSpace(m)
+
+    val upName = turtleInspectUpName()
+    if (upName != null && isValuableOre(upName)) {
+        if (m.up()) {
+            followVein(m, depth + 1)
+            m.down()
+        }
+    }
+
+    val downName = turtleInspectDownName()
+    if (downName != null && isValuableOre(downName)) {
+        if (m.down()) {
+            followVein(m, depth + 1)
+            m.up()
+        }
+    }
+
+    m.turnLeft()
+    val leftName = turtleInspectName()
+    if (leftName != null && isValuableOre(leftName)) {
+        if (m.forward()) {
+            followVein(m, depth + 1)
+            m.back()
+        }
+    }
+    m.turnRight()
+
+    m.turnRight()
+    val rightName = turtleInspectName()
+    if (rightName != null && isValuableOre(rightName)) {
+        if (m.forward()) {
+            followVein(m, depth + 1)
+            m.back()
+        }
+    }
+    m.turnLeft()
+
+    val fwdName = turtleInspectName()
+    if (fwdName != null && isValuableOre(fwdName)) {
+        if (m.forward()) {
+            followVein(m, depth + 1)
+            m.back()
+        }
+    }
+}
+
+// Tries the direct path home; if blocked (most likely a local bedrock
+// pocket), climbs one block — ordinary stone digs through fine via
+// Movement's own auto-dig, so this only matters for actually escaping a
+// bedrock formation — and retries, repeating (bounded by
+// MAX_RETURN_ASCENTS) until it clears whatever's blocking it.
+fun returnHomeWithRecovery(m: Movement): Boolean {
+    if (navigateTo(m, m.homeX, m.homeY, m.homeZ)) {
+        return true
+    }
+    var attempts = 0
+    var reached = false
+    while (!reached && attempts < MAX_RETURN_ASCENTS) {
+        if (!m.up()) {
+            return false
+        }
+        reached = navigateTo(m, m.homeX, m.homeY, m.homeZ)
+        attempts += 1
+    }
+    return reached
+}
+
+// -- Base servicing (fuel + cargo disposal; charcoal-only chest) --
+
+fun dfKeepSlot(slot: Int): Boolean {
+    return slot == CHEST_INTAKE_SLOT
+}
+
+fun dfEnsureFuelAndSpace(m: Movement) {
+    val fuel = turtleGetFuelLevel()
+    val distance = m.distanceHome()
+    var needsService = fuel < distance + DF_FUEL_SAFETY_MARGIN
+    if (!needsService) {
+        needsService = cargoFull { slot -> dfKeepSlot(slot) }
+    }
+    if (needsService) {
+        println("Returning to base to refuel/dump inventory...")
+        val returnX = m.x
+        val returnY = m.y
+        val returnZ = m.z
+
+        dumpCargo(m) { slot -> dfKeepSlot(slot) }
+        restockChest(m, DF_RESTOCK_ATTEMPTS) { name -> false }
+
+        navigateTo(m, returnX, returnY, returnZ)
+
+        val checked = gpsLocate()
+        if (checked != null) {
+            m.x = checked.x
+            m.y = checked.y
+            m.z = checked.z
+        }
+        println("Resuming.")
+    }
+}
