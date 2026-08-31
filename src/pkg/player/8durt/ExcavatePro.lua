@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-26"]=1,["27"]=70,["28"]=71,["29-30"]=72,["31"]=75,["32"]=76,["33"]=77,["34"]=78,["35"]=79,["36-37"]=80,["38"]=83,["39"]=84,["40"]=85,["41"]=86,["42-43"]=87,["44"]=89,["45"]=91,["46"]=92,["47"]=93,["48"]=94,["49"]=95,["50"]=97,["51"]=98,["52"]=99,["53"]=100,["54"]=101,["55"]=102,["56"]=104,["57"]=106,["58"]=107,["59"]=108,["60"]=109,["61"]=110,["62"]=111,["63"]=112,["64"]=114,["65"]=115,["66"]=116,["67"]=118,["68"]=119,["69"]=120,["70"]=121,["71"]=122,["72"]=123,["73"]=125,["74"]=126,["75"]=127,["76"]=128,["77"]=129,["78"]=130,["79-80"]=131,["81"]=133,["82"]=134,["83"]=135,["84-85"]=136,["86"]=139,["87"]=140,["88"]=141,["89-90"]=142,["91"]=145,["92-93"]=146,["94"]=148,["95"]=149,["96"]=150,["97"]=151,["98-101"]=152,["102"]=157,["103"]=158,["104"]=159,["105-144"]=160,["145-152"]=173,["153"]=177,["154"]=178,["155"]=179,["156-157"]=180,["158"]=182,["159"]=183,["160-161"]=184,["162"]=186,["163"]=187,["164-165"]=188,["166"]=190,["167-177"]=191,["178"]=197,["179"]=198,["180"]=199,["181"]=200,["182"]=201,["183"]=202,["184"]=203,["185"]=204,["186"]=205,["187"]=206,["188-189"]=207,["190-192"]=209,["193"]=212,["194"]=213,["195"]=214,["196"]=215,["197-198"]=216,["199-201"]=218,["202"]=221,["203-209"]=222,["210"]=229,["211-212"]=230,["213"]=232,["214-215"]=233,["216"]=235,["217-218"]=236,["219-224"]=238,["225"]=242,["226"]=243,["227"]=244,["228-229"]=245,["230-234"]=247,["235"]=251,["236"]=252,["237"]=253,["238"]=254,["239"]=255,["240-242"]=256,["243-244"]=259,["245-249"]=261,["250"]=265,["251-256"]=266,["257"]=271,["258-263"]=272,["264"]=277,["265-270"]=278,["271"]=283,["272"]=284,["273"]=285,["274"]=286,["275"]=288,["276"]=289,["277"]=291,["278"]=294,["279"]=295,["280"]=296,["281"]=297,["282-283"]=298,["284-289"]=300,["290"]=307,["291"]=308,["292"]=309,["293"]=310,["294-298"]=311,["299"]=318,["300"]=319,["301"]=321,["302"]=322,["303"]=323,["304"]=324,["305"]=325,["306"]=326,["307"]=327,["308"]=328,["309"]=329,["310"]=330,["311"]=331,["312"]=332,["313-314"]=333,["315"]=335,["316-320"]=336,["321-322"]=341,["323"]=344,["324-329"]=345,["330"]=352,["331-335"]=353,["336"]=360,["337"]=361,["338"]=362,["339"]=363,["340"]=364,["341"]=365,["342"]=366,["343-344"]=367,["345"]=369,["346"]=370,["347"]=371,["348-349"]=372,["350"]=375,["351-352"]=376,["353"]=377,["354"]=378,["355-356"]=379,["357"]=381,["358-361"]=382,["362-363"]=385,["364"]=387,["365-367"]=388}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-26"]=1,["27"]=75,["28"]=76,["29-30"]=77,["31"]=80,["32"]=81,["33"]=82,["34"]=83,["35"]=84,["36-37"]=85,["38"]=88,["39"]=89,["40"]=90,["41"]=91,["42-43"]=92,["44"]=94,["45"]=96,["46"]=97,["47"]=98,["48"]=99,["49"]=100,["50"]=102,["51"]=103,["52"]=104,["53"]=105,["54"]=106,["55"]=107,["56"]=109,["57"]=111,["58"]=112,["59"]=113,["60"]=114,["61"]=115,["62"]=117,["63"]=118,["64"]=119,["65"]=122,["66"]=123,["67"]=124,["68"]=125,["69"]=126,["70"]=128,["71"]=129,["72"]=130,["73"]=131,["74"]=132,["75"]=133,["76-77"]=134,["78"]=136,["79"]=137,["80"]=138,["81-82"]=139,["83-84"]=142,["85"]=144,["86"]=146,["87-88"]=147,["89"]=149,["90"]=150,["91"]=151,["92"]=152,["93-96"]=153,["97"]=158,["98"]=159,["99"]=160,["100-139"]=161,["140-147"]=174,["148"]=178,["149"]=179,["150"]=180,["151-152"]=181,["153"]=183,["154"]=184,["155-156"]=185,["157"]=187,["158"]=188,["159-160"]=189,["161"]=191,["162-169"]=192,["170"]=198,["171"]=199,["172"]=200,["173"]=201,["174"]=202,["175"]=203,["176"]=204,["177"]=205,["178"]=206,["179"]=207,["180-182"]=208,["183"]=211,["184"]=212,["185"]=213,["186"]=214,["187-189"]=215,["190"]=218,["191-197"]=219,["198"]=226,["199-200"]=227,["201"]=229,["202-203"]=230,["204"]=232,["205-206"]=233,["207-212"]=235,["213"]=239,["214"]=240,["215"]=241,["216-217"]=242,["218-222"]=244,["223"]=248,["224"]=249,["225"]=250,["226"]=251,["227"]=252,["228-230"]=253,["231-232"]=256,["233-237"]=258,["238"]=262,["239-244"]=263,["245"]=268,["246-251"]=269,["252"]=274,["253-258"]=275,["259"]=280,["260"]=281,["261"]=282,["262"]=283,["263"]=285,["264"]=286,["265"]=288,["266"]=291,["267"]=292,["268"]=293,["269"]=294,["270-271"]=295,["272-277"]=297,["278"]=304,["279"]=305,["280"]=306,["281"]=307,["282-286"]=308,["287"]=315,["288"]=316,["289"]=318,["290"]=319,["291"]=320,["292"]=321,["293"]=322,["294"]=323,["295"]=324,["296"]=325,["297"]=326,["298"]=327,["299"]=328,["300"]=329,["301-302"]=330,["303"]=332,["304-308"]=333,["309-310"]=338,["311"]=341,["312-317"]=342,["318"]=349,["319-323"]=350,["324"]=367,["325"]=368,["326"]=369,["327"]=370,["328"]=371,["329"]=372,["330"]=373,["331"]=374,["332-333"]=375,["334"]=377,["335"]=378,["336-337"]=379,["338"]=381,["339-340"]=382,["341"]=385,["342-343"]=386,["344"]=387,["345"]=388,["346-347"]=389,["348"]=391,["349"]=392,["350"]=393,["351-354"]=394,["355-356"]=397,["357"]=399,["358-360"]=400}, "programs")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
@@ -57,15 +57,12 @@ function main(args)
     local y = movement.homeY
     local step = 0
     local levelsSinceTorch = 0
-    local hasPendingSkip = false
-    local pendingSkipX = 0
-    local pendingSkipZ = 0
+    local isFirstLayer = true
     local digging = true
     while digging do
         epEnsureFuelAndSpace(movement)
-        digLayer(movement, xSpan, zSpan, y, pendingSkipX, pendingSkipZ, hasPendingSkip)
-        hasPendingSkip = false
-        if hasStaircase then
+        digLayer(movement, xSpan, zSpan, y)
+        if hasStaircase and not isFirstLayer then
             local cell = perimeterCell(step, width, length)
             local cellX = xSpan.start + cell.dx * xStep
             local cellZ = zSpan.start + cell.dz * zStep
@@ -73,21 +70,19 @@ function main(args)
             levelsSinceTorch = ktox_plusAssign(levelsSinceTorch, 1)
             if levelsSinceTorch >= TORCH_INTERVAL then
                 ensureTorchSupply(movement)
-                turtle.digDown()
+                turtle.digUp()
                 turtle.select(TORCH_SLOT)
-                turtle.placeDown()
+                turtle.placeUp()
                 levelsSinceTorch = 0
             else
                 ensureStairSupply(movement)
-                turtle.digDown()
+                turtle.digUp()
                 turtle.select(STAIRS_SLOT)
-                turtle.placeDown()
+                turtle.placeUp()
             end
-            pendingSkipX = cellX
-            pendingSkipZ = cellZ
-            hasPendingSkip = true
             step = ktox_plusAssign(step, 1)
         end
+        isFirstLayer = false
         if hasYTarget and y <= yTarget then
             digging = false
         else
@@ -171,10 +166,7 @@ end
 ---@param xSpan IntSpan
 ---@param zSpan IntSpan
 ---@param y number
----@param skipX number
----@param skipZ number
----@param hasSkip boolean
-function digLayer(m, xSpan, zSpan, y, skipX, skipZ, hasSkip)
+function digLayer(m, xSpan, zSpan, y)
     local xStep = stepFor(xSpan)
     local zStep = stepFor(zSpan)
     local x = xSpan.start
@@ -183,19 +175,15 @@ function digLayer(m, xSpan, zSpan, y, skipX, skipZ, hasSkip)
         if forwardZ then
             local z = zSpan.start
             while not pastEnd(z, zSpan.finish, zStep) do
-                if not (hasSkip and x == skipX and z == skipZ) then
-                    epEnsureFuelAndSpace(m)
-                    navigateTo(m, x, y, z)
-                end
+                epEnsureFuelAndSpace(m)
+                navigateTo(m, x, y, z)
                 z = ktox_plusAssign(z, zStep)
             end
         else
             local z = zSpan.finish
             while not pastEnd(z, zSpan.start, -zStep) do
-                if not (hasSkip and x == skipX and z == skipZ) then
-                    epEnsureFuelAndSpace(m)
-                    navigateTo(m, x, y, z)
-                end
+                epEnsureFuelAndSpace(m)
+                navigateTo(m, x, y, z)
                 z = ktox_minusAssign(z, zStep)
             end
         end
@@ -336,14 +324,17 @@ function restockAtChest(m)
     epGoToChest(m, 0)
     local attempts = 0
     local chestEmpty = false
-    while attempts < RESTOCK_ATTEMPTS and not chestEmpty do
+    local stuck = false
+    while attempts < RESTOCK_ATTEMPTS and not chestEmpty and not stuck do
         turtle.select(INTAKE_SLOT)
         local pulled = turtle.suck(64)
         if not pulled then
             chestEmpty = true
         else
             turtle.select(INTAKE_SLOT)
-            turtle.refuel(64)
+            if turtle.getFuelLevel() < turtle.getFuelLimit() then
+                turtle.refuel(64)
+            end
             local name = ktoxGetItemName(INTAKE_SLOT)
             if name == nil then
             elseif isStairsItem(name) then
@@ -356,6 +347,8 @@ function restockAtChest(m)
                 else
                     turtle.select(INTAKE_SLOT)
                     turtle.drop(64)
+                    stuck = true
+                    println("Chest\'s next item isn\'t usable right now (fuel topped off?) and stairs/torches may be stuck behind it - stopping restock early.")
                 end
             end
         end

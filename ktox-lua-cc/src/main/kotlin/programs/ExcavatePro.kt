@@ -1,11 +1,12 @@
 package programs
 
 import common.turtleGetItemName
-import common.turtleDigDown
+import common.turtleDigUp
 import common.turtleDrop
 import common.turtleGetFuelLevel
+import common.turtleGetFuelLimit
 import common.turtleGetItemCount
-import common.turtlePlaceDown
+import common.turtlePlaceUp
 import common.turtleRefuel
 import common.turtleSelect
 import common.turtleSuck
@@ -37,15 +38,19 @@ import lib.stepFor
 // Geometry: one stair (or, every TORCH_INTERVAL levels, one torch
 // instead) is placed each Y-level at a position that walks around the
 // footprint's perimeter, so the full descent traces one connected
-// spiral (wrapping around for as many laps as the depth needs). That
-// column is dug from directly above and immediately re-filled
-// (turtleDigDown + turtlePlaceDown) before the turtle ever descends
-// into it, and the following layer's sweep skips that exact column so
-// the placed block survives. Only happens when width >= 2 and
-// length >= 2 — smaller footprints just get a plain shaft, no perimeter
-// to walk. This whole placement scheme is the least-tested part of this
-// program (no way to exercise real turtle placement outside a live
-// world) — try it on a small hole first.
+// spiral (wrapping around for as many laps as the depth needs). It's
+// placed into the CEILING of the layer just finished — i.e. the floor
+// of the layer above, which was already fully cleared on the previous
+// iteration — via turtlePlaceUp(), not down into ground the turtle is
+// about to descend through. That means no bookkeeping is needed to
+// protect it from the next layer's sweep: the layer it's placed into
+// has already been swept and is never revisited, so there's nothing
+// left to accidentally re-dig it. (First cut of this placed the block
+// below instead, which meant movement.down() immediately re-dug — and
+// destroyed — whatever had just been placed, since it auto-digs
+// anything blocking it, exactly like every other Movement call.) This
+// whole placement scheme is the least-tested part of this program (no
+// way to exercise real turtle placement outside a live world).
 //
 // Supply: a single chest at the turtle's start position holds charcoal,
 // stairs (any item whose name ends in "_stairs"), and torches
@@ -106,17 +111,15 @@ fun main(args: Array<String>) {
     var y = movement.homeY
     var step = 0
     var levelsSinceTorch = 0
-    var hasPendingSkip = false
-    var pendingSkipX = 0
-    var pendingSkipZ = 0
+    var isFirstLayer = true
     var digging = true
 
     while (digging) {
         epEnsureFuelAndSpace(movement)
-        digLayer(movement, xSpan, zSpan, y, pendingSkipX, pendingSkipZ, hasPendingSkip)
+        digLayer(movement, xSpan, zSpan, y)
 
-        hasPendingSkip = false
-        if (hasStaircase) {
+        // Nothing to attach a step to above the very first (topmost) layer.
+        if (hasStaircase && !isFirstLayer) {
             val cell = perimeterCell(step, width, length)
             val cellX = xSpan.start + cell.dx * xStep
             val cellZ = zSpan.start + cell.dz * zStep
@@ -125,22 +128,20 @@ fun main(args: Array<String>) {
             levelsSinceTorch += 1
             if (levelsSinceTorch >= TORCH_INTERVAL) {
                 ensureTorchSupply(movement)
-                turtleDigDown()
+                turtleDigUp()
                 turtleSelect(TORCH_SLOT)
-                turtlePlaceDown()
+                turtlePlaceUp()
                 levelsSinceTorch = 0
             } else {
                 ensureStairSupply(movement)
-                turtleDigDown()
+                turtleDigUp()
                 turtleSelect(STAIRS_SLOT)
-                turtlePlaceDown()
+                turtlePlaceUp()
             }
 
-            pendingSkipX = cellX
-            pendingSkipZ = cellZ
-            hasPendingSkip = true
             step += 1
         }
+        isFirstLayer = false
 
         if (hasYTarget && y <= yTarget) {
             digging = false
@@ -191,9 +192,9 @@ fun perimeterCell(step: Int, width: Int, length: Int): Cell {
     return Cell(0, length - 2 - i)
 }
 
-// -- Full-layer excavation, with one column optionally preserved --
+// -- Full-layer excavation --
 
-fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int, skipX: Int, skipZ: Int, hasSkip: Boolean) {
+fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int) {
     val xStep = stepFor(xSpan)
     val zStep = stepFor(zSpan)
     var x = xSpan.start
@@ -202,19 +203,15 @@ fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int, skipX: Int, sk
         if (forwardZ) {
             var z = zSpan.start
             while (!pastEnd(z, zSpan.finish, zStep)) {
-                if (!(hasSkip && x == skipX && z == skipZ)) {
-                    epEnsureFuelAndSpace(m)
-                    navigateTo(m, x, y, z)
-                }
+                epEnsureFuelAndSpace(m)
+                navigateTo(m, x, y, z)
                 z += zStep
             }
         } else {
             var z = zSpan.finish
             while (!pastEnd(z, zSpan.start, -zStep)) {
-                if (!(hasSkip && x == skipX && z == skipZ)) {
-                    epEnsureFuelAndSpace(m)
-                    navigateTo(m, x, y, z)
-                }
+                epEnsureFuelAndSpace(m)
+                navigateTo(m, x, y, z)
                 z -= zStep
             }
         }
@@ -356,18 +353,31 @@ fun isStairsItem(name: String): Boolean {
 // Sucks from the mixed supply chest one item at a time, sorting by name:
 // charcoal (or any valid furnace fuel) is burned immediately, stairs and
 // torches go to their reserved slots, anything else gets put back.
+//
+// turtle.suck() always pulls whatever's in the chest's lowest-indexed
+// non-empty slot — there's no way to ask for a specific item, and
+// turtle.drop() puts an unwanted item right back into that same slot.
+// So if the chest's front item can't be used *right now* (most likely:
+// charcoal, but the tank's already topped off) and isn't stairs/torches
+// either, dropping it back just re-surfaces the identical stack on the
+// next suck() — an unwinnable loop, not a transient hiccup. Detect that
+// and stop this visit early rather than burning the whole attempt
+// budget spinning on one stuck stack.
 fun restockAtChest(m: Movement) {
     epGoToChest(m, 0)
     var attempts = 0
     var chestEmpty = false
-    while (attempts < RESTOCK_ATTEMPTS && !chestEmpty) {
+    var stuck = false
+    while (attempts < RESTOCK_ATTEMPTS && !chestEmpty && !stuck) {
         turtleSelect(INTAKE_SLOT)
         val pulled = turtleSuck(64)
         if (!pulled) {
             chestEmpty = true
         } else {
             turtleSelect(INTAKE_SLOT)
-            turtleRefuel(64)
+            if (turtleGetFuelLevel() < turtleGetFuelLimit()) {
+                turtleRefuel(64)
+            }
             val name = turtleGetItemName(INTAKE_SLOT)
             if (name == null) {
                 // fully consumed as fuel - nothing left to sort
@@ -380,6 +390,8 @@ fun restockAtChest(m: Movement) {
             } else {
                 turtleSelect(INTAKE_SLOT)
                 turtleDrop(64)
+                stuck = true
+                println("Chest's next item isn't usable right now (fuel topped off?) and stairs/torches may be stuck behind it - stopping restock early.")
             }
         }
         attempts += 1
