@@ -39,3 +39,24 @@ function ktoxInspectDownName()
     end
     return data.name
 end
+
+-- Wraps http.get()'s response handle and fs.open()'s write handle, neither
+-- of which Kotlin can model directly. See common/Http.kt.
+function ktoxDownloadFile(url, path)
+    local response = http.get(url, nil, true)
+    if response == nil then
+        return false
+    end
+    local data = response.readAll()
+    response.close()
+    if data == nil then
+        return false
+    end
+    local file = fs.open(path, "wb")
+    if file == nil then
+        return false
+    end
+    file.write(data)
+    file.close()
+    return true
+end
