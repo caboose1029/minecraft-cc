@@ -15,8 +15,8 @@ import lib.headingDz
 import lib.navigateTo
 import lib.restockChest
 
-// Branch-mining ore finder: bores parallel 1-wide, 1-tall tunnels at
-// three fixed depths favorable for diamonds, and chases any valuable ore
+// Branch-mining ore finder: bores parallel 1-wide, 1-tall tunnels at two
+// fixed depths favorable for diamonds, and chases any valuable ore
 // (diamond, redstone, gold, and other metals — see isValuableOre) found
 // along the way to clear out its whole vein before resuming.
 //
@@ -28,16 +28,21 @@ import lib.restockChest
 //     roughly in the middle of the gap is still within inspection range
 //     (up/down/left/right, 1 block) of at least one borehole wall.
 //
-// Depth: three fixed tiers, Y = -51, -55, -59 — straddles Y=-54, a
-// commonly lava-heavy layer in modern world gen (turtles don't care
-// about lava, but there's no point tunneling through it if a level
-// just above/below is nearly as rich and drier). Vertical spacing of 4
-// between tiers leaves exactly 1 block per gap that isn't directly
-// reached by either tier's up/down inspection — accepted on the
-// assumption that a real vein commonly spans more than one Y level, so
-// it's still very likely to be caught by an adjacent tier even where
-// the single gap block itself is missed. Not currently configurable —
-// see tierY() to adjust.
+// Depth: two fixed tiers, Y = -56 and -59, clustered near -59 — the
+// sharp density peak for diamond generation in modern (1.18+) world
+// gen — rather than spread toward the surface (an earlier version went
+// up to -51 to dodge a lava-heavy layer around -54, but turtles don't
+// care about lava, so there was nothing to actually dodge, just fewer
+// diamonds per block dug the further from -59 it went). A 3-block gap
+// between the two tiers is deliberate, not just "close together": the
+// 2 blocks strictly between them (-57, -58) are each directly reached
+// by one tier's up/down inspection (-56's down-check hits -57; -59's
+// up-check hits -58) — full coverage, no blind spot. A 4-block gap
+// (e.g. -55/-59) leaves the single middle block uninspected, relying on
+// a vein spanning multiple Y levels to still get caught by an adjacent
+// tier; 3 blocks avoids needing that assumption at all, for one less
+// block of total vertical range. Not currently configurable — see
+// tierY() to adjust.
 //
 // Each borehole is bored one block at a time; at every position, the
 // turtle checks up, down, left, and right (never behind — that's
@@ -136,7 +141,7 @@ fun main(args: Array<String>) {
     val rgtDz = headingDz(rightHeading)
 
     var tierIndex = 1
-    while (tierIndex <= 3) {
+    while (tierIndex <= 2) {
         val tierY = tierY(tierIndex)
         println("Moving to tier ${tierIndex} (y=${tierY})...")
         navigateTo(movement, movement.homeX, tierY, movement.homeZ)
@@ -167,10 +172,7 @@ fun main(args: Array<String>) {
 
 fun tierY(tierIndex: Int): Int {
     if (tierIndex == 1) {
-        return -51
-    }
-    if (tierIndex == 2) {
-        return -55
+        return -56
     }
     return -59
 }
