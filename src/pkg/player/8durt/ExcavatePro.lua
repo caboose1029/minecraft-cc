@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-19"]=1,["20"]=73,["21"]=74,["22-23"]=75,["24"]=78,["25"]=79,["26"]=80,["27"]=81,["28"]=82,["29-30"]=83,["31"]=86,["32"]=87,["33"]=88,["34"]=89,["35-36"]=90,["37"]=92,["38"]=94,["39"]=95,["40"]=96,["41"]=97,["42"]=98,["43"]=100,["44"]=101,["45"]=102,["46"]=103,["47"]=105,["48"]=107,["49"]=108,["50"]=109,["51"]=110,["52"]=111,["53"]=113,["54"]=114,["55"]=115,["56"]=118,["57"]=119,["58"]=129,["59"]=130,["60"]=131,["61"]=133,["62"]=134,["63"]=135,["64"]=136,["65"]=137,["66"]=138,["67-68"]=139,["69"]=141,["70"]=142,["71-72"]=143,["73"]=145,["74"]=146,["75-77"]=147,["78-79"]=151,["80"]=153,["81"]=155,["82-83"]=156,["84"]=158,["85"]=159,["86"]=160,["87"]=161,["88-91"]=162,["92"]=167,["93"]=168,["94"]=169,["95-134"]=170,["135-142"]=183,["143"]=187,["144"]=188,["145"]=189,["146-147"]=190,["148"]=192,["149"]=193,["150-151"]=194,["152"]=196,["153"]=197,["154-155"]=198,["156"]=200,["157-164"]=201,["165"]=207,["166"]=208,["167"]=209,["168"]=210,["169"]=211,["170"]=212,["171"]=213,["172"]=214,["173"]=215,["174"]=216,["175-177"]=217,["178"]=220,["179"]=221,["180"]=222,["181"]=223,["182-184"]=224,["185"]=227,["186-192"]=228,["193-198"]=235,["199"]=251,["200-201"]=252,["202"]=254,["203"]=255,["204-205"]=256,["206"]=258,["207-208"]=259,["209-214"]=261,["215"]=265,["216"]=266,["217"]=267,["218-219"]=268,["220-226"]=270,["227"]=274,["228-233"]=275,["234"]=280,["235"]=281,["236"]=282,["237-242"]=283,["243"]=292,["244"]=293,["245"]=294,["246"]=295,["247"]=296,["248"]=297,["249-251"]=298,["252-253"]=301,["254-258"]=303,["259"]=307,["260"]=308,["261"]=309,["262"]=310,["263-265"]=312,["266"]=313,["267"]=315,["268"]=318,["269"]=319,["270"]=320,["271"]=321,["272-273"]=322,["274-278"]=324,["279-289"]=334}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-19"]=1,["20"]=73,["21"]=74,["22-23"]=75,["24"]=78,["25"]=79,["26"]=80,["27"]=81,["28"]=82,["29-30"]=83,["31"]=86,["32"]=87,["33"]=88,["34"]=89,["35-36"]=90,["37"]=92,["38"]=94,["39"]=95,["40"]=96,["41"]=97,["42"]=98,["43"]=100,["44"]=101,["45"]=102,["46"]=103,["47"]=111,["48"]=112,["49"]=114,["50"]=116,["51"]=117,["52"]=118,["53"]=119,["54"]=120,["55"]=122,["56"]=123,["57"]=124,["58"]=125,["59-60"]=126,["61"]=130,["62"]=131,["63"]=141,["64"]=142,["65"]=143,["66-67"]=144,["68"]=146,["69"]=147,["70"]=148,["71"]=149,["72"]=150,["73"]=151,["74-75"]=152,["76"]=154,["77"]=155,["78-79"]=156,["80"]=158,["81"]=159,["82-84"]=160,["85-87"]=163,["88"]=166,["89"]=168,["90"]=174,["91-92"]=175,["93-94"]=177,["95"]=179,["96"]=180,["97"]=181,["98"]=182,["99-102"]=183,["103"]=188,["104"]=189,["105-106"]=190,["107"]=195,["108"]=196,["109"]=197,["110-120"]=198,["121"]=214,["122-123"]=215,["124"]=217,["125"]=218,["126"]=219,["127"]=220,["128-129"]=221,["130"]=223,["131-132"]=224,["133-172"]=226,["173-180"]=239,["181"]=243,["182"]=244,["183"]=245,["184-185"]=246,["186"]=248,["187"]=249,["188-189"]=250,["190"]=252,["191"]=253,["192-193"]=254,["194"]=256,["195-203"]=257,["204"]=266,["205"]=267,["206"]=268,["207"]=269,["208"]=270,["209"]=271,["210"]=272,["211"]=273,["212"]=274,["213"]=275,["214"]=276,["215-216"]=277,["217-219"]=279,["220"]=282,["221"]=283,["222"]=284,["223"]=285,["224-225"]=286,["226-228"]=288,["229"]=291,["230-231"]=292,["232-237"]=294,["238-243"]=300,["244"]=316,["245-246"]=317,["247"]=319,["248"]=320,["249-250"]=321,["251"]=323,["252-253"]=324,["254-259"]=326,["260"]=330,["261"]=331,["262"]=332,["263-264"]=333,["265-271"]=335,["272"]=339,["273-278"]=340,["279"]=345,["280"]=346,["281"]=347,["282-287"]=348,["288"]=357,["289"]=358,["290"]=359,["291"]=360,["292"]=361,["293"]=362,["294-296"]=363,["297-298"]=366,["299-303"]=368,["304"]=372,["305"]=373,["306"]=374,["307"]=375,["308-310"]=377,["311"]=378,["312"]=380,["313"]=383,["314"]=384,["315"]=385,["316"]=386,["317-318"]=387,["319-323"]=389,["324-334"]=399}, "programs")
 ktox_require("lib/Chest")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
@@ -44,6 +44,8 @@ function main(args)
     local zOther = movement.homeZ + rgtDz * (width - 1) + fwdDz * (length - 1)
     local xSpan = IntSpan:new(movement.homeX, xOther)
     local zSpan = IntSpan:new(movement.homeZ, zOther)
+    local centerX = movement.homeX + rgtDx * (width / 2) + fwdDx * (length / 2)
+    local centerZ = movement.homeZ + rgtDz * (width / 2) + fwdDz * (length / 2)
     local hasStaircase = width >= 2 and length >= 2
     local y = movement.homeY
     local step = 0
@@ -52,33 +54,42 @@ function main(args)
     local digging = true
     while digging do
         epEnsureFuelAndSpace(movement)
-        digLayer(movement, xSpan, zSpan, y)
-        if hasStaircase and not isFirstLayer then
+        local blocked = false
+        if not digLayer(movement, xSpan, zSpan, y) then
+            blocked = true
+        end
+        if not blocked and hasStaircase and not isFirstLayer then
             local cell = perimeterCell(step, width, length)
             local cellX = movement.homeX + rgtDx * cell.dx + fwdDx * cell.dz
             local cellZ = movement.homeZ + rgtDz * cell.dx + fwdDz * cell.dz
-            navigateTo(movement, cellX, y, cellZ)
-            levelsSinceTorch = ktox_plusAssign(levelsSinceTorch, 1)
-            if levelsSinceTorch >= TORCH_INTERVAL then
-                ensureTorchSupply(movement)
-                turtle.digUp()
-                turtle.select(TORCH_SLOT)
-                turtle.placeUp()
-                levelsSinceTorch = 0
+            if not navigateTo(movement, cellX, y, cellZ) then
+                blocked = true
             else
-                local stepSlot = findCobblestoneSlot()
-                if stepSlot == -1 then
-                    println("No cobblestone on hand for a step at y=" .. tostring(y) .. " - skipping this one.")
-                else
+                levelsSinceTorch = ktox_plusAssign(levelsSinceTorch, 1)
+                if levelsSinceTorch >= TORCH_INTERVAL then
+                    ensureTorchSupply(movement)
                     turtle.digUp()
-                    turtle.select(stepSlot)
+                    turtle.select(TORCH_SLOT)
                     turtle.placeUp()
+                    levelsSinceTorch = 0
+                else
+                    local stepSlot = findCobblestoneSlot()
+                    if stepSlot == -1 then
+                        println("No cobblestone on hand for a step at y=" .. tostring(y) .. " - skipping this one.")
+                    else
+                        turtle.digUp()
+                        turtle.select(stepSlot)
+                        turtle.placeUp()
+                    end
                 end
+                step = ktox_plusAssign(step, 1)
             end
-            step = ktox_plusAssign(step, 1)
         end
         isFirstLayer = false
-        if hasYTarget and y <= yTarget then
+        if blocked then
+            println("Movement blocked at y=" .. tostring(y) .. " (bedrock or another undiggable obstruction) - stopping.")
+            digging = false
+        elseif hasYTarget and y <= yTarget then
             digging = false
         else
             local moved = movement:down()
@@ -90,9 +101,36 @@ function main(args)
         end
     end
     println("Excavation complete. Returning home...")
-    navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
-    movement:faceHeading(movement.homeHeading)
-    println("Home.")
+    if not navigateWithRecovery(movement, centerX, centerZ) then
+        println("Could not reach the center column even after climbing - staying put.")
+    else
+        navigateTo(movement, centerX, movement.homeY, centerZ)
+        navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
+        movement:faceHeading(movement.homeHeading)
+        println("Home.")
+    end
+end
+
+MAX_RECOVERY_ASCENTS = 32
+
+---@param m Movement
+---@param targetX number
+---@param targetZ number
+---@return boolean
+function navigateWithRecovery(m, targetX, targetZ)
+    if navigateTo(m, targetX, m.y, targetZ) then
+        return true
+    end
+    local attempts = 0
+    local reached = false
+    while not reached and attempts < MAX_RECOVERY_ASCENTS do
+        if not m:up() then
+            return false
+        end
+        reached = navigateTo(m, targetX, m.y, targetZ)
+        attempts = ktox_plusAssign(attempts, 1)
+    end
+    return reached
 end
 
 ---@class Cell
@@ -161,30 +199,37 @@ end
 ---@param xSpan IntSpan
 ---@param zSpan IntSpan
 ---@param y number
+---@return boolean
 function digLayer(m, xSpan, zSpan, y)
     local xStep = stepFor(xSpan)
     local zStep = stepFor(zSpan)
     local x = xSpan.start
     local forwardZ = true
-    while not pastEnd(x, xSpan.finish, xStep) do
+    local ok = true
+    while ok and not pastEnd(x, xSpan.finish, xStep) do
         if forwardZ then
             local z = zSpan.start
-            while not pastEnd(z, zSpan.finish, zStep) do
+            while ok and not pastEnd(z, zSpan.finish, zStep) do
                 epEnsureFuelAndSpace(m)
-                navigateTo(m, x, y, z)
+                if not navigateTo(m, x, y, z) then
+                    ok = false
+                end
                 z = ktox_plusAssign(z, zStep)
             end
         else
             local z = zSpan.finish
-            while not pastEnd(z, zSpan.start, -zStep) do
+            while ok and not pastEnd(z, zSpan.start, -zStep) do
                 epEnsureFuelAndSpace(m)
-                navigateTo(m, x, y, z)
+                if not navigateTo(m, x, y, z) then
+                    ok = false
+                end
                 z = ktox_minusAssign(z, zStep)
             end
         end
         forwardZ = not forwardZ
         x = ktox_plusAssign(x, xStep)
     end
+    return ok
 end
 
 ---@param name string

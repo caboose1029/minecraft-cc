@@ -102,6 +102,15 @@ fun main(args: Array<String>) {
     val xSpan = IntSpan(movement.homeX, xOther)
     val zSpan = IntSpan(movement.homeZ, zOther)
 
+    // Used only as a return-path waypoint (see navigateWithRecovery) —
+    // every layer's digLayer sweep clears it along with everything else,
+    // so it's guaranteed open at every height above wherever the turtle
+    // currently is, unlike a direct path to home which could run into
+    // this layer's own placed step/torch or, at the very bottom, bedrock
+    // on multiple sides at once.
+    val centerX = movement.homeX + rgtDx * (width / 2) + fwdDx * (length / 2)
+    val centerZ = movement.homeZ + rgtDz * (width / 2) + fwdDz * (length / 2)
+
     val hasStaircase = width >= 2 && length >= 2
 
     var y = movement.homeY
@@ -112,10 +121,13 @@ fun main(args: Array<String>) {
 
     while (digging) {
         epEnsureFuelAndSpace(movement)
-        digLayer(movement, xSpan, zSpan, y)
+        var blocked = false
+        if (!digLayer(movement, xSpan, zSpan, y)) {
+            blocked = true
+        }
 
         // Nothing to attach a step to above the very first (topmost) layer.
-        if (hasStaircase && !isFirstLayer) {
+        if (!blocked && hasStaircase && !isFirstLayer) {
             val cell = perimeterCell(step, width, length)
             // cell.dx/dz are offsets along the right/forward axes (the same
             // basis used to build xSpan/zSpan above) — NOT along x/z
@@ -128,31 +140,40 @@ fun main(args: Array<String>) {
             // correctly — reuse them instead.
             val cellX = movement.homeX + rgtDx * cell.dx + fwdDx * cell.dz
             val cellZ = movement.homeZ + rgtDz * cell.dx + fwdDz * cell.dz
-            navigateTo(movement, cellX, y, cellZ)
-
-            levelsSinceTorch += 1
-            if (levelsSinceTorch >= TORCH_INTERVAL) {
-                ensureTorchSupply(movement)
-                turtleDigUp()
-                turtleSelect(TORCH_SLOT)
-                turtlePlaceUp()
-                levelsSinceTorch = 0
+            if (!navigateTo(movement, cellX, y, cellZ)) {
+                blocked = true
             } else {
-                val stepSlot = findCobblestoneSlot()
-                if (stepSlot == -1) {
-                    println("No cobblestone on hand for a step at y=${y} - skipping this one.")
-                } else {
+                levelsSinceTorch += 1
+                if (levelsSinceTorch >= TORCH_INTERVAL) {
+                    ensureTorchSupply(movement)
                     turtleDigUp()
-                    turtleSelect(stepSlot)
+                    turtleSelect(TORCH_SLOT)
                     turtlePlaceUp()
+                    levelsSinceTorch = 0
+                } else {
+                    val stepSlot = findCobblestoneSlot()
+                    if (stepSlot == -1) {
+                        println("No cobblestone on hand for a step at y=${y} - skipping this one.")
+                    } else {
+                        turtleDigUp()
+                        turtleSelect(stepSlot)
+                        turtlePlaceUp()
+                    }
                 }
+                step += 1
             }
-
-            step += 1
         }
         isFirstLayer = false
 
-        if (hasYTarget && y <= yTarget) {
+        if (blocked) {
+            // Movement genuinely can't proceed — most likely bedrock (dig
+            // succeeds into a pocket between two bedrock blocks, but the
+            // move into the next one still fails). Stop and fall through
+            // to the return-home below rather than retrying a move that
+            // will just fail again.
+            println("Movement blocked at y=${y} (bedrock or another undiggable obstruction) - stopping.")
+            digging = false
+        } else if (hasYTarget && y <= yTarget) {
             digging = false
         } else {
             val moved = movement.down()
@@ -165,9 +186,44 @@ fun main(args: Array<String>) {
     }
 
     println("Excavation complete. Returning home...")
-    navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
-    movement.faceHeading(movement.homeHeading)
-    println("Home.")
+    if (!navigateWithRecovery(movement, centerX, centerZ)) {
+        println("Could not reach the center column even after climbing - staying put.")
+    } else {
+        // From the center column, everything above was already fully
+        // cleared by earlier digLayer calls, so a plain climb-then-walk
+        // is safe the rest of the way.
+        navigateTo(movement, centerX, movement.homeY, centerZ)
+        navigateTo(movement, movement.homeX, movement.homeY, movement.homeZ)
+        movement.faceHeading(movement.homeHeading)
+        println("Home.")
+    }
+}
+
+const val MAX_RECOVERY_ASCENTS = 32
+
+// Tries to reach (targetX, targetZ) at the turtle's current height. If
+// blocked — most likely wedged in a bedrock pocket, possibly boxed in on
+// more than one side — climbs one block (retracing already-dug
+// territory, since everything above the current layer was already fully
+// swept) and retries at the new height, repeating until it succeeds or
+// MAX_RECOVERY_ASCENTS is hit. Gives up (returns false) immediately if
+// even climbing fails — that would mean something is blocking upward
+// too, which shouldn't happen given every layer above is already clear,
+// but there's no sense retrying a move that can't work.
+fun navigateWithRecovery(m: Movement, targetX: Int, targetZ: Int): Boolean {
+    if (navigateTo(m, targetX, m.y, targetZ)) {
+        return true
+    }
+    var attempts = 0
+    var reached = false
+    while (!reached && attempts < MAX_RECOVERY_ASCENTS) {
+        if (!m.up()) {
+            return false
+        }
+        reached = navigateTo(m, targetX, m.y, targetZ)
+        attempts += 1
+    }
+    return reached
 }
 
 // -- Perimeter walk --
@@ -203,30 +259,39 @@ fun perimeterCell(step: Int, width: Int, length: Int): Cell {
 
 // -- Full-layer excavation --
 
-fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int) {
+// Returns false the moment any move is genuinely blocked (see
+// navigateTo) — the layer may be left partially swept when that happens;
+// the caller decides how to react (main() stops and returns home).
+fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int): Boolean {
     val xStep = stepFor(xSpan)
     val zStep = stepFor(zSpan)
     var x = xSpan.start
     var forwardZ = true
-    while (!pastEnd(x, xSpan.finish, xStep)) {
+    var ok = true
+    while (ok && !pastEnd(x, xSpan.finish, xStep)) {
         if (forwardZ) {
             var z = zSpan.start
-            while (!pastEnd(z, zSpan.finish, zStep)) {
+            while (ok && !pastEnd(z, zSpan.finish, zStep)) {
                 epEnsureFuelAndSpace(m)
-                navigateTo(m, x, y, z)
+                if (!navigateTo(m, x, y, z)) {
+                    ok = false
+                }
                 z += zStep
             }
         } else {
             var z = zSpan.finish
-            while (!pastEnd(z, zSpan.start, -zStep)) {
+            while (ok && !pastEnd(z, zSpan.start, -zStep)) {
                 epEnsureFuelAndSpace(m)
-                navigateTo(m, x, y, z)
+                if (!navigateTo(m, x, y, z)) {
+                    ok = false
+                }
                 z -= zStep
             }
         }
         forwardZ = !forwardZ
         x += xStep
     }
+    return ok
 }
 
 // -- Base servicing (fuel + item disposal + torch restock) --

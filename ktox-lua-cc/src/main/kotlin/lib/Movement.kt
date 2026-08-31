@@ -198,26 +198,45 @@ fun headingDz(h: Int): Int {
 }
 
 // Axis-aligned navigation to an absolute world position: Y first, then X,
-// then Z. Digs through anything in the way (via Movement's forward/up/down).
-fun navigateTo(m: Movement, targetX: Int, targetY: Int, targetZ: Int) {
+// then Z. Digs through anything in the way (via Movement's forward/up/down)
+// — but forward()/up()/down() themselves return false when genuinely
+// blocked (e.g. bedrock: dig succeeds on a pocket between two bedrock
+// blocks, but the move into the next one still fails). Every step here
+// checks that and bails out immediately instead of re-attempting the same
+// blocked move in an infinite loop with the target never getting closer.
+//
+// Returns true if the target was fully reached, false if it stopped
+// early — callers that care why (bedrock vs. something else) can inspect
+// m.x/m.y/m.z afterward; callers that don't care can ignore the result,
+// same as before this returned Unit.
+fun navigateTo(m: Movement, targetX: Int, targetY: Int, targetZ: Int): Boolean {
     while (m.y < targetY) {
-        m.up()
+        if (!m.up()) {
+            return false
+        }
     }
     while (m.y > targetY) {
-        m.down()
+        if (!m.down()) {
+            return false
+        }
     }
     if (m.x != targetX) {
         val toward = if (targetX > m.x) 1 else 3
         m.faceHeading(toward)
         while (m.x != targetX) {
-            m.forward()
+            if (!m.forward()) {
+                return false
+            }
         }
     }
     if (m.z != targetZ) {
         val toward = if (targetZ > m.z) 2 else 0
         m.faceHeading(toward)
         while (m.z != targetZ) {
-            m.forward()
+            if (!m.forward()) {
+                return false
+            }
         }
     }
+    return true
 }
