@@ -145,3 +145,12 @@ fun turtleInspectUpName(): String? = externalSource()
 
 @NativeName("ktoxInspectDownName")
 fun turtleInspectDownName(): String? = externalSource()
+
+// -- Inventory item identification --
+//
+// turtle.getItemDetail() returns a whole Lua table (name, count, ...) —
+// Kotlin has nowhere to put an arbitrary table, so this binds to a shim
+// that narrows it down to just the item name, or nil if the slot is empty.
+
+@NativeName("ktoxGetItemName")
+fun turtleGetItemName(slot: Int): String? = externalSource()

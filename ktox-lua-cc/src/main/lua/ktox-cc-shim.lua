@@ -40,6 +40,16 @@ function ktoxInspectDownName()
     return data.name
 end
 
+-- turtle.getItemDetail() returns a whole table; narrow to just the name.
+-- See common/Turtle.kt.
+function ktoxGetItemName(slot)
+    local detail = turtle.getItemDetail(slot)
+    if detail == nil then
+        return nil
+    end
+    return detail.name
+end
+
 -- Wraps http.get()'s response handle and fs.open()'s write handle, neither
 -- of which Kotlin can model directly. See common/Http.kt.
 function ktoxDownloadFile(url, path)
