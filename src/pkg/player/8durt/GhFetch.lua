@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "GhFetch.kt", {["1-8"]=1,["9"]=22,["10"]=23,["11"]=24,["12"]=25,["13-14"]=26,["15"]=29,["16"]=38,["17"]=39,["18"]=40,["19"]=41,["20"]=42,["21"]=43,["22"]=44,["23"]=45,["24-25"]=46,["26"]=48,["27-28"]=49,["29-30"]=51,["31"]=54,["32-33"]=55,["34-40"]=57}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "GhFetch.kt", {["1-8"]=1,["9"]=22,["10"]=23,["11"]=24,["12"]=25,["13-14"]=26,["15"]=29,["16"]=41,["17"]=42,["18"]=43,["19"]=44,["20"]=45,["21"]=46,["22"]=47,["23"]=48,["24-25"]=49,["26"]=51,["27-28"]=52,["29-30"]=54,["31"]=57,["32-33"]=58,["34-40"]=60}, "programs")
 
 REPO_BASE = "https://raw.githubusercontent.com/caboose1029/minecraft-cc/feat/add-ktox-lua-cc/src/pkg/player/8durt"
 
@@ -12,7 +12,7 @@ local function main()
         fs.makeDir(dirs[d])
         d = ktox_plusAssign(d, 1)
     end
-    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "Digsite.lua"}
+    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "lib/Span.lua", "Digsite.lua", "ExcavatePro.lua", "GhFetch.lua"}
     local i = 1
     local failures = 0
     while i <= #(files) do

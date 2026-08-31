@@ -32,7 +32,10 @@ fun main() {
         "startup.lua",
         "lib/Movement.lua",
         "lib/Position.lua",
+        "lib/Span.lua",
         "Digsite.lua",
+        "ExcavatePro.lua",
+        "GhFetch.lua",
     )
 
     var i = 1
