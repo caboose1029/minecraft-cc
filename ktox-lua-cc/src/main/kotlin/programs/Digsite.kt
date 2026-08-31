@@ -220,11 +220,15 @@ fun goToChest(m: Movement, n: Int) {
     m.faceHeading((m.homeHeading + 2) % 4)
 }
 
+// Slot 1 is reserved for fuel (see refuelAtBase) — skipped here so leftover
+// unburned charcoal (turtle.refuel() only consumes enough to top off the
+// tank, and leaves the rest sitting in the slot) doesn't get hauled off to
+// the overflow chest as if it were loot.
 fun dumpInventoryAtBase(m: Movement) {
     var chestIndex = 1
     goToChest(m, chestIndex)
 
-    var slot = 1
+    var slot = 2
     var giveUp = false
     while (slot <= 16 && !giveUp) {
         val count = turtleGetItemCount(slot)
