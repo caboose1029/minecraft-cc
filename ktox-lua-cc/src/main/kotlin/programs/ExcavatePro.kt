@@ -35,29 +35,32 @@ import lib.stepFor
 //   tell a bare length from a bare yTarget apart otherwise. To request a
 //   square hole to a specific depth, pass width twice: "5 5 -50".
 //
-// Geometry: one stair (or, every TORCH_INTERVAL levels, one torch
-// instead) is placed each Y-level at a position that walks around the
-// footprint's perimeter, so the full descent traces one connected
-// spiral (wrapping around for as many laps as the depth needs). It's
-// placed into the CEILING of the layer just finished — i.e. the floor
-// of the layer above, which was already fully cleared on the previous
-// iteration — via turtlePlaceUp(), not down into ground the turtle is
-// about to descend through. That means no bookkeeping is needed to
-// protect it from the next layer's sweep: the layer it's placed into
-// has already been swept and is never revisited, so there's nothing
-// left to accidentally re-dig it. (First cut of this placed the block
-// below instead, which meant movement.down() immediately re-dug — and
-// destroyed — whatever had just been placed, since it auto-digs
-// anything blocking it, exactly like every other Movement call.) This
-// whole placement scheme is the least-tested part of this program (no
-// way to exercise real turtle placement outside a live world).
+// Geometry: one step (cobblestone — see below) or, every TORCH_INTERVAL
+// levels, one torch instead, is placed each Y-level at a position that
+// walks around the footprint's perimeter, so the full descent traces one
+// connected spiral (wrapping around for as many laps as the depth
+// needs). It's placed into the CEILING of the layer just finished — i.e.
+// the floor of the layer above, which was already fully cleared on the
+// previous iteration — via turtlePlaceUp(), not down into ground the
+// turtle is about to descend through. That means no bookkeeping is
+// needed to protect it from the next layer's sweep: the layer it's
+// placed into has already been swept and is never revisited, so there's
+// nothing left to accidentally re-dig it. This whole placement scheme is
+// the least-tested part of this program (no way to exercise real turtle
+// placement outside a live world).
 //
-// Supply: a single chest at the turtle's start position holds charcoal,
-// stairs (any item whose name ends in "_stairs"), and torches
-// ("minecraft:torch"), all mixed together — sucked one item at a time
-// into INTAKE_SLOT and sorted by name. STAIRS_SLOT/TORCH_SLOT hold
-// stock; every other slot (except INTAKE_SLOT) is general cargo, dumped
-// to overflow chests exactly like Digsite.
+// Steps are plain cobblestone, not actual stair blocks: mining through
+// stone always produces it, so it's entirely self-sustaining (no chest
+// trip needed), and unlike a real stair block it has no facing to get
+// placed wrong. It won't look like a proper sloped staircase, just
+// ascending platforms, but it's a reliable climbable path.
+//
+// Supply: a chest at the turtle's start position holds charcoal and
+// torches ("minecraft:torch") mixed together — sucked one item at a
+// time into INTAKE_SLOT and sorted by name. TORCH_SLOT holds torch
+// stock; cobblestone is never dumped as cargo (kept for steps, see
+// shouldKeepSlot); everything else is general cargo, dumped to overflow
+// chests exactly like Digsite.
 
 // +1 = turtle's original right is "sideways toward the overflow row".
 // Flip to -1 if the chests turn out to be laid out the other way in-game.
@@ -66,7 +69,6 @@ const val EP_OVERFLOW_SIDE = 1
 const val EP_FUEL_SAFETY_MARGIN = 20
 const val EP_MAX_OVERFLOW_CHESTS = 20
 const val TORCH_INTERVAL = 6
-const val STAIRS_SLOT = 2
 const val TORCH_SLOT = 3
 const val INTAKE_SLOT = 16
 const val RESTOCK_ATTEMPTS = 32
@@ -103,8 +105,6 @@ fun main(args: Array<String>) {
     val zOther = movement.homeZ + rgtDz * (width - 1) + fwdDz * (length - 1)
     val xSpan = IntSpan(movement.homeX, xOther)
     val zSpan = IntSpan(movement.homeZ, zOther)
-    val xStep = stepFor(xSpan)
-    val zStep = stepFor(zSpan)
 
     val hasStaircase = width >= 2 && length >= 2
 
@@ -121,8 +121,17 @@ fun main(args: Array<String>) {
         // Nothing to attach a step to above the very first (topmost) layer.
         if (hasStaircase && !isFirstLayer) {
             val cell = perimeterCell(step, width, length)
-            val cellX = xSpan.start + cell.dx * xStep
-            val cellZ = zSpan.start + cell.dz * zStep
+            // cell.dx/dz are offsets along the right/forward axes (the same
+            // basis used to build xSpan/zSpan above) — NOT along x/z
+            // directly. Which world axis "right" and "forward" map to
+            // depends on the turtle's starting heading (north/south: right
+            // is x, forward is z; east/west: the other way around), so
+            // reusing xSpan/zSpan's step values here would silently swap
+            // width and length whenever the turtle started facing east or
+            // west. rgtDx/rgtDz/fwdDx/fwdDz already encode that mapping
+            // correctly — reuse them instead.
+            val cellX = movement.homeX + rgtDx * cell.dx + fwdDx * cell.dz
+            val cellZ = movement.homeZ + rgtDz * cell.dx + fwdDz * cell.dz
             navigateTo(movement, cellX, y, cellZ)
 
             levelsSinceTorch += 1
@@ -133,10 +142,14 @@ fun main(args: Array<String>) {
                 turtlePlaceUp()
                 levelsSinceTorch = 0
             } else {
-                ensureStairSupply(movement)
-                turtleDigUp()
-                turtleSelect(STAIRS_SLOT)
-                turtlePlaceUp()
+                val stepSlot = findCobblestoneSlot()
+                if (stepSlot == -1) {
+                    println("No cobblestone on hand for a step at y=${y} - skipping this one.")
+                } else {
+                    turtleDigUp()
+                    turtleSelect(stepSlot)
+                    turtlePlaceUp()
+                }
             }
 
             step += 1
@@ -220,19 +233,36 @@ fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int) {
     }
 }
 
-// -- Base servicing (fuel + item disposal + stair/torch restock) --
+// -- Base servicing (fuel + item disposal + torch restock) --
 
-fun isReservedSlot(slot: Int): Boolean {
-    if (slot == STAIRS_SLOT) {
-        return true
-    }
-    if (slot == TORCH_SLOT) {
-        return true
-    }
+fun isTorchItem(name: String): Boolean {
+    return name == "minecraft:torch"
+}
+
+// A slot's current content is worth keeping — never dumped as cargo —
+// when: it's the transient intake slot and happens to be empty right
+// now; it's the torch slot and actually holds a torch; or it holds
+// cobblestone, kept around as step material regardless of which slot it
+// landed in (mining always produces some, so there's no dedicated slot
+// to protect — see findCobblestoneSlot()). Checking by content rather
+// than just slot number matters: a slot ktoxGetItemName doesn't
+// recognize as its intended item (e.g. TORCH_SLOT holding ordinary
+// mined cobblestone, because it happened to be the first empty slot the
+// very first time the turtle mined something, before any chest visit
+// ever occurred) is NOT protected — it's ordinary cargo that needs to
+// get dumped so the slot is actually empty for the real item next visit.
+fun shouldKeepSlot(slot: Int): Boolean {
     if (slot == INTAKE_SLOT) {
+        return turtleGetItemCount(slot) == 0
+    }
+    val name = turtleGetItemName(slot)
+    if (name == null) {
+        return slot == TORCH_SLOT
+    }
+    if (slot == TORCH_SLOT && isTorchItem(name)) {
         return true
     }
-    return false
+    return name == "minecraft:cobblestone"
 }
 
 fun epNeedsService(m: Movement): Boolean {
@@ -248,7 +278,7 @@ fun epInventoryFull(): Boolean {
     var slot = 1
     var full = true
     while (slot <= 16) {
-        if (!isReservedSlot(slot)) {
+        if (!shouldKeepSlot(slot)) {
             if (turtleGetItemCount(slot) == 0) {
                 full = false
             }
@@ -264,16 +294,31 @@ fun epEnsureFuelAndSpace(m: Movement) {
     }
 }
 
-fun ensureStairSupply(m: Movement) {
-    if (turtleGetItemCount(STAIRS_SLOT) == 0) {
+fun ensureTorchSupply(m: Movement) {
+    val name = turtleGetItemName(TORCH_SLOT)
+    val hasTorch = name != null && isTorchItem(name)
+    if (!hasTorch) {
         epServiceAtBase(m)
     }
 }
 
-fun ensureTorchSupply(m: Movement) {
-    if (turtleGetItemCount(TORCH_SLOT) == 0) {
-        epServiceAtBase(m)
+// Searches inventory for a slot already holding cobblestone (from mining
+// through stone) to use as step material. Returns -1 if the turtle
+// genuinely has none right now — rare, but possible early in a dig or in
+// a stone-poor area.
+fun findCobblestoneSlot(): Int {
+    var slot = 1
+    var found = -1
+    while (slot <= 16 && found == -1) {
+        if (turtleGetItemCount(slot) > 0) {
+            val name = turtleGetItemName(slot)
+            if (name != null && name == "minecraft:cobblestone") {
+                found = slot
+            }
+        }
+        slot += 1
     }
+    return found
 }
 
 fun epServiceAtBase(m: Movement) {
@@ -308,9 +353,8 @@ fun epGoToChest(m: Movement, n: Int) {
     m.faceHeading((m.homeHeading + 2) % 4)
 }
 
-// Slots STAIRS_SLOT/TORCH_SLOT/INTAKE_SLOT are reserved (see
-// restockAtChest) — skipped here so stock/scratch items don't get hauled
-// off to the overflow chest as if they were loot.
+// See shouldKeepSlot() — torch stock, cobblestone (step material), and
+// the empty intake slot are never dumped as cargo.
 fun epDumpInventoryAtBase(m: Movement) {
     var chestIndex = 1
     epGoToChest(m, chestIndex)
@@ -318,7 +362,7 @@ fun epDumpInventoryAtBase(m: Movement) {
     var slot = 1
     var giveUp = false
     while (slot <= 16 && !giveUp) {
-        if (!isReservedSlot(slot)) {
+        if (!shouldKeepSlot(slot)) {
             val count = turtleGetItemCount(slot)
             if (count > 0) {
                 turtleSelect(slot)
@@ -342,27 +386,19 @@ fun epDumpInventoryAtBase(m: Movement) {
     m.faceHeading(m.homeHeading)
 }
 
-// Any item name ending in "_stairs" counts as a stair block, whatever the
-// material — split on "_" and check the last segment rather than relying
-// on an unverified endsWith().
-fun isStairsItem(name: String): Boolean {
-    val parts = name.split("_")
-    return parts[parts.size] == "stairs"
-}
-
 // Sucks from the mixed supply chest one item at a time, sorting by name:
-// charcoal (or any valid furnace fuel) is burned immediately, stairs and
-// torches go to their reserved slots, anything else gets put back.
+// charcoal (or any valid furnace fuel) is burned immediately, torches go
+// to TORCH_SLOT, anything else gets put back.
 //
 // turtle.suck() always pulls whatever's in the chest's lowest-indexed
 // non-empty slot — there's no way to ask for a specific item, and
 // turtle.drop() puts an unwanted item right back into that same slot.
 // So if the chest's front item can't be used *right now* (most likely:
-// charcoal, but the tank's already topped off) and isn't stairs/torches
-// either, dropping it back just re-surfaces the identical stack on the
-// next suck() — an unwinnable loop, not a transient hiccup. Detect that
-// and stop this visit early rather than burning the whole attempt
-// budget spinning on one stuck stack.
+// charcoal, but the tank's already topped off) and isn't a torch either,
+// dropping it back just re-surfaces the identical stack on the next
+// suck() — an unwinnable loop, not a transient hiccup. Detect that and
+// stop this visit early rather than burning the whole attempt budget
+// spinning on one stuck stack.
 fun restockAtChest(m: Movement) {
     epGoToChest(m, 0)
     var attempts = 0
@@ -381,17 +417,14 @@ fun restockAtChest(m: Movement) {
             val name = turtleGetItemName(INTAKE_SLOT)
             if (name == null) {
                 // fully consumed as fuel - nothing left to sort
-            } else if (isStairsItem(name)) {
-                turtleSelect(INTAKE_SLOT)
-                turtleTransferTo(STAIRS_SLOT, 64)
-            } else if (name == "minecraft:torch") {
+            } else if (isTorchItem(name)) {
                 turtleSelect(INTAKE_SLOT)
                 turtleTransferTo(TORCH_SLOT, 64)
             } else {
                 turtleSelect(INTAKE_SLOT)
                 turtleDrop(64)
                 stuck = true
-                println("Chest's next item isn't usable right now (fuel topped off?) and stairs/torches may be stuck behind it - stopping restock early.")
+                println("Chest's next item isn't usable right now (fuel topped off?) and torches may be stuck behind it - stopping restock early.")
             }
         }
         attempts += 1

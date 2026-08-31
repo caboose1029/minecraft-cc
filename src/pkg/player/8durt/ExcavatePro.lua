@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-26"]=1,["27"]=75,["28"]=76,["29-30"]=77,["31"]=80,["32"]=81,["33"]=82,["34"]=83,["35"]=84,["36-37"]=85,["38"]=88,["39"]=89,["40"]=90,["41"]=91,["42-43"]=92,["44"]=94,["45"]=96,["46"]=97,["47"]=98,["48"]=99,["49"]=100,["50"]=102,["51"]=103,["52"]=104,["53"]=105,["54"]=106,["55"]=107,["56"]=109,["57"]=111,["58"]=112,["59"]=113,["60"]=114,["61"]=115,["62"]=117,["63"]=118,["64"]=119,["65"]=122,["66"]=123,["67"]=124,["68"]=125,["69"]=126,["70"]=128,["71"]=129,["72"]=130,["73"]=131,["74"]=132,["75"]=133,["76-77"]=134,["78"]=136,["79"]=137,["80"]=138,["81-82"]=139,["83-84"]=142,["85"]=144,["86"]=146,["87-88"]=147,["89"]=149,["90"]=150,["91"]=151,["92"]=152,["93-96"]=153,["97"]=158,["98"]=159,["99"]=160,["100-139"]=161,["140-147"]=174,["148"]=178,["149"]=179,["150"]=180,["151-152"]=181,["153"]=183,["154"]=184,["155-156"]=185,["157"]=187,["158"]=188,["159-160"]=189,["161"]=191,["162-169"]=192,["170"]=198,["171"]=199,["172"]=200,["173"]=201,["174"]=202,["175"]=203,["176"]=204,["177"]=205,["178"]=206,["179"]=207,["180-182"]=208,["183"]=211,["184"]=212,["185"]=213,["186"]=214,["187-189"]=215,["190"]=218,["191-197"]=219,["198"]=226,["199-200"]=227,["201"]=229,["202-203"]=230,["204"]=232,["205-206"]=233,["207-212"]=235,["213"]=239,["214"]=240,["215"]=241,["216-217"]=242,["218-222"]=244,["223"]=248,["224"]=249,["225"]=250,["226"]=251,["227"]=252,["228-230"]=253,["231-232"]=256,["233-237"]=258,["238"]=262,["239-244"]=263,["245"]=268,["246-251"]=269,["252"]=274,["253-258"]=275,["259"]=280,["260"]=281,["261"]=282,["262"]=283,["263"]=285,["264"]=286,["265"]=288,["266"]=291,["267"]=292,["268"]=293,["269"]=294,["270-271"]=295,["272-277"]=297,["278"]=304,["279"]=305,["280"]=306,["281"]=307,["282-286"]=308,["287"]=315,["288"]=316,["289"]=318,["290"]=319,["291"]=320,["292"]=321,["293"]=322,["294"]=323,["295"]=324,["296"]=325,["297"]=326,["298"]=327,["299"]=328,["300"]=329,["301-302"]=330,["303"]=332,["304-308"]=333,["309-310"]=338,["311"]=341,["312-317"]=342,["318"]=349,["319-323"]=350,["324"]=367,["325"]=368,["326"]=369,["327"]=370,["328"]=371,["329"]=372,["330"]=373,["331"]=374,["332-333"]=375,["334"]=377,["335"]=378,["336-337"]=379,["338"]=381,["339-340"]=382,["341"]=385,["342-343"]=386,["344"]=387,["345"]=388,["346-347"]=389,["348"]=391,["349"]=392,["350"]=393,["351-354"]=394,["355-356"]=397,["357"]=399,["358-360"]=400}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-24"]=1,["25"]=77,["26"]=78,["27-28"]=79,["29"]=82,["30"]=83,["31"]=84,["32"]=85,["33"]=86,["34-35"]=87,["36"]=90,["37"]=91,["38"]=92,["39"]=93,["40-41"]=94,["42"]=96,["43"]=98,["44"]=99,["45"]=100,["46"]=101,["47"]=102,["48"]=104,["49"]=105,["50"]=106,["51"]=107,["52"]=109,["53"]=111,["54"]=112,["55"]=113,["56"]=114,["57"]=115,["58"]=117,["59"]=118,["60"]=119,["61"]=122,["62"]=123,["63"]=133,["64"]=134,["65"]=135,["66"]=137,["67"]=138,["68"]=139,["69"]=140,["70"]=141,["71"]=142,["72-73"]=143,["74"]=145,["75"]=146,["76-77"]=147,["78"]=149,["79"]=150,["80-82"]=151,["83-84"]=155,["85"]=157,["86"]=159,["87-88"]=160,["89"]=162,["90"]=163,["91"]=164,["92"]=165,["93-96"]=166,["97"]=171,["98"]=172,["99"]=173,["100-139"]=174,["140-147"]=187,["148"]=191,["149"]=192,["150"]=193,["151-152"]=194,["153"]=196,["154"]=197,["155-156"]=198,["157"]=200,["158"]=201,["159-160"]=202,["161"]=204,["162-169"]=205,["170"]=211,["171"]=212,["172"]=213,["173"]=214,["174"]=215,["175"]=216,["176"]=217,["177"]=218,["178"]=219,["179"]=220,["180-182"]=221,["183"]=224,["184"]=225,["185"]=226,["186"]=227,["187-189"]=228,["190"]=231,["191-197"]=232,["198-203"]=239,["204"]=255,["205-206"]=256,["207"]=258,["208"]=259,["209-210"]=260,["211"]=262,["212-213"]=263,["214-219"]=265,["220"]=269,["221"]=270,["222"]=271,["223-224"]=272,["225-229"]=274,["230"]=278,["231"]=279,["232"]=280,["233"]=281,["234"]=282,["235-237"]=283,["238-239"]=286,["240-244"]=288,["245"]=292,["246-251"]=293,["252"]=298,["253"]=299,["254"]=300,["255-260"]=301,["261"]=310,["262"]=311,["263"]=312,["264"]=313,["265"]=314,["266"]=315,["267-269"]=316,["270-271"]=319,["272-276"]=321,["277"]=325,["278"]=326,["279"]=327,["280"]=328,["281"]=330,["282"]=331,["283"]=333,["284"]=336,["285"]=337,["286"]=338,["287"]=339,["288-289"]=340,["290-295"]=342,["296"]=349,["297"]=350,["298"]=351,["299"]=352,["300-304"]=353,["305"]=359,["306"]=360,["307"]=362,["308"]=363,["309"]=364,["310"]=365,["311"]=366,["312"]=367,["313"]=368,["314"]=369,["315"]=370,["316"]=371,["317"]=372,["318"]=373,["319-320"]=374,["321"]=376,["322-326"]=377,["327-328"]=382,["329"]=385,["330-334"]=386,["335"]=403,["336"]=404,["337"]=405,["338"]=406,["339"]=407,["340"]=408,["341"]=409,["342"]=410,["343-344"]=411,["345"]=413,["346"]=414,["347-348"]=415,["349"]=417,["350-351"]=418,["352"]=421,["353-354"]=422,["355"]=424,["356"]=425,["357"]=426,["358-360"]=427,["361-362"]=430,["363"]=432,["364-366"]=433}, "programs")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
@@ -13,8 +13,6 @@ EP_FUEL_SAFETY_MARGIN = 20
 EP_MAX_OVERFLOW_CHESTS = 20
 
 TORCH_INTERVAL = 6
-
-STAIRS_SLOT = 2
 
 TORCH_SLOT = 3
 
@@ -51,8 +49,6 @@ function main(args)
     local zOther = movement.homeZ + rgtDz * (width - 1) + fwdDz * (length - 1)
     local xSpan = IntSpan:new(movement.homeX, xOther)
     local zSpan = IntSpan:new(movement.homeZ, zOther)
-    local xStep = stepFor(xSpan)
-    local zStep = stepFor(zSpan)
     local hasStaircase = width >= 2 and length >= 2
     local y = movement.homeY
     local step = 0
@@ -64,8 +60,8 @@ function main(args)
         digLayer(movement, xSpan, zSpan, y)
         if hasStaircase and not isFirstLayer then
             local cell = perimeterCell(step, width, length)
-            local cellX = xSpan.start + cell.dx * xStep
-            local cellZ = zSpan.start + cell.dz * zStep
+            local cellX = movement.homeX + rgtDx * cell.dx + fwdDx * cell.dz
+            local cellZ = movement.homeZ + rgtDz * cell.dx + fwdDz * cell.dz
             navigateTo(movement, cellX, y, cellZ)
             levelsSinceTorch = ktox_plusAssign(levelsSinceTorch, 1)
             if levelsSinceTorch >= TORCH_INTERVAL then
@@ -75,10 +71,14 @@ function main(args)
                 turtle.placeUp()
                 levelsSinceTorch = 0
             else
-                ensureStairSupply(movement)
-                turtle.digUp()
-                turtle.select(STAIRS_SLOT)
-                turtle.placeUp()
+                local stepSlot = findCobblestoneSlot()
+                if stepSlot == -1 then
+                    println("No cobblestone on hand for a step at y=" .. tostring(y) .. " - skipping this one.")
+                else
+                    turtle.digUp()
+                    turtle.select(stepSlot)
+                    turtle.placeUp()
+                end
             end
             step = ktox_plusAssign(step, 1)
         end
@@ -192,19 +192,26 @@ function digLayer(m, xSpan, zSpan, y)
     end
 end
 
+---@param name string
+---@return boolean
+function isTorchItem(name)
+    return name == "minecraft:torch"
+end
+
 ---@param slot number
 ---@return boolean
-function isReservedSlot(slot)
-    if slot == STAIRS_SLOT then
-        return true
-    end
-    if slot == TORCH_SLOT then
-        return true
-    end
+function shouldKeepSlot(slot)
     if slot == INTAKE_SLOT then
+        return turtle.getItemCount(slot) == 0
+    end
+    local name = ktoxGetItemName(slot)
+    if name == nil then
+        return slot == TORCH_SLOT
+    end
+    if slot == TORCH_SLOT and isTorchItem(name) then
         return true
     end
-    return false
+    return name == "minecraft:cobblestone"
 end
 
 ---@param m Movement
@@ -223,7 +230,7 @@ function epInventoryFull()
     local slot = 1
     local full = true
     while slot <= 16 do
-        if not isReservedSlot(slot) then
+        if not shouldKeepSlot(slot) then
             if turtle.getItemCount(slot) == 0 then
                 full = false
             end
@@ -241,17 +248,28 @@ function epEnsureFuelAndSpace(m)
 end
 
 ---@param m Movement
-function ensureStairSupply(m)
-    if turtle.getItemCount(STAIRS_SLOT) == 0 then
+function ensureTorchSupply(m)
+    local name = ktoxGetItemName(TORCH_SLOT)
+    local hasTorch = name ~= nil and isTorchItem(name)
+    if not hasTorch then
         epServiceAtBase(m)
     end
 end
 
----@param m Movement
-function ensureTorchSupply(m)
-    if turtle.getItemCount(TORCH_SLOT) == 0 then
-        epServiceAtBase(m)
+---@return number
+function findCobblestoneSlot()
+    local slot = 1
+    local found = -1
+    while slot <= 16 and found == -1 do
+        if turtle.getItemCount(slot) > 0 then
+            local name = ktoxGetItemName(slot)
+            if name ~= nil and name == "minecraft:cobblestone" then
+                found = slot
+            end
+        end
+        slot = ktox_plusAssign(slot, 1)
     end
+    return found
 end
 
 ---@param m Movement
@@ -289,7 +307,7 @@ function epDumpInventoryAtBase(m)
     local slot = 1
     local giveUp = false
     while slot <= 16 and not giveUp do
-        if not isReservedSlot(slot) then
+        if not shouldKeepSlot(slot) then
             local count = turtle.getItemCount(slot)
             if count > 0 then
                 turtle.select(slot)
@@ -312,13 +330,6 @@ function epDumpInventoryAtBase(m)
     m:faceHeading(m.homeHeading)
 end
 
----@param name string
----@return boolean
-function isStairsItem(name)
-    local parts = ktox_split(name, "_")
-    return parts[#(parts)] == "stairs"
-end
-
 ---@param m Movement
 function restockAtChest(m)
     epGoToChest(m, 0)
@@ -337,19 +348,14 @@ function restockAtChest(m)
             end
             local name = ktoxGetItemName(INTAKE_SLOT)
             if name == nil then
-            elseif isStairsItem(name) then
+            elseif isTorchItem(name) then
                 turtle.select(INTAKE_SLOT)
-                turtle.transferTo(STAIRS_SLOT, 64)
+                turtle.transferTo(TORCH_SLOT, 64)
             else
-                if name == "minecraft:torch" then
-                    turtle.select(INTAKE_SLOT)
-                    turtle.transferTo(TORCH_SLOT, 64)
-                else
-                    turtle.select(INTAKE_SLOT)
-                    turtle.drop(64)
-                    stuck = true
-                    println("Chest\'s next item isn\'t usable right now (fuel topped off?) and stairs/torches may be stuck behind it - stopping restock early.")
-                end
+                turtle.select(INTAKE_SLOT)
+                turtle.drop(64)
+                stuck = true
+                println("Chest\'s next item isn\'t usable right now (fuel topped off?) and torches may be stuck behind it - stopping restock early.")
             end
         end
         attempts = ktox_plusAssign(attempts, 1)
