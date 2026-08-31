@@ -52,8 +52,19 @@ fun stepFor(span: IntSpan): Int {
 
 // True once `current` has moved past `limit` while stepping by `step`
 // (whose sign gives the direction of travel).
+//
+// Written as an if/else block, NOT `return if (cond) A else B` — ktox
+// compiles that single-expression form to Lua's `(cond and A or B)`
+// idiom, which is broken here: A (`current > limit`) is itself a
+// boolean, and whenever it's false, `cond and false` is false, so Lua
+// falls through to B regardless of cond. That made every ascending span
+// (step > 0) report "past end" on almost every call, terminating
+// digsiteRoom/digsiteLayer after ~0 iterations. See AGENTS.md.
 fun pastEnd(current: Int, limit: Int, step: Int): Boolean {
-    return if (step > 0) current > limit else current < limit
+    if (step > 0) {
+        return current > limit
+    }
+    return current < limit
 }
 
 // +1 = turtle's original right is "sideways toward the overflow row".
