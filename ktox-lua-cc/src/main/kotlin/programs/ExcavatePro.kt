@@ -239,6 +239,44 @@ fun isTorchItem(name: String): Boolean {
     return name == "minecraft:torch"
 }
 
+// Deliberately restrictive, not exhaustive: turtle.refuel() itself
+// already accepts anything CC:Tweaked considers valid fuel (any wood
+// variant included) for free, via its own return value — this allowlist
+// exists to burn LESS than that, not more, so wood/planks/logs never get
+// consumed as fuel even though they're technically valid, without having
+// to enumerate every wood variant to exclude it. No blaze rod, per
+// explicit request.
+//
+// Values are fuel level gained per single item burned. These match
+// commonly-documented CC:Tweaked numbers but aren't verified against
+// this pack/version — to confirm one yourself: hold one item, note
+// turtleGetFuelLevel(), run turtle.refuel(1), and the difference is the
+// exact value for your setup. Worth spot-checking coal_block and
+// dried_kelp_block especially, since a wrong number there is exactly
+// the near-cap waste this exists to prevent.
+fun fuelValue(name: String): Int {
+    if (name == "minecraft:charcoal") {
+        return 80
+    }
+    if (name == "minecraft:coal") {
+        return 80
+    }
+    if (name == "minecraft:coal_block") {
+        return 800
+    }
+    if (name == "minecraft:lava_bucket") {
+        return 1000
+    }
+    if (name == "minecraft:dried_kelp_block") {
+        return 4000
+    }
+    return 0
+}
+
+fun isAllowedFuel(name: String): Boolean {
+    return fuelValue(name) > 0
+}
+
 // A slot's current content is worth keeping — never dumped as cargo —
 // when: it's the transient intake slot and happens to be empty right
 // now; it's the torch slot and actually holds a torch; or it holds
@@ -387,18 +425,18 @@ fun epDumpInventoryAtBase(m: Movement) {
 }
 
 // Sucks from the mixed supply chest one item at a time, sorting by name:
-// charcoal (or any valid furnace fuel) is burned immediately, torches go
-// to TORCH_SLOT, anything else gets put back.
+// allowed fuel (see fuelValue()) is burned, torches go to TORCH_SLOT,
+// anything else — including any wood variant, and any allowed fuel that
+// would waste value by pushing past the fuel cap — gets put back.
 //
 // turtle.suck() always pulls whatever's in the chest's lowest-indexed
 // non-empty slot — there's no way to ask for a specific item, and
 // turtle.drop() puts an unwanted item right back into that same slot.
-// So if the chest's front item can't be used *right now* (most likely:
-// charcoal, but the tank's already topped off) and isn't a torch either,
-// dropping it back just re-surfaces the identical stack on the next
-// suck() — an unwinnable loop, not a transient hiccup. Detect that and
-// stop this visit early rather than burning the whole attempt budget
-// spinning on one stuck stack.
+// So if the chest's front item can't be used *right now* dropping it
+// back just re-surfaces the identical stack on the next suck() — an
+// unwinnable loop, not a transient hiccup. Detect that and stop this
+// visit early rather than burning the whole attempt budget spinning on
+// one stuck stack.
 fun restockAtChest(m: Movement) {
     epGoToChest(m, 0)
     var attempts = 0
@@ -410,21 +448,27 @@ fun restockAtChest(m: Movement) {
         if (!pulled) {
             chestEmpty = true
         } else {
-            turtleSelect(INTAKE_SLOT)
-            if (turtleGetFuelLevel() < turtleGetFuelLimit()) {
-                turtleRefuel(64)
-            }
             val name = turtleGetItemName(INTAKE_SLOT)
-            if (name == null) {
-                // fully consumed as fuel - nothing left to sort
-            } else if (isTorchItem(name)) {
-                turtleSelect(INTAKE_SLOT)
-                turtleTransferTo(TORCH_SLOT, 64)
-            } else {
+            var handled = false
+            if (name != null) {
+                if (isAllowedFuel(name)) {
+                    val headroom = turtleGetFuelLimit() - turtleGetFuelLevel()
+                    if (headroom >= fuelValue(name)) {
+                        turtleSelect(INTAKE_SLOT)
+                        turtleRefuel(64)
+                        handled = true
+                    }
+                } else if (isTorchItem(name)) {
+                    turtleSelect(INTAKE_SLOT)
+                    turtleTransferTo(TORCH_SLOT, 64)
+                    handled = true
+                }
+            }
+            if (!handled) {
                 turtleSelect(INTAKE_SLOT)
                 turtleDrop(64)
                 stuck = true
-                println("Chest's next item isn't usable right now (fuel topped off?) and torches may be stuck behind it - stopping restock early.")
+                println("Chest's next item isn't usable right now (unrecognized, or would waste a high-value fuel item near the cap) - stopping restock early.")
             }
         }
         attempts += 1
