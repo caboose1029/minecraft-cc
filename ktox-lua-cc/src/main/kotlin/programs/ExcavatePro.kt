@@ -120,7 +120,6 @@ fun main(args: Array<String>) {
     var y = movement.homeY
     var step = 0
     var levelsSinceTorch = 0
-    var isFirstLayer = true
     var digging = true
 
     while (digging) {
@@ -130,8 +129,16 @@ fun main(args: Array<String>) {
             blocked = true
         }
 
-        // Nothing to attach a step to above the very first (topmost) layer.
-        if (!blocked && hasStaircase && !isFirstLayer) {
+        // Nothing is placed at or above homeY: the topmost layer has
+        // nothing pre-cleared above it to place into (there was no
+        // previous iteration), and more importantly homeY is the fuel
+        // chest's level — every overflow chest sits along exactly the
+        // same right-hand line (dz=0) that segment 1 of the perimeter
+        // walk below would otherwise place its first few steps/torches
+        // into, burying the chest row (or home itself, at cell (0,0))
+        // under a placed block. The first real step goes in once
+        // excavation reaches the layer strictly below homeY.
+        if (!blocked && hasStaircase && y + 1 < movement.homeY) {
             val cell = perimeterCell(step, width, length)
             // cell.dx/dz are offsets along the right/forward axes (the same
             // basis used to build xSpan/zSpan above) — NOT along x/z
@@ -167,7 +174,6 @@ fun main(args: Array<String>) {
                 step += 1
             }
         }
-        isFirstLayer = false
 
         if (blocked) {
             // Movement genuinely can't proceed — most likely bedrock (dig
@@ -324,8 +330,8 @@ fun shouldKeepSlot(slot: Int): Boolean {
     if (name == null) {
         return slot == TORCH_SLOT
     }
-    if (slot == TORCH_SLOT && isTorchItem(name)) {
-        return true
+    if (slot == TORCH_SLOT) {
+        return isTorchItem(name)
     }
     return name == "minecraft:cobblestone"
 }
@@ -408,8 +414,13 @@ fun restockAtChest(m: Movement) {
         var handled = false
         if (isTorchItem(name)) {
             turtleSelect(CHEST_INTAKE_SLOT)
-            turtleTransferTo(TORCH_SLOT, 64)
-            handled = true
+            // Checked, not assumed: turtleTransferTo() returns false (and
+            // moves nothing) if TORCH_SLOT is occupied by something that
+            // can't stack with a torch. Reporting handled=true anyway
+            // would silently strand the torch in CHEST_INTAKE_SLOT, where
+            // it'd eventually get swept up and dumped as ordinary cargo
+            // on the next base trip instead of ever reaching TORCH_SLOT.
+            handled = turtleTransferTo(TORCH_SLOT, 64)
         }
         handled
     }
