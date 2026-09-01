@@ -7,6 +7,12 @@
     "player/caboose/test.lua": {
       "dependencies": []
     },
+    "player/caboose/multi_test/test1.lua": {
+      "dependencies": []
+    },
+    "player/caboose/multi_test/test2.lua": {
+      "dependencies": []
+    },
     "share/test/sharetest.lua": {
       "dependencies": []
     }
