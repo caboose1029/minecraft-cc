@@ -51,10 +51,13 @@ import lib.restockChest
 // program prompts for the turtle's actual Y via read() and aborts on
 // invalid/missing input rather than digging to a meaningless depth.
 //
-// Each borehole is bored one block at a time; at every position, the
-// turtle checks up, down, left, and right (never behind — that's
-// already-mined air) for valuable ore, and follows any found vein via
-// recursive backtracking (see followVein) before resuming the bore.
+// Every block dug on the way anywhere — boring a branch, descending to a
+// tier, or moving to the next branch's start position (see
+// dfNavigateAndScan) — is checked up/down/left/right/forward for
+// valuable ore, and any vein found is chased via recursive backtracking
+// (see followVein) before resuming. The only ground never scanned is the
+// path retraced on the way back from a base-servicing trip, since that's
+// already-dug territory the turtle just came from.
 // Fuel/cargo servicing reuses the same lib/Chest.kt machinery as
 // Digsite/ExcavatePro — this file only supplies its own keep/onOther
 // policy (charcoal only, no torches/stairs/step-material concept here)
@@ -152,7 +155,7 @@ fun main(args: Array<String>) {
     while (tierIndex <= 2) {
         val tierY = tierY(tierIndex)
         println("Moving to tier ${tierIndex} (y=${tierY})...")
-        navigateTo(movement, movement.homeX, tierY, movement.homeZ)
+        dfNavigateAndScan(movement, movement.homeX, tierY, movement.homeZ)
 
         var branch = 0
         while (branch < branchCount) {
@@ -160,7 +163,7 @@ fun main(args: Array<String>) {
             val startX = movement.homeX + rgtDx * lateralOffset
             val startZ = movement.homeZ + rgtDz * lateralOffset
             dfEnsureFuelAndSpace(movement)
-            navigateTo(movement, startX, tierY, startZ)
+            dfNavigateAndScan(movement, startX, tierY, startZ)
             movement.faceHeading(movement.homeHeading)
             boreBranch(movement, branchLength)
             branch += 1
@@ -211,9 +214,11 @@ fun boreBranch(m: Movement, length: Int) {
 // ore doubling back on itself) can't wander indefinitely and burn
 // through fuel chasing it.
 //
-// Called with depth=0 after every step of the main bore (checking
-// "forward" there just means the next not-yet-dug tunnel block — a
-// harmless early check, since the bore loop was about to dig it anyway).
+// Called with depth=0 after every single-block move this program makes
+// through undug ground — the main bore (see boreBranch) and, via
+// dfNavigateAndScan below, the tier descents and inter-branch transit
+// too. Checking "forward" there just means the next not-yet-dug block —
+// a harmless early check, since the caller was about to dig it anyway.
 fun followVein(m: Movement, depth: Int) {
     if (depth >= MAX_VEIN_DEPTH) {
         return
@@ -265,13 +270,56 @@ fun followVein(m: Movement, depth: Int) {
     }
 }
 
+// Same axis-aligned move as lib/Movement.kt's navigateTo (Y, then X, then
+// Z), but scans for ore via followVein after every single step - used
+// for the tier descents and inter-branch transit, which used to dig
+// straight through solid ground with zero ore awareness (only
+// boreBranch's own forward stepping checked). Not folded into navigateTo
+// itself since that's shared with Digsite/ExcavatePro, which have no use
+// for vein-chasing.
+fun dfNavigateAndScan(m: Movement, targetX: Int, targetY: Int, targetZ: Int): Boolean {
+    while (m.y < targetY) {
+        if (!m.up()) {
+            return false
+        }
+        followVein(m, 0)
+    }
+    while (m.y > targetY) {
+        if (!m.down()) {
+            return false
+        }
+        followVein(m, 0)
+    }
+    if (m.x != targetX) {
+        val toward = if (targetX > m.x) 1 else 3
+        m.faceHeading(toward)
+        while (m.x != targetX) {
+            if (!m.forward()) {
+                return false
+            }
+            followVein(m, 0)
+        }
+    }
+    if (m.z != targetZ) {
+        val toward = if (targetZ > m.z) 2 else 0
+        m.faceHeading(toward)
+        while (m.z != targetZ) {
+            if (!m.forward()) {
+                return false
+            }
+            followVein(m, 0)
+        }
+    }
+    return true
+}
+
 // Tries the direct path home; if blocked (most likely a local bedrock
 // pocket), climbs one block — ordinary stone digs through fine via
 // Movement's own auto-dig, so this only matters for actually escaping a
 // bedrock formation — and retries, repeating (bounded by
 // MAX_RETURN_ASCENTS) until it clears whatever's blocking it.
 fun returnHomeWithRecovery(m: Movement): Boolean {
-    if (navigateTo(m, m.homeX, m.homeY, m.homeZ)) {
+    if (dfNavigateAndScan(m, m.homeX, m.homeY, m.homeZ)) {
         return true
     }
     var attempts = 0
@@ -280,7 +328,7 @@ fun returnHomeWithRecovery(m: Movement): Boolean {
         if (!m.up()) {
             return false
         }
-        reached = navigateTo(m, m.homeX, m.homeY, m.homeZ)
+        reached = dfNavigateAndScan(m, m.homeX, m.homeY, m.homeZ)
         attempts += 1
     }
     return reached
