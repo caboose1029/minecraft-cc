@@ -26,6 +26,11 @@ fun main() {
         d += 1
     }
 
+    // NOTE: this list isn't derived from anything — every new program/lib
+    // file has to be added here by hand or it silently won't reach fresh
+    // turtles via ghfetch. Do this proactively for every new feature file
+    // until moonman's sync (see AGENTS.md) is fixed by caboose1029 and we
+    // can drop this manifest in favor of his.
     val files = arrayOf(
         "ktox-lib.lua",
         "ktox-cc-shim.lua",
@@ -33,8 +38,10 @@ fun main() {
         "lib/Movement.lua",
         "lib/Position.lua",
         "lib/Span.lua",
+        "lib/Chest.lua",
         "Digsite.lua",
         "ExcavatePro.lua",
+        "DiamondFinder.lua",
         "GhFetch.lua",
     )
 
