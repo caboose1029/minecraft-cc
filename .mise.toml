@@ -8,3 +8,15 @@ run = "craftos --directory .craftos --mount /repo=$PWD"
 [tasks.bootstrap]
 description = "Launch emulation with moonman bootstrapped"
 run = "craftos --directory .craftos --mount /moonman=$PWD/moonman"
+
+[tasks.test]
+description = "Run a repo file headless in CraftOS-PC (path relative to repo root)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+file="{{arg(name="file")}}"
+mkdir -p .craftos-test/computer/0
+printf 'local ok = shell.run("/repo/%s")\nprint(ok and "== PASS ==" or "== FAIL ==")\nos.shutdown()\n' "$file" \
+  > .craftos-test/computer/0/startup.lua
+craftos --headless --directory "$PWD/.craftos-test" --mount-ro /repo="$PWD"
+'''
