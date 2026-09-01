@@ -154,22 +154,41 @@ fun main(args: Array<String>) {
             if (!navigateTo(movement, cellX, y, cellZ)) {
                 blocked = true
             } else {
+                // The step is placed on every transition, unconditionally
+                // - it's the only thing making that transition climbable.
+                // A torch used to be placed here INSTEAD of the step every
+                // TORCH_INTERVAL layers, which left a gap in the staircase
+                // at every one of those transitions (a torch isn't
+                // something you can stand on). Torches are now a bonus,
+                // placed at a separate cell below instead of competing
+                // for this one.
+                val stepSlot = findCobblestoneSlot()
+                if (stepSlot == -1) {
+                    println("No cobblestone on hand for a step at y=${y} - skipping this one.")
+                } else {
+                    turtleDigUp()
+                    turtleSelect(stepSlot)
+                    turtlePlaceUp()
+                }
+
                 levelsSinceTorch += 1
                 if (levelsSinceTorch >= TORCH_INTERVAL) {
-                    ensureTorchSupply(movement)
-                    turtleDigUp()
-                    turtleSelect(TORCH_SLOT)
-                    turtlePlaceUp()
-                    levelsSinceTorch = 0
-                } else {
-                    val stepSlot = findCobblestoneSlot()
-                    if (stepSlot == -1) {
-                        println("No cobblestone on hand for a step at y=${y} - skipping this one.")
+                    // Next perimeter cell over — not due for its own
+                    // (real) step until the following, one-lower
+                    // iteration, so there's no Y-level collision with it,
+                    // and it's right next to the step just placed.
+                    val torchCell = perimeterCell(step + 1, width, length)
+                    val torchX = movement.homeX + rgtDx * torchCell.dx + fwdDx * torchCell.dz
+                    val torchZ = movement.homeZ + rgtDz * torchCell.dx + fwdDz * torchCell.dz
+                    if (!navigateTo(movement, torchX, y, torchZ)) {
+                        println("Couldn't reach a torch position at y=${y} - skipping this one.")
                     } else {
+                        ensureTorchSupply(movement)
                         turtleDigUp()
-                        turtleSelect(stepSlot)
+                        turtleSelect(TORCH_SLOT)
                         turtlePlaceUp()
                     }
+                    levelsSinceTorch = 0
                 }
                 step += 1
             }
