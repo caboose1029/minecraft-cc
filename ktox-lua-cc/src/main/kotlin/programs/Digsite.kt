@@ -8,27 +8,38 @@ import lib.calibrateMovement
 import lib.cargoFull
 import lib.dumpCargo
 import lib.gpsLocate
+import lib.headingDx
+import lib.headingDz
 import lib.navigateTo
 import lib.pastEnd
 import lib.restockChest
 import lib.stepFor
 
-// Coordinate-driven excavator. Named "digsite" (not "excavate") to avoid
+// Footprint-driven excavator. Named "digsite" (not "excavate") to avoid
 // clashing with CC:Tweaked's built-in turtle/excavate.lua program.
 //
-// Usage: digsite x1:x2 z1:z2 (y1:y2 optional)
-//   - x/z ranges are absolute world (GPS) coordinates for two corners of
-//     the horizontal footprint. Each pair is a literal start:end, not a
-//     sorted min:max — the turtle sweeps from the first value to the
-//     second, so "100:150" climbs and "150:100" descends, on both x and z.
-//   - If a y-range is given: "room" mode — hollows out that exact bounded
-//     x/y/z volume, one full horizontal layer at a time.
-//   - If no y-range is given: "clear cut" mode — the turtle's own starting
-//     Y is the FLOOR (never dug below); it sweeps full layers upward from
-//     there through CLEAR_CUT_HEIGHT blocks. Full-layer sweeps (not
-//     per-column "dig until first gap") so overhangs/floating terrain get
-//     cleared too — GPS keeps positioning reliable enough that clearing a
-//     generous fixed height is cheap insurance rather than a real cost.
+// Usage: digsite <width> (<length>) (<height>)
+//   - width: footprint size along the turtle's right-hand side at start.
+//   - length (optional, defaults to width — square footprint): footprint
+//     size along the turtle's forward direction at start.
+//   - height (optional, signed — positive climbs, negative descends): if
+//     given, "room" mode — hollows out that exact bounded x/y/z volume
+//     (homeY to homeY+height), one full horizontal layer at a time. If
+//     omitted, "clear cut" mode — the turtle's own starting Y is the
+//     FLOOR (never dug below); it sweeps full layers upward from there
+//     through CLEAR_CUT_HEIGHT blocks. Full-layer sweeps (not per-column
+//     "dig until first gap") so overhangs/floating terrain get cleared
+//     too.
+//   All three are relative to home (the turtle's start position/heading),
+//   like ExcavatePro's width/length/depth, rather than absolute world
+//   coordinates — so this works identically with or without GPS (see
+//   calibrateMovement() in lib/Movement.kt). Replaces an earlier
+//   x1:x2/z1:z2 absolute-world-coordinate interface that broke (silently
+//   pointed at meaningless/wrong ground) the moment GPS was unavailable.
+//   Positional convention: arg COUNT decides meaning (1 = width only,
+//   2 = width+length, 3 = width+length+height), matching ExcavatePro,
+//   since there's no way to tell a bare length from a bare height apart
+//   otherwise.
 //
 // Fueling/storage: assumes a fuel chest directly behind the turtle's start
 // position, with overflow chests extending from there. ASSUMPTION (easy to
@@ -37,18 +48,6 @@ import lib.stepFor
 // (dumping, restocking, the fuel allowlist) is shared with ExcavatePro via
 // lib/Chest.kt — this file only decides which slot(s) to keep off-limits.
 
-// ktox does not offset List/Array [] indexing — indices below are 1-based
-// on purpose. See AGENTS.md.
-//
-// Order is preserved as given (no min/max sorting) — the two values define
-// a literal start->end sweep direction, not just a bounding pair.
-fun parseSpan(raw: String): IntSpan {
-    val parts = raw.split(":")
-    val a = parts[1].toInt()
-    val b = parts[2].toInt()
-    return IntSpan(a, b)
-}
-
 const val FUEL_SAFETY_MARGIN = 20
 
 // Blocks swept upward from the floor in clear-cut mode. Raise this if your
@@ -56,14 +55,15 @@ const val FUEL_SAFETY_MARGIN = 20
 const val CLEAR_CUT_HEIGHT = 32
 
 fun main(args: Array<String>) {
-    if (args.size < 2) {
-        println("Usage: digsite x1:x2 z1:z2 (y1:y2 optional)")
+    if (args.size < 1) {
+        println("Usage: digsite <width> (<length>) (<height>)")
         return
     }
 
-    val xSpan = parseSpan(args[1])
-    val zSpan = parseSpan(args[2])
-    val hasYSpan = args.size >= 3
+    val width = args[1].toInt()
+    val length = if (args.size >= 2) args[2].toInt() else width
+    val hasHeight = args.size >= 3
+    val height = if (hasHeight) args[3].toInt() else 0
 
     println("Calibrating position via GPS...")
     val movement = calibrateMovement()
@@ -73,8 +73,20 @@ fun main(args: Array<String>) {
         println("No GPS available - running on dead reckoning only (no drift checks).")
     }
 
-    if (hasYSpan) {
-        val ySpan = parseSpan(args[3])
+    val fwdDx = headingDx(movement.homeHeading)
+    val fwdDz = headingDz(movement.homeHeading)
+    val rightHeading = (movement.homeHeading + 1) % 4
+    val rgtDx = headingDx(rightHeading)
+    val rgtDz = headingDz(rightHeading)
+
+    val xOther = movement.homeX + rgtDx * (width - 1) + fwdDx * (length - 1)
+    val zOther = movement.homeZ + rgtDz * (width - 1) + fwdDz * (length - 1)
+    val xSpan = IntSpan(movement.homeX, xOther)
+    val zSpan = IntSpan(movement.homeZ, zOther)
+
+    if (hasHeight) {
+        val yOther = movement.homeY + height
+        val ySpan = IntSpan(movement.homeY, yOther)
         digsiteRoom(movement, xSpan, ySpan, zSpan)
     } else {
         clearCut(movement, xSpan, zSpan)

@@ -1,20 +1,11 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-12"]=1,["13"]=46,["14"]=47,["15"]=48,["16-24"]=49,["25"]=59,["26"]=60,["27-28"]=61,["29"]=64,["30"]=65,["31"]=66,["32"]=68,["33"]=69,["34"]=70,["35-36"]=71,["37-38"]=73,["39"]=76,["40"]=77,["41-42"]=78,["43-44"]=80,["45"]=83,["46"]=84,["47"]=85,["48-53"]=86,["54-59"]=96,["60"]=100,["61"]=101,["62"]=102,["63-64"]=103,["65-71"]=105,["72"]=109,["73-78"]=110,["79"]=115,["80"]=116,["81"]=117,["82"]=118,["83-85"]=120,["86-88"]=124,["89"]=126,["90"]=131,["91"]=132,["92"]=133,["93"]=134,["94"]=135,["95-97"]=136,["98-105"]=139,["106"]=145,["107"]=146,["108"]=147,["109"]=148,["110-118"]=149,["119"]=154,["120"]=155,["121"]=156,["122"]=157,["123"]=158,["124"]=159,["125"]=160,["126"]=161,["127"]=162,["128"]=163,["129-131"]=164,["132"]=167,["133"]=168,["134"]=169,["135"]=170,["136-138"]=171,["139"]=174,["140-147"]=175,["148"]=189,["149"]=190,["150-152"]=191}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-15"]=1,["16"]=58,["17"]=59,["18-19"]=60,["20"]=63,["21"]=64,["22"]=65,["23"]=66,["24"]=68,["25"]=69,["26"]=70,["27-28"]=71,["29-30"]=73,["31"]=76,["32"]=77,["33"]=78,["34"]=79,["35"]=80,["36"]=82,["37"]=83,["38"]=84,["39"]=85,["40"]=87,["41"]=88,["42"]=89,["43-44"]=90,["45-46"]=92,["47"]=95,["48"]=96,["49"]=97,["50-55"]=98,["56-61"]=108,["62"]=112,["63"]=113,["64"]=114,["65-66"]=115,["67-73"]=117,["74"]=121,["75-80"]=122,["81"]=127,["82"]=128,["83"]=129,["84"]=130,["85-87"]=132,["88-90"]=136,["91"]=138,["92"]=143,["93"]=144,["94"]=145,["95"]=146,["96"]=147,["97-99"]=148,["100-107"]=151,["108"]=157,["109"]=158,["110"]=159,["111"]=160,["112-120"]=161,["121"]=166,["122"]=167,["123"]=168,["124"]=169,["125"]=170,["126"]=171,["127"]=172,["128"]=173,["129"]=174,["130"]=175,["131-133"]=176,["134"]=179,["135"]=180,["136"]=181,["137"]=182,["138-140"]=183,["141"]=186,["142-149"]=187,["150"]=201,["151"]=202,["152-154"]=203}, "programs")
 ktox_require("lib/Chest")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
 ktox_require("lib/Position")
-
----@param raw string
----@return IntSpan
-function parseSpan(raw)
-    local parts = ktox_split(raw, ":")
-    local a = ktox_toInt(parts[1])
-    local b = ktox_toInt(parts[2])
-    return IntSpan:new(a, b)
-end
 
 FUEL_SAFETY_MARGIN = 20
 
@@ -22,13 +13,14 @@ CLEAR_CUT_HEIGHT = 32
 
 ---@param args table
 function main(args)
-    if #(args) < 2 then
-        println("Usage: digsite x1:x2 z1:z2 (y1:y2 optional)")
+    if #(args) < 1 then
+        println("Usage: digsite <width> (<length>) (<height>)")
         return
     end
-    local xSpan = parseSpan(args[1])
-    local zSpan = parseSpan(args[2])
-    local hasYSpan = #(args) >= 3
+    local width = ktox_toInt(args[1])
+    local length = (#(args) >= 2 and ktox_toInt(args[2]) or width)
+    local hasHeight = #(args) >= 3
+    local height = (hasHeight and ktox_toInt(args[3]) or 0)
     println("Calibrating position via GPS...")
     local movement = calibrateMovement()
     if movement.gpsEnabled then
@@ -36,8 +28,18 @@ function main(args)
     else
         println("No GPS available - running on dead reckoning only (no drift checks).")
     end
-    if hasYSpan then
-        local ySpan = parseSpan(args[3])
+    local fwdDx = headingDx(movement.homeHeading)
+    local fwdDz = headingDz(movement.homeHeading)
+    local rightHeading = (movement.homeHeading + 1) % 4
+    local rgtDx = headingDx(rightHeading)
+    local rgtDz = headingDz(rightHeading)
+    local xOther = movement.homeX + rgtDx * (width - 1) + fwdDx * (length - 1)
+    local zOther = movement.homeZ + rgtDz * (width - 1) + fwdDz * (length - 1)
+    local xSpan = IntSpan:new(movement.homeX, xOther)
+    local zSpan = IntSpan:new(movement.homeZ, zOther)
+    if hasHeight then
+        local yOther = movement.homeY + height
+        local ySpan = IntSpan:new(movement.homeY, yOther)
         digsiteRoom(movement, xSpan, ySpan, zSpan)
     else
         clearCut(movement, xSpan, zSpan)

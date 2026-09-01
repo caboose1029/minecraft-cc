@@ -28,3 +28,12 @@ fun termSetBackgroundColor(color: Int): Unit = externalSource()
 
 @NativeName("term.scroll")
 fun termScroll(lines: Int): Unit = externalSource()
+
+// `read()` is a bare CC:Tweaked global (not part of the term.* table), but
+// lives here alongside the rest of the terminal I/O bindings. Blocks until
+// Enter, returns the typed line. NOT exercised by scripts/validate.sh's
+// headless run — there's no interactive terminal to type into, so a
+// program that reaches this call there just hangs until the script's
+// timeout kills it. Verify manually against a real turtle/computer.
+@NativeName("read")
+fun readInput(): String = externalSource()

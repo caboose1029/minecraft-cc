@@ -1,5 +1,6 @@
 package programs
 
+import common.readInput
 import common.turtleGetFuelLevel
 import common.turtleInspectDownName
 import common.turtleInspectName
@@ -43,6 +44,12 @@ import lib.restockChest
 // tier; 3 blocks avoids needing that assumption at all, for one less
 // block of total vertical range. Not currently configurable — see
 // tierY() to adjust.
+//
+// GPS: these tier depths are real absolute world Y, not relative offsets
+// like Digsite/ExcavatePro's spans — dead reckoning alone can't tell you
+// how deep -59 is from an unknown start. If GPS calibration fails, this
+// program prompts for the turtle's actual Y via read() and aborts on
+// invalid/missing input rather than digging to a meaningless depth.
 //
 // Each borehole is bored one block at a time; at every position, the
 // turtle checks up, down, left, and right (never behind — that's
@@ -127,11 +134,26 @@ fun main(args: Array<String>) {
     val spacing = if (args.size >= 3) args[3].toInt() else 3
 
     println("Calibrating position via GPS...")
-    val movement = calibrateMovement()
+    var movement = calibrateMovement()
     if (movement.gpsEnabled) {
         println("Home at x=${movement.homeX} y=${movement.homeY} z=${movement.homeZ}")
     } else {
-        println("No GPS available - running on dead reckoning only (no drift checks).")
+        // Unlike Digsite/ExcavatePro, the tier depths below (tierY()) are
+        // fixed absolute world Y values chosen for real diamond generation
+        // - there's no relative substitute for "how deep is Y=-59 from
+        // here" without knowing the turtle's actual world Y. Ask for it
+        // rather than digging to a meaningless (or bedrock-piercing)
+        // depth.
+        println("No GPS available - DiamondFinder targets real diamond-rich depths (y=-56/-59) and needs the turtle's actual world Y to do that.")
+        println("Enter the turtle's current Y coordinate:")
+        val input = readInput()
+        val manualY = input.toIntOrNull()
+        if (manualY == null) {
+            println("Invalid Y value entered - aborting.")
+            return
+        }
+        movement = Movement(0, manualY, 0, 0, 0, manualY, 0, 0, false)
+        println("Using manual y=${manualY} as home.")
     }
 
     val fwdDx = headingDx(movement.homeHeading)

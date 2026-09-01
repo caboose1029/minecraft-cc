@@ -24,16 +24,19 @@ import lib.stepFor
 // Straight-down excavator (like CC's built-in excavate) that also lines
 // the shaft with a spiral staircase and torches as it descends.
 //
-// Usage: excavatepro <width> [<length>] [<yTarget>]
+// Usage: excavatepro <width> [<length>] [<depth>]
 //   - width: footprint size along the turtle's right-hand side at start.
 //   - length (optional, defaults to width — square footprint): footprint
 //     size along the turtle's forward direction at start.
-//   - yTarget (optional, can be negative): absolute world Y to stop at.
-//     Omit to dig until bedrock (a fresh digDown() attempt fails).
+//   - depth (optional, blocks below home's Y — always positive): stop
+//     once this many levels below the start have been dug. Omit to dig
+//     until bedrock (a fresh digDown() attempt fails). Relative to home
+//     rather than an absolute world Y, so this works identically with or
+//     without GPS (see calibrateMovement() in lib/Movement.kt).
 //   Positional convention: arg COUNT decides meaning (1 = width only,
-//   2 = width+length, 3 = width+length+yTarget) since there's no way to
-//   tell a bare length from a bare yTarget apart otherwise. To request a
-//   square hole to a specific depth, pass width twice: "5 5 -50".
+//   2 = width+length, 3 = width+length+depth) since there's no way to
+//   tell a bare length from a bare depth apart otherwise. To request a
+//   square hole to a specific depth, pass width twice: "5 5 50".
 //
 // Geometry: one step (cobblestone — see below) or, every TORCH_INTERVAL
 // levels, one torch instead, is placed each Y-level at a position that
@@ -71,17 +74,14 @@ const val RESTOCK_ATTEMPTS = 32
 
 fun main(args: Array<String>) {
     if (args.size < 1) {
-        println("Usage: excavatepro <width> (<length>) (<yTarget>)")
+        println("Usage: excavatepro <width> (<length>) (<depth>)")
         return
     }
 
     val width = args[1].toInt()
     val length = if (args.size >= 2) args[2].toInt() else width
-    val hasYTarget = args.size >= 3
-    var yTarget = 0
-    if (hasYTarget) {
-        yTarget = args[3].toInt()
-    }
+    val hasDepth = args.size >= 3
+    val depth = if (hasDepth) args[3].toInt() else 0
 
     println("Calibrating position via GPS...")
     val movement = calibrateMovement()
@@ -90,6 +90,10 @@ fun main(args: Array<String>) {
     } else {
         println("No GPS available - running on dead reckoning only (no drift checks).")
     }
+
+    // Relative to homeY rather than an absolute world Y, so this stop
+    // condition means the same thing regardless of GPS availability.
+    val yTarget = movement.homeY - depth
 
     val fwdDx = headingDx(movement.homeHeading)
     val fwdDz = headingDz(movement.homeHeading)
@@ -173,7 +177,7 @@ fun main(args: Array<String>) {
             // will just fail again.
             println("Movement blocked at y=${y} (bedrock or another undiggable obstruction) - stopping.")
             digging = false
-        } else if (hasYTarget && y <= yTarget) {
+        } else if (hasDepth && y <= yTarget) {
             digging = false
         } else {
             val moved = movement.down()
