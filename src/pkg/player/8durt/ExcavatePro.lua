@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-19"]=1,["20"]=76,["21"]=77,["22-23"]=78,["24"]=81,["25"]=82,["26"]=83,["27"]=84,["28"]=86,["29"]=87,["30"]=88,["31-32"]=89,["33-34"]=91,["35"]=96,["36"]=98,["37"]=99,["38"]=100,["39"]=101,["40"]=102,["41"]=104,["42"]=105,["43"]=106,["44"]=107,["45"]=115,["46"]=116,["47"]=118,["48"]=120,["49"]=121,["50"]=122,["51"]=123,["52"]=125,["53"]=126,["54"]=127,["55"]=128,["56-57"]=129,["58"]=141,["59"]=142,["60"]=152,["61"]=153,["62"]=154,["63-64"]=155,["65"]=165,["66"]=166,["67-68"]=167,["69"]=169,["70"]=170,["71-72"]=171,["73"]=174,["74"]=175,["75"]=180,["76"]=181,["77"]=182,["78"]=183,["79-80"]=184,["81"]=186,["82"]=187,["83"]=188,["84-85"]=189,["86-87"]=191,["88-90"]=193,["91"]=197,["92"]=203,["93-94"]=204,["95-96"]=206,["97"]=208,["98"]=209,["99"]=210,["100"]=211,["101-104"]=212,["105"]=217,["106"]=218,["107-108"]=219,["109"]=224,["110"]=225,["111"]=226,["112-122"]=227,["123"]=243,["124-125"]=244,["126"]=246,["127"]=247,["128"]=248,["129"]=249,["130-131"]=250,["132"]=252,["133-134"]=253,["135-174"]=255,["175-182"]=268,["183"]=272,["184"]=273,["185"]=274,["186-187"]=275,["188"]=277,["189"]=278,["190-191"]=279,["192"]=281,["193"]=282,["194-195"]=283,["196"]=285,["197-205"]=286,["206"]=295,["207"]=296,["208"]=297,["209"]=298,["210"]=299,["211"]=300,["212"]=301,["213"]=302,["214"]=303,["215"]=304,["216"]=305,["217-218"]=306,["219-221"]=308,["222"]=311,["223"]=312,["224"]=313,["225"]=314,["226-227"]=315,["228-230"]=317,["231"]=320,["232-233"]=321,["234-239"]=323,["240-245"]=329,["246"]=345,["247-248"]=346,["249"]=348,["250"]=349,["251-252"]=350,["253"]=352,["254-255"]=353,["256-261"]=355,["262"]=359,["263"]=360,["264"]=361,["265-266"]=362,["267-273"]=364,["274"]=368,["275-280"]=369,["281"]=374,["282"]=375,["283"]=376,["284-289"]=377,["290"]=386,["291"]=387,["292"]=388,["293"]=389,["294"]=390,["295"]=391,["296-298"]=392,["299-300"]=395,["301-305"]=397,["306"]=401,["307"]=402,["308"]=403,["309"]=404,["310-312"]=406,["313"]=407,["314"]=409,["315"]=414,["316"]=415,["317"]=416,["318"]=417,["319"]=418,["320-322"]=419,["323-327"]=422,["328-337"]=432}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "ExcavatePro.kt", {["1-21"]=1,["22"]=77,["23"]=78,["24-25"]=79,["26"]=82,["27"]=83,["28"]=84,["29"]=85,["30"]=87,["31"]=88,["32"]=89,["33-34"]=90,["35-36"]=92,["37"]=97,["38"]=99,["39"]=100,["40"]=101,["41"]=102,["42"]=103,["43"]=105,["44"]=106,["45"]=107,["46"]=108,["47"]=116,["48"]=117,["49"]=119,["50"]=121,["51"]=122,["52"]=123,["53"]=124,["54"]=126,["55"]=127,["56"]=128,["57"]=129,["58-59"]=130,["60"]=142,["61"]=143,["62"]=153,["63"]=154,["64"]=155,["65-66"]=156,["67"]=166,["68"]=167,["69-70"]=168,["71"]=170,["72"]=171,["73-74"]=172,["75"]=175,["76"]=176,["77"]=181,["78"]=182,["79"]=183,["80"]=184,["81-82"]=185,["83"]=187,["84"]=188,["85"]=189,["86-87"]=190,["88-89"]=192,["90-92"]=194,["93"]=198,["94"]=204,["95-96"]=205,["97-98"]=207,["99"]=209,["100"]=210,["101"]=211,["102"]=212,["103-106"]=213,["107"]=218,["108"]=219,["109-110"]=220,["111"]=225,["112"]=226,["113"]=227,["114-124"]=228,["125"]=244,["126-127"]=245,["128"]=247,["129"]=248,["130"]=249,["131"]=250,["132-133"]=251,["134"]=253,["135-136"]=254,["137-176"]=256,["177-184"]=269,["185"]=273,["186"]=274,["187"]=275,["188-189"]=276,["190"]=278,["191"]=279,["192-193"]=280,["194"]=282,["195"]=283,["196-197"]=284,["198"]=286,["199-209"]=287,["210"]=296,["211"]=297,["212"]=298,["213"]=299,["214"]=300,["215"]=301,["216"]=302,["217"]=303,["218"]=304,["219"]=305,["220"]=306,["221-222"]=307,["223-225"]=309,["226"]=312,["227"]=313,["228"]=314,["229"]=315,["230-231"]=316,["232-234"]=318,["235"]=321,["236-237"]=322,["238-243"]=324,["244-249"]=330,["250"]=344,["251"]=345,["252"]=346,["253"]=347,["254"]=348,["255-256"]=349,["257-258"]=351,["259-264"]=353,["265"]=368,["266-267"]=369,["268"]=371,["269"]=372,["270-271"]=373,["272"]=375,["273-274"]=376,["275"]=378,["276-277"]=379,["278-283"]=381,["284"]=385,["285"]=386,["286"]=387,["287-288"]=388,["289-297"]=390,["298"]=394,["299-306"]=395,["307"]=400,["308"]=401,["309"]=402,["310-315"]=403,["316"]=412,["317"]=413,["318"]=414,["319"]=415,["320"]=416,["321"]=417,["322-324"]=418,["325-326"]=421,["327-333"]=423,["334"]=427,["335"]=428,["336"]=429,["337"]=430,["338"]=437,["339"]=438,["340-342"]=440,["343"]=441,["344"]=443,["345"]=444,["346"]=445,["347"]=450,["348"]=451,["349"]=452,["350"]=453,["351"]=454,["352-354"]=455,["355-359"]=458,["360-369"]=468}, "programs")
 ktox_require("lib/Chest")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
@@ -14,6 +14,8 @@ TORCH_INTERVAL = 6
 TORCH_SLOT = 3
 
 RESTOCK_ATTEMPTS = 32
+
+COBBLESTONE_RESERVE = 64
 
 ---@param args table
 function main(args)
@@ -50,9 +52,9 @@ function main(args)
     local levelsSinceTorch = 0
     local digging = true
     while digging do
-        epEnsureFuelAndSpace(movement)
+        epEnsureFuelAndSpace(movement, centerX, centerZ)
         local blocked = false
-        if not digLayer(movement, xSpan, zSpan, y) then
+        if not digLayer(movement, xSpan, zSpan, y, centerX, centerZ) then
             blocked = true
         end
         if not blocked and hasStaircase and y + 1 < movement.homeY then
@@ -78,7 +80,7 @@ function main(args)
                     if not navigateTo(movement, torchX, y, torchZ) then
                         println("Couldn\'t reach a torch position at y=" .. tostring(y) .. " - skipping this one.")
                     else
-                        ensureTorchSupply(movement)
+                        ensureTorchSupply(movement, centerX, centerZ)
                         turtle.digUp()
                         turtle.select(TORCH_SLOT)
                         turtle.placeUp()
@@ -201,8 +203,10 @@ end
 ---@param xSpan IntSpan
 ---@param zSpan IntSpan
 ---@param y number
+---@param centerX number
+---@param centerZ number
 ---@return boolean
-function digLayer(m, xSpan, zSpan, y)
+function digLayer(m, xSpan, zSpan, y, centerX, centerZ)
     local xStep = stepFor(xSpan)
     local zStep = stepFor(zSpan)
     local x = xSpan.start
@@ -212,7 +216,7 @@ function digLayer(m, xSpan, zSpan, y)
         if forwardZ then
             local z = zSpan.start
             while ok and not pastEnd(z, zSpan.finish, zStep) do
-                epEnsureFuelAndSpace(m)
+                epEnsureFuelAndSpace(m, centerX, centerZ)
                 if not navigateTo(m, x, y, z) then
                     ok = false
                 end
@@ -221,7 +225,7 @@ function digLayer(m, xSpan, zSpan, y)
         else
             local z = zSpan.finish
             while ok and not pastEnd(z, zSpan.start, -zStep) do
-                epEnsureFuelAndSpace(m)
+                epEnsureFuelAndSpace(m, centerX, centerZ)
                 if not navigateTo(m, x, y, z) then
                     ok = false
                 end
@@ -242,6 +246,21 @@ end
 
 ---@param slot number
 ---@return boolean
+function withinCobblestoneReserve(slot)
+    local s = 1
+    local totalBefore = 0
+    while s < slot do
+        local name = ktoxGetItemName(s)
+        if name ~= nil and name == "minecraft:cobblestone" then
+            totalBefore = ktox_plusAssign(totalBefore, turtle.getItemCount(s))
+        end
+        s = ktox_plusAssign(s, 1)
+    end
+    return totalBefore < COBBLESTONE_RESERVE
+end
+
+---@param slot number
+---@return boolean
 function shouldKeepSlot(slot)
     if slot == CHEST_INTAKE_SLOT then
         return turtle.getItemCount(slot) == 0
@@ -253,7 +272,10 @@ function shouldKeepSlot(slot)
     if slot == TORCH_SLOT then
         return isTorchItem(name)
     end
-    return name == "minecraft:cobblestone"
+    if name == "minecraft:cobblestone" then
+        return withinCobblestoneReserve(slot)
+    end
+    return false
 end
 
 ---@param m Movement
@@ -270,18 +292,22 @@ function epNeedsService(m)
 end
 
 ---@param m Movement
-function epEnsureFuelAndSpace(m)
+---@param centerX number
+---@param centerZ number
+function epEnsureFuelAndSpace(m, centerX, centerZ)
     if epNeedsService(m) then
-        epServiceAtBase(m)
+        epServiceAtBase(m, centerX, centerZ)
     end
 end
 
 ---@param m Movement
-function ensureTorchSupply(m)
+---@param centerX number
+---@param centerZ number
+function ensureTorchSupply(m, centerX, centerZ)
     local name = ktoxGetItemName(TORCH_SLOT)
     local hasTorch = name ~= nil and isTorchItem(name)
     if not hasTorch then
-        epServiceAtBase(m)
+        epServiceAtBase(m, centerX, centerZ)
     end
 end
 
@@ -302,15 +328,21 @@ function findCobblestoneSlot()
 end
 
 ---@param m Movement
-function epServiceAtBase(m)
+---@param centerX number
+---@param centerZ number
+function epServiceAtBase(m, centerX, centerZ)
     println("Returning to base to refuel/dump inventory/restock supplies...")
     local returnX = m.x
     local returnY = m.y
     local returnZ = m.z
+    navigateTo(m, centerX, m.y, centerZ)
+    navigateTo(m, centerX, m.homeY, centerZ)
     dumpCargo(m, function(slot)
         return shouldKeepSlot(slot)
     end)
     restockAtChest(m)
+    navigateTo(m, centerX, m.homeY, centerZ)
+    navigateTo(m, centerX, returnY, centerZ)
     navigateTo(m, returnX, returnY, returnZ)
     if m.gpsEnabled then
         local checked = gpsLocate()

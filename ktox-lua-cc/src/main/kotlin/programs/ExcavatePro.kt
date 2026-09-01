@@ -71,6 +71,7 @@ const val EP_FUEL_SAFETY_MARGIN = 20
 const val TORCH_INTERVAL = 6
 const val TORCH_SLOT = 3
 const val RESTOCK_ATTEMPTS = 32
+const val COBBLESTONE_RESERVE = 64
 
 fun main(args: Array<String>) {
     if (args.size < 1) {
@@ -123,9 +124,9 @@ fun main(args: Array<String>) {
     var digging = true
 
     while (digging) {
-        epEnsureFuelAndSpace(movement)
+        epEnsureFuelAndSpace(movement, centerX, centerZ)
         var blocked = false
-        if (!digLayer(movement, xSpan, zSpan, y)) {
+        if (!digLayer(movement, xSpan, zSpan, y, centerX, centerZ)) {
             blocked = true
         }
 
@@ -183,7 +184,7 @@ fun main(args: Array<String>) {
                     if (!navigateTo(movement, torchX, y, torchZ)) {
                         println("Couldn't reach a torch position at y=${y} - skipping this one.")
                     } else {
-                        ensureTorchSupply(movement)
+                        ensureTorchSupply(movement, centerX, centerZ)
                         turtleDigUp()
                         turtleSelect(TORCH_SLOT)
                         turtlePlaceUp()
@@ -291,7 +292,7 @@ fun perimeterCell(step: Int, width: Int, length: Int): Cell {
 // Returns false the moment any move is genuinely blocked (see
 // navigateTo) — the layer may be left partially swept when that happens;
 // the caller decides how to react (main() stops and returns home).
-fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int): Boolean {
+fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int, centerX: Int, centerZ: Int): Boolean {
     val xStep = stepFor(xSpan)
     val zStep = stepFor(zSpan)
     var x = xSpan.start
@@ -301,7 +302,7 @@ fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int): Boolean {
         if (forwardZ) {
             var z = zSpan.start
             while (ok && !pastEnd(z, zSpan.finish, zStep)) {
-                epEnsureFuelAndSpace(m)
+                epEnsureFuelAndSpace(m, centerX, centerZ)
                 if (!navigateTo(m, x, y, z)) {
                     ok = false
                 }
@@ -310,7 +311,7 @@ fun digLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int): Boolean {
         } else {
             var z = zSpan.finish
             while (ok && !pastEnd(z, zSpan.start, -zStep)) {
-                epEnsureFuelAndSpace(m)
+                epEnsureFuelAndSpace(m, centerX, centerZ)
                 if (!navigateTo(m, x, y, z)) {
                     ok = false
                 }
@@ -329,18 +330,40 @@ fun isTorchItem(name: String): Boolean {
     return name == "minecraft:torch"
 }
 
+// True if this slot's cobblestone falls within the first
+// COBBLESTONE_RESERVE items counted across cobblestone-holding slots in
+// order from slot 1 - roughly "the first stack". Mining constantly
+// produces more cobblestone than a staircase actually needs, and it used
+// to be kept in EVERY slot that held any, uncapped - cargo filled with
+// cobblestone alone, triggering base trips (see epServiceAtBase) far
+// more often than necessary. Recomputed fresh each call (a plain O(slot)
+// scan) rather than tracked as running state, since shouldKeepSlot is
+// called independently per slot by the shared cargoFull/dumpCargo loops
+// in lib/Chest.kt with no state passed between calls.
+fun withinCobblestoneReserve(slot: Int): Boolean {
+    var s = 1
+    var totalBefore = 0
+    while (s < slot) {
+        val name = turtleGetItemName(s)
+        if (name != null && name == "minecraft:cobblestone") {
+            totalBefore += turtleGetItemCount(s)
+        }
+        s += 1
+    }
+    return totalBefore < COBBLESTONE_RESERVE
+}
+
 // A slot's current content is worth keeping — never dumped as cargo —
 // when: it's the transient intake slot and happens to be empty right
 // now; it's the torch slot and actually holds a torch; or it holds
-// cobblestone, kept around as step material regardless of which slot it
-// landed in (mining always produces some, so there's no dedicated slot
-// to protect — see findCobblestoneSlot()). Checking by content rather
-// than just slot number matters: a slot that doesn't hold its intended
-// item (e.g. TORCH_SLOT holding ordinary mined cobblestone, because it
-// happened to be the first empty slot the very first time the turtle
-// mined something, before any chest visit ever occurred) is NOT
-// protected — it's ordinary cargo that needs to get dumped so the slot
-// is actually empty for the real item next visit.
+// cobblestone within the reserve (see withinCobblestoneReserve) — cargo
+// beyond that reserve is treated as ordinary cargo like anything else.
+// Checking by content rather than just slot number matters: a slot that
+// doesn't hold its intended item (e.g. TORCH_SLOT holding ordinary mined
+// cobblestone, because it happened to be the first empty slot the very
+// first time the turtle mined something, before any chest visit ever
+// occurred) is NOT protected — it's ordinary cargo that needs to get
+// dumped so the slot is actually empty for the real item next visit.
 fun shouldKeepSlot(slot: Int): Boolean {
     if (slot == CHEST_INTAKE_SLOT) {
         return turtleGetItemCount(slot) == 0
@@ -352,7 +375,10 @@ fun shouldKeepSlot(slot: Int): Boolean {
     if (slot == TORCH_SLOT) {
         return isTorchItem(name)
     }
-    return name == "minecraft:cobblestone"
+    if (name == "minecraft:cobblestone") {
+        return withinCobblestoneReserve(slot)
+    }
+    return false
 }
 
 fun epNeedsService(m: Movement): Boolean {
@@ -364,17 +390,17 @@ fun epNeedsService(m: Movement): Boolean {
     return cargoFull { slot -> shouldKeepSlot(slot) }
 }
 
-fun epEnsureFuelAndSpace(m: Movement) {
+fun epEnsureFuelAndSpace(m: Movement, centerX: Int, centerZ: Int) {
     if (epNeedsService(m)) {
-        epServiceAtBase(m)
+        epServiceAtBase(m, centerX, centerZ)
     }
 }
 
-fun ensureTorchSupply(m: Movement) {
+fun ensureTorchSupply(m: Movement, centerX: Int, centerZ: Int) {
     val name = turtleGetItemName(TORCH_SLOT)
     val hasTorch = name != null && isTorchItem(name)
     if (!hasTorch) {
-        epServiceAtBase(m)
+        epServiceAtBase(m, centerX, centerZ)
     }
 }
 
@@ -397,15 +423,25 @@ fun findCobblestoneSlot(): Int {
     return found
 }
 
-fun epServiceAtBase(m: Movement) {
+fun epServiceAtBase(m: Movement, centerX: Int, centerZ: Int) {
     println("Returning to base to refuel/dump inventory/restock supplies...")
     val returnX = m.x
     val returnY = m.y
     val returnZ = m.z
 
+    // Route vertical travel through the center column - guaranteed clear
+    // of placed steps at every height (see centerX/centerZ in main()) -
+    // rather than climbing/descending straight from wherever the turtle
+    // happens to be, which could dig straight through (destroy) a step
+    // placed on an earlier, higher layer.
+    navigateTo(m, centerX, m.y, centerZ)
+    navigateTo(m, centerX, m.homeY, centerZ)
+
     dumpCargo(m) { slot -> shouldKeepSlot(slot) }
     restockAtChest(m)
 
+    navigateTo(m, centerX, m.homeY, centerZ)
+    navigateTo(m, centerX, returnY, centerZ)
     navigateTo(m, returnX, returnY, returnZ)
 
     // Drift safety check after the round trip — only meaningful when GPS
