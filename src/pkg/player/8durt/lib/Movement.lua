@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Movement.kt", {["1-37"]=1,["38"]=44,["39-42"]=45,["43"]=49,["44-47"]=50,["48"]=54,["49-53"]=55,["54"]=60,["55"]=61,["56-57"]=62,["58"]=64,["59"]=65,["60"]=66,["61-67"]=67,["68"]=75,["69"]=76,["70-71"]=77,["72"]=79,["73"]=80,["74"]=81,["75-76"]=82,["77-81"]=84,["82"]=88,["83"]=89,["84-85"]=90,["86-90"]=92,["91"]=96,["92"]=97,["93-94"]=98,["95"]=100,["96"]=101,["97"]=102,["98-99"]=103,["100-104"]=105,["105"]=109,["106"]=110,["107-108"]=111,["109"]=113,["110"]=114,["111"]=115,["112-113"]=116,["114-118"]=118,["119"]=122,["120"]=123,["121-122"]=124,["123-124"]=125,["125-126"]=126,["127-132"]=127,["133"]=135,["134"]=136,["135"]=137,["136"]=138,["137"]=139,["138"]=140,["139-148"]=141,["149"]=151,["150"]=152,["151-152"]=153,["153"]=155,["154"]=156,["155"]=157,["156-158"]=158,["159"]=161,["160"]=162,["161-162"]=163,["163"]=165,["164-170"]=166,["171-186"]=170,["187-192"]=181,["193-201"]=191,["202"]=213,["203"]=214,["204-206"]=215,["207"]=218,["208"]=219,["209-211"]=220,["212"]=223,["213"]=224,["214"]=225,["215"]=226,["216"]=227,["217-220"]=228,["221"]=232,["222"]=233,["223"]=234,["224"]=235,["225"]=236,["226-229"]=237,["230-232"]=241}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Movement.kt", {["1-39"]=1,["40"]=51,["41-44"]=52,["45"]=56,["46-49"]=57,["50"]=61,["51-55"]=62,["56"]=67,["57"]=68,["58-59"]=69,["60"]=71,["61"]=72,["62"]=73,["63-69"]=74,["70"]=82,["71"]=83,["72-73"]=84,["74"]=86,["75"]=87,["76"]=88,["77-78"]=89,["79-83"]=91,["84"]=95,["85"]=96,["86-87"]=97,["88-92"]=99,["93"]=103,["94"]=104,["95-96"]=105,["97"]=107,["98"]=108,["99"]=109,["100-101"]=110,["102-106"]=112,["107"]=116,["108"]=117,["109-110"]=118,["111"]=120,["112"]=121,["113"]=122,["114-115"]=123,["116-120"]=125,["121"]=129,["122"]=130,["123-124"]=131,["125-126"]=132,["127-128"]=133,["129-134"]=134,["135"]=142,["136"]=143,["137"]=144,["138"]=145,["139"]=146,["140"]=147,["141-150"]=148,["151"]=161,["152"]=162,["153-154"]=163,["155"]=165,["156"]=166,["157"]=167,["158-160"]=168,["161"]=171,["162"]=172,["163-164"]=176,["165"]=178,["166-172"]=179,["173-188"]=183,["189-194"]=194,["195-203"]=204,["204"]=226,["205"]=227,["206-208"]=228,["209"]=231,["210"]=232,["211-213"]=233,["214"]=236,["215"]=237,["216"]=238,["217"]=239,["218"]=240,["219-222"]=241,["223"]=245,["224"]=246,["225"]=247,["226"]=248,["227"]=249,["228-231"]=250,["232-234"]=254}, "lib")
 
 ---@alias MoveSign "FORWARD" | "BACKWARD"
 local MoveSign = {}
@@ -14,6 +14,7 @@ MoveSign.BACKWARD = "BACKWARD"
 ---@field homeY number
 ---@field homeZ number
 ---@field homeHeading number
+---@field gpsEnabled boolean
 ---@field x number
 ---@field y number
 ---@field z number
@@ -21,12 +22,13 @@ MoveSign.BACKWARD = "BACKWARD"
 Movement = {}
 Movement.__index = Movement
 
-function Movement:new(startX, startY, startZ, startHeading, homeX, homeY, homeZ, homeHeading)
+function Movement:new(startX, startY, startZ, startHeading, homeX, homeY, homeZ, homeHeading, gpsEnabled)
     local self = setmetatable({}, Movement)
     self.homeX = homeX
     self.homeY = homeY
     self.homeZ = homeZ
     self.homeHeading = homeHeading
+    self.gpsEnabled = gpsEnabled
     self.x = startX
     self.y = startY
     self.z = startZ
@@ -144,24 +146,24 @@ function Movement:toString()
 end
 Movement.__tostring = function(a) return a:toString() end
 
----@return Movement?
+---@return Movement
 function calibrateMovement()
     local start = gpsLocate()
     if start == nil then
-        return nil
+        return Movement:new(0, 0, 0, 0, 0, 0, 0, 0, false)
     end
     if not turtle.forward() then
         turtle.dig()
         if not turtle.forward() then
-            return nil
+            return Movement:new(0, 0, 0, 0, 0, 0, 0, 0, false)
         end
     end
     local after = gpsLocate()
     if after == nil then
-        return nil
+        return Movement:new(0, 0, 0, 0, 0, 0, 0, 0, false)
     end
     local heading = headingFromDelta(after.x - start.x, after.z - start.z)
-    return Movement:new(after.x, after.y, after.z, heading, start.x, start.y, start.z, heading)
+    return Movement:new(after.x, after.y, after.z, heading, start.x, start.y, start.z, heading, true)
 end
 
 ---@param dx number

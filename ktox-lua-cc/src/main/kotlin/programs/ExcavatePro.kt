@@ -85,11 +85,11 @@ fun main(args: Array<String>) {
 
     println("Calibrating position via GPS...")
     val movement = calibrateMovement()
-    if (movement == null) {
-        println("GPS calibration failed - check the wireless/ender modem and GPS host coverage.")
-        return
+    if (movement.gpsEnabled) {
+        println("Home at x=${movement.homeX} y=${movement.homeY} z=${movement.homeZ}")
+    } else {
+        println("No GPS available - running on dead reckoning only (no drift checks).")
     }
-    println("Home at x=${movement.homeX} y=${movement.homeY} z=${movement.homeZ}")
 
     val fwdDx = headingDx(movement.homeHeading)
     val fwdDz = headingDz(movement.homeHeading)
@@ -379,12 +379,16 @@ fun epServiceAtBase(m: Movement) {
 
     navigateTo(m, returnX, returnY, returnZ)
 
-    // Drift safety check after the round trip.
-    val checked = gpsLocate()
-    if (checked != null) {
-        m.x = checked.x
-        m.y = checked.y
-        m.z = checked.z
+    // Drift safety check after the round trip — only meaningful when GPS
+    // was available at calibration; otherwise there's no ground truth to
+    // check against.
+    if (m.gpsEnabled) {
+        val checked = gpsLocate()
+        if (checked != null) {
+            m.x = checked.x
+            m.y = checked.y
+            m.z = checked.z
+        }
     }
     println("Resuming excavation.")
 }

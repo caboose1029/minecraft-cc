@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-12"]=1,["13"]=46,["14"]=47,["15"]=48,["16-24"]=49,["25"]=59,["26"]=60,["27-28"]=61,["29"]=64,["30"]=65,["31"]=66,["32"]=68,["33"]=69,["34"]=70,["35"]=71,["36-37"]=72,["38"]=74,["39"]=76,["40"]=77,["41-42"]=78,["43-44"]=80,["45"]=83,["46"]=84,["47"]=85,["48-53"]=86,["54-59"]=96,["60"]=100,["61"]=101,["62"]=102,["63-64"]=103,["65-71"]=105,["72"]=109,["73-78"]=110,["79"]=115,["80"]=116,["81"]=117,["82"]=118,["83-85"]=120,["86-88"]=124,["89"]=126,["90"]=129,["91"]=130,["92"]=131,["93"]=132,["94-95"]=133,["96-103"]=135,["104"]=141,["105"]=142,["106"]=143,["107"]=144,["108-116"]=145,["117"]=150,["118"]=151,["119"]=152,["120"]=153,["121"]=154,["122"]=155,["123"]=156,["124"]=157,["125"]=158,["126"]=159,["127-129"]=160,["130"]=163,["131"]=164,["132"]=165,["133"]=166,["134-136"]=167,["137"]=170,["138-145"]=171,["146"]=185,["147"]=186,["148-150"]=187}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Digsite.kt", {["1-12"]=1,["13"]=46,["14"]=47,["15"]=48,["16-24"]=49,["25"]=59,["26"]=60,["27-28"]=61,["29"]=64,["30"]=65,["31"]=66,["32"]=68,["33"]=69,["34"]=70,["35-36"]=71,["37-38"]=73,["39"]=76,["40"]=77,["41-42"]=78,["43-44"]=80,["45"]=83,["46"]=84,["47"]=85,["48-53"]=86,["54-59"]=96,["60"]=100,["61"]=101,["62"]=102,["63-64"]=103,["65-71"]=105,["72"]=109,["73-78"]=110,["79"]=115,["80"]=116,["81"]=117,["82"]=118,["83-85"]=120,["86-88"]=124,["89"]=126,["90"]=131,["91"]=132,["92"]=133,["93"]=134,["94"]=135,["95-97"]=136,["98-105"]=139,["106"]=145,["107"]=146,["108"]=147,["109"]=148,["110-118"]=149,["119"]=154,["120"]=155,["121"]=156,["122"]=157,["123"]=158,["124"]=159,["125"]=160,["126"]=161,["127"]=162,["128"]=163,["129-131"]=164,["132"]=167,["133"]=168,["134"]=169,["135"]=170,["136-138"]=171,["139"]=174,["140-147"]=175,["148"]=189,["149"]=190,["150-152"]=191}, "programs")
 ktox_require("lib/Chest")
 ktox_require("lib/Span")
 ktox_require("lib/Movement")
@@ -31,11 +31,11 @@ function main(args)
     local hasYSpan = #(args) >= 3
     println("Calibrating position via GPS...")
     local movement = calibrateMovement()
-    if movement == nil then
-        println("GPS calibration failed - check the wireless/ender modem and GPS host coverage.")
-        return
+    if movement.gpsEnabled then
+        println("Home at x=" .. tostring(movement.homeX) .. " y=" .. tostring(movement.homeY) .. " z=" .. tostring(movement.homeZ))
+    else
+        println("No GPS available - running on dead reckoning only (no drift checks).")
     end
-    println("Home at x=" .. tostring(movement.homeX) .. " y=" .. tostring(movement.homeY) .. " z=" .. tostring(movement.homeZ))
     if hasYSpan then
         local ySpan = parseSpan(args[3])
         digsiteRoom(movement, xSpan, ySpan, zSpan)
@@ -87,11 +87,13 @@ function serviceAtBase(m)
         return false
     end)
     navigateTo(m, returnX, returnY, returnZ)
-    local checked = gpsLocate()
-    if checked ~= nil then
-        m.x = checked.x
-        m.y = checked.y
-        m.z = checked.z
+    if m.gpsEnabled then
+        local checked = gpsLocate()
+        if checked ~= nil then
+            m.x = checked.x
+            m.y = checked.y
+            m.z = checked.z
+        end
     end
     println("Resuming excavation.")
 end

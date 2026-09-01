@@ -10,16 +10,22 @@ import common.turtleTurnLeft
 import common.turtleTurnRight
 import common.turtleUp
 
-// Tracks the turtle's position/heading (real world/GPS-aligned coordinates,
-// kept in sync by dead reckoning — counting moves) plus a fixed "home"
-// reference: the exact block the turtle was standing on when the program
-// started, i.e. where the fuel/overflow chests are relative to. Anchored to
-// world coordinates via one gps.locate() call at start — see
-// calibrateMovement() below. No further GPS calls during normal operation;
-// re-sync explicitly (a fresh gpsLocate() call) after a return-to-base trip
-// as a drift safety check.
+// Tracks the turtle's position/heading, kept in sync purely by dead
+// reckoning (counting moves) — GPS is never required for this to work,
+// only optionally used to anchor it to real world coordinates and, when
+// available, to sanity-check for drift. Home is a fixed reference: the
+// exact block the turtle was standing on when the program started, i.e.
+// where the fuel/overflow chests are relative to. See calibrateMovement()
+// below: with a working wireless/ender modem + GPS host, home/heading are
+// real world coordinates and callers should periodically re-sync via a
+// fresh gpsLocate() call as a drift safety check (gated on `gpsEnabled`);
+// without one, home is just local (0,0,0) with heading 0 — an arbitrary
+// but internally consistent origin, since nothing in this file or
+// lib/Chest.kt ever needs home to align with true world coordinates, only
+// with itself.
 //
-// Heading: 0 = north (-z), 1 = east (+x), 2 = south (+z), 3 = west (-x).
+// Heading: 0 = north (-z), 1 = east (+x), 2 = south (+z), 3 = west (-x)
+// when GPS-anchored; an arbitrary but self-consistent label otherwise.
 // `homeHeading` is the direction the turtle originally faced (away from
 // the fuel chest) — turning to this heading and then turnAround() faces
 // the fuel chest.
@@ -34,6 +40,7 @@ class Movement(
     val homeY: Int,
     val homeZ: Int,
     val homeHeading: Int,
+    val gpsEnabled: Boolean,
 ) {
     var x: Int = startX
     var y: Int = startY
@@ -142,28 +149,34 @@ class Movement(
     }
 }
 
-// One-time GPS calibration: reads world position (this becomes "home"),
-// moves forward one block (digging through if blocked) to derive heading
-// from the resulting position delta, then reads position again. The
-// turtle needs clear-or-diggable space directly ahead at program start
-// for this to work.
-fun calibrateMovement(): Movement? {
+// Attempts one-time GPS calibration: reads world position (this becomes
+// "home"), moves forward one block (digging through if blocked) to derive
+// heading from the resulting position delta, then reads position again.
+// GPS is optional — this never fails the caller. If no modem/GPS host is
+// available (or the forced calibration move is blocked, e.g. bedrock on
+// every side), it falls back to a local (0,0,0) origin with heading 0 and
+// gpsEnabled=false, and the turtle stays exactly where it started (no
+// forced move attempted unless the first gpsLocate() already succeeded).
+fun calibrateMovement(): Movement {
     val start = gpsLocate()
     if (start == null) {
-        return null
+        return Movement(0, 0, 0, 0, 0, 0, 0, 0, false)
     }
     if (!turtleForward()) {
         turtleDig()
         if (!turtleForward()) {
-            return null
+            return Movement(0, 0, 0, 0, 0, 0, 0, 0, false)
         }
     }
     val after = gpsLocate()
     if (after == null) {
-        return null
+        // Already moved one block by this point with no second reading to
+        // derive heading from — treat wherever the turtle now stands as
+        // the dead-reckoning origin rather than aborting.
+        return Movement(0, 0, 0, 0, 0, 0, 0, 0, false)
     }
     val heading = headingFromDelta(after.x - start.x, after.z - start.z)
-    return Movement(after.x, after.y, after.z, heading, start.x, start.y, start.z, heading)
+    return Movement(after.x, after.y, after.z, heading, start.x, start.y, start.z, heading, true)
 }
 
 private fun headingFromDelta(dx: Int, dz: Int): Int {
