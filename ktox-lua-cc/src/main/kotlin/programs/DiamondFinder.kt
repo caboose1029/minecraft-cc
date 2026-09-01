@@ -72,47 +72,33 @@ import lib.restockChest
 // actual bedrock formation, which is typically a small local pocket, not
 // a full impassable layer.
 
+// Substring match rather than an exhaustive equality list: every ore here
+// follows Minecraft's "minecraft:[deepslate_]<ore>_ore" naming, so this
+// catches deepslate/stone variants (and any future variant) alike without
+// needing both spelled out - a gap that would otherwise silently miss
+// real ore (see AGENTS.md-adjacent history: deepslate_gold_ore was
+// already listed explicitly, but this makes that kind of gap impossible
+// instead of just checking it off one variant at a time).
 fun isValuableOre(name: String): Boolean {
-    if (name == "minecraft:diamond_ore") {
+    if (name.contains("diamond")) {
         return true
     }
-    if (name == "minecraft:deepslate_diamond_ore") {
+    if (name.contains("redstone")) {
         return true
     }
-    if (name == "minecraft:redstone_ore") {
+    if (name.contains("gold")) {
         return true
     }
-    if (name == "minecraft:deepslate_redstone_ore") {
+    if (name.contains("iron")) {
         return true
     }
-    if (name == "minecraft:gold_ore") {
+    if (name.contains("copper")) {
         return true
     }
-    if (name == "minecraft:deepslate_gold_ore") {
+    if (name.contains("lapis")) {
         return true
     }
-    if (name == "minecraft:iron_ore") {
-        return true
-    }
-    if (name == "minecraft:deepslate_iron_ore") {
-        return true
-    }
-    if (name == "minecraft:copper_ore") {
-        return true
-    }
-    if (name == "minecraft:deepslate_copper_ore") {
-        return true
-    }
-    if (name == "minecraft:lapis_ore") {
-        return true
-    }
-    if (name == "minecraft:deepslate_lapis_ore") {
-        return true
-    }
-    if (name == "minecraft:emerald_ore") {
-        return true
-    }
-    if (name == "minecraft:deepslate_emerald_ore") {
+    if (name.contains("emerald")) {
         return true
     }
     return false
