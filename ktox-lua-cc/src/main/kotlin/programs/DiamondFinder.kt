@@ -98,6 +98,9 @@ fun isValuableOre(name: String): Boolean {
     if (name.contains("copper")) {
         return true
     }
+    if (name.contains("zinc")) {
+        return true
+    }
     if (name.contains("lapis")) {
         return true
     }
