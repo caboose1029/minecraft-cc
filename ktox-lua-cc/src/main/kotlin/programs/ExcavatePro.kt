@@ -113,8 +113,23 @@ fun main(args: Array<String>) {
     // currently is, unlike a direct path to home which could run into
     // this layer's own placed step/torch or, at the very bottom, bedrock
     // on multiple sides at once.
-    val centerX = movement.homeX + rgtDx * (width / 2) + fwdDx * (length / 2)
-    val centerZ = movement.homeZ + rgtDz * (width / 2) + fwdDz * (length / 2)
+    //
+    // halfWidth/halfLength are computed by subtracting off the remainder
+    // BEFORE dividing, not via a plain `width / 2` - ktox transpiles `/`
+    // to Lua's `/`, which is always floating-point division regardless
+    // of operand types (unlike Kotlin's truncating Int/Int). For an odd
+    // width/length that silently produces a `.5` target coordinate that
+    // the turtle's always-integer tracked position can never equal, so
+    // navigateTo's `while m.x ~= targetX` loop toward it never
+    // terminates - confirmed live: 13/2 == 6 is false in the real
+    // CC:Tweaked Lua runtime (it's 6.5). Subtracting the remainder first
+    // guarantees the numerator is even, so the division result is always
+    // an exact whole number in both Kotlin and the transpiled Lua. See
+    // AGENTS.md.
+    val halfWidth = (width - width % 2) / 2
+    val halfLength = (length - length % 2) / 2
+    val centerX = movement.homeX + rgtDx * halfWidth + fwdDx * halfLength
+    val centerZ = movement.homeZ + rgtDz * halfWidth + fwdDz * halfLength
 
     val hasStaircase = width >= 2 && length >= 2
 
