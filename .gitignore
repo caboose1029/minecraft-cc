@@ -1,6 +1,7 @@
 # CraftOS-PC emulation
 .craftos/
 .craftos-test/
+.craftos-verify/
 
 # mise override
 mise.local.toml

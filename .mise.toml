@@ -5,9 +5,38 @@ lua = "5.2.4"
 description = "Launch with emulation at project root"
 run = "craftos --directory .craftos --mount /repo=$PWD"
 
-[tasks.bootstrap]
-description = "Launch emulation with moonman bootstrapped"
-run = "craftos --directory .craftos --mount /moonman=$PWD/moonman"
+[tasks.dev]
+description = "Launch emulation with the working-tree moonman mounted live"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+# Mirrors the installed layout: entry at /moonman.lua, library tree at
+# /moonman/. The tree is mounted from the working copy, so edits are live;
+# main.lua is copied because it lands at a different path than it has here.
+mkdir -p .craftos/computer/0
+cp moonman/main.lua .craftos/computer/0/moonman.lua
+craftos --directory .craftos --mount-ro /moonman=$PWD/moonman
+'''
+
+[tasks.manifest]
+description = "Regenerate dist/manifest.json from the repository contents"
+run = "python3 tools/gen_manifest.py"
+
+[tasks.manifest-check]
+description = "Fail if the committed manifest is out of date"
+run = "python3 tools/gen_manifest.py --check"
+
+[tasks."test:moonman"]
+description = "Run the off-device moonman test suite (fake ports, no emulator)"
+run = "lua tools/test_moonman.lua"
+
+[tasks.verify]
+description = "Boot CraftOS-PC and confirm require() resolves in an installed layout"
+run = "tools/verify_device.sh"
+
+[tasks.check]
+description = "Everything CI runs: manifest freshness plus both test suites"
+depends = ["manifest-check", "test:moonman", "verify"]
 
 [tasks.test]
 description = "Run a repo file headless in CraftOS-PC (path relative to repo root)"

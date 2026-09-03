@@ -1,11 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
   "runtime.version": "Lua 5.2",
-  "workspace.library": [
-    "types/cc-tweaked/library",
-    "types/avionics"
-  ],
+  "runtime.path": ["?.lua", "?/init.lua", "src/?.lua", "src/?/init.lua"],
+  "workspace.library": ["types/cc-tweaked/library", "types/avionics"],
   "workspace.checkThirdParty": false,
+  "workspace.ignoreDir": [".craftos", ".craftos-test", ".craftos-verify", "dist", "types"],
   "diagnostics.globals": ["sleep", "printError", "read", "write"],
   "diagnostics.disable": ["lowercase-global"]
 }

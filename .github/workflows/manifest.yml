@@ -1,0 +1,65 @@
+name: manifest
+
+# Regenerates dist/manifest.json on every branch, so that bootstrapping from a
+# dev branch always finds a manifest that matches that branch's contents.
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "src/**"
+      - "moonman/**"
+      - "tools/gen_manifest.py"
+      - ".github/workflows/manifest.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: manifest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+
+      # generated_at changes on every run, so --check compares everything else
+      # and tells us whether there is a real change worth committing.
+      - name: Check whether the manifest is stale
+        id: staleness
+        run: |
+          if python3 tools/gen_manifest.py --check; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Regenerate manifest
+        if: steps.staleness.outputs.stale == 'true'
+        run: python3 tools/gen_manifest.py
+
+      # Runs against the freshly generated manifest, so a manifest that moonman
+      # cannot actually consume never reaches the branch.
+      - name: Run moonman test suite
+        run: lua5.4 tools/test_moonman.lua
+
+      - name: Commit
+        if: steps.staleness.outputs.stale == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/manifest.json
+          git commit -m "chore: regenerate manifest for ${{ github.ref_name }}"
+          git push
