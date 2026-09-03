@@ -1,27 +1,194 @@
 {
-  "schema": 1,
+  "schema": 2,
+  "generated_at": "2026-09-03T01:16:58+00:00",
   "source": {
-    "base_url": "https://raw.githubusercontent.com/caboose1029/minecraft-cc/refs/heads/main/src"
+    "repo": "caboose1029/minecraft-cc",
+    "ref": "refactor/clean-code",
+    "manifest_path": "dist/manifest.json"
   },
-  "files": {
-    "player/caboose/test.lua": {
+  "moonman": {
+    "version": "0.2.0",
+    "files": [
+      {
+        "source": "moonman/main.lua",
+        "target": "moonman.lua"
+      },
+      {
+        "source": "moonman/app/config.lua",
+        "target": "moonman/app/config.lua"
+      },
+      {
+        "source": "moonman/app/context.lua",
+        "target": "moonman/app/context.lua"
+      },
+      {
+        "source": "moonman/app/installer.lua",
+        "target": "moonman/app/installer.lua"
+      },
+      {
+        "source": "moonman/app/packages.lua",
+        "target": "moonman/app/packages.lua"
+      },
+      {
+        "source": "moonman/app/selfupdate.lua",
+        "target": "moonman/app/selfupdate.lua"
+      },
+      {
+        "source": "moonman/app/state.lua",
+        "target": "moonman/app/state.lua"
+      },
+      {
+        "source": "moonman/app/sync.lua",
+        "target": "moonman/app/sync.lua"
+      },
+      {
+        "source": "moonman/cli/args.lua",
+        "target": "moonman/cli/args.lua"
+      },
+      {
+        "source": "moonman/cli/commands/config.lua",
+        "target": "moonman/cli/commands/config.lua"
+      },
+      {
+        "source": "moonman/cli/commands/help.lua",
+        "target": "moonman/cli/commands/help.lua"
+      },
+      {
+        "source": "moonman/cli/commands/info.lua",
+        "target": "moonman/cli/commands/info.lua"
+      },
+      {
+        "source": "moonman/cli/commands/install.lua",
+        "target": "moonman/cli/commands/install.lua"
+      },
+      {
+        "source": "moonman/cli/commands/list.lua",
+        "target": "moonman/cli/commands/list.lua"
+      },
+      {
+        "source": "moonman/cli/commands/remove.lua",
+        "target": "moonman/cli/commands/remove.lua"
+      },
+      {
+        "source": "moonman/cli/commands/search.lua",
+        "target": "moonman/cli/commands/search.lua"
+      },
+      {
+        "source": "moonman/cli/commands/selfupdate.lua",
+        "target": "moonman/cli/commands/selfupdate.lua"
+      },
+      {
+        "source": "moonman/cli/commands/sync.lua",
+        "target": "moonman/cli/commands/sync.lua"
+      },
+      {
+        "source": "moonman/cli/commands/update.lua",
+        "target": "moonman/cli/commands/update.lua"
+      },
+      {
+        "source": "moonman/cli/commands/use.lua",
+        "target": "moonman/cli/commands/use.lua"
+      },
+      {
+        "source": "moonman/cli/init.lua",
+        "target": "moonman/cli/init.lua"
+      },
+      {
+        "source": "moonman/domain/manifest.lua",
+        "target": "moonman/domain/manifest.lua"
+      },
+      {
+        "source": "moonman/domain/path.lua",
+        "target": "moonman/domain/path.lua"
+      },
+      {
+        "source": "moonman/domain/plan.lua",
+        "target": "moonman/domain/plan.lua"
+      },
+      {
+        "source": "moonman/domain/source.lua",
+        "target": "moonman/domain/source.lua"
+      },
+      {
+        "source": "moonman/platform/fs.lua",
+        "target": "moonman/platform/fs.lua"
+      },
+      {
+        "source": "moonman/platform/http.lua",
+        "target": "moonman/platform/http.lua"
+      },
+      {
+        "source": "moonman/platform/json.lua",
+        "target": "moonman/platform/json.lua"
+      },
+      {
+        "source": "moonman/platform/log.lua",
+        "target": "moonman/platform/log.lua"
+      },
+      {
+        "source": "moonman/version.lua",
+        "target": "moonman/version.lua"
+      }
+    ]
+  },
+  "modules": {
+    "pkg.test_package.main": {
+      "source": "src/pkg/test_package/main.lua",
       "dependencies": []
     },
-    "player/caboose/multi_test/test1.lua": {
+    "player.caboose.multi_test.main": {
+      "source": "src/player/caboose/multi_test/main.lua",
+      "dependencies": [
+        "share.test.sharetest"
+      ]
+    },
+    "player.caboose.multi_test.test2": {
+      "source": "src/player/caboose/multi_test/test2.lua",
       "dependencies": []
     },
-    "player/caboose/multi_test/test2.lua": {
+    "player.caboose.test": {
+      "source": "src/player/caboose/test.lua",
       "dependencies": []
     },
-    "share/test/sharetest.lua": {
+    "share.test.sharetest": {
+      "source": "src/share/test/sharetest.lua",
       "dependencies": []
     }
   },
-  "pkgs": {
+  "packages": {
+    "caboose/multi_test": {
+      "entry": "main.lua",
+      "files": [
+        {
+          "source": "src/player/caboose/multi_test/main.lua",
+          "target": "main.lua"
+        },
+        {
+          "source": "src/player/caboose/multi_test/test2.lua",
+          "target": "test2.lua"
+        }
+      ],
+      "dependencies": [
+        "share.test.sharetest"
+      ]
+    },
+    "caboose/test": {
+      "entry": "test.lua",
+      "files": [
+        {
+          "source": "src/player/caboose/test.lua",
+          "target": "test.lua"
+        }
+      ],
+      "dependencies": []
+    },
     "test_package": {
       "entry": "main.lua",
       "files": [
-        "pkg/test_package/main.lua"
+        {
+          "source": "src/pkg/test_package/main.lua",
+          "target": "main.lua"
+        }
       ],
       "dependencies": []
     }
