@@ -1,9 +1,9 @@
 {
   "schema": 2,
-  "generated_at": "2026-09-03T01:16:58+00:00",
+  "generated_at": "2026-09-03T04:03:35+00:00",
   "source": {
     "repo": "caboose1029/minecraft-cc",
-    "ref": "refactor/clean-code",
+    "ref": "main",
     "manifest_path": "dist/manifest.json"
   },
   "moonman": {
