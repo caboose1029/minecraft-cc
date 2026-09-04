@@ -47,6 +47,14 @@ class Movement(
     var z: Int = startZ
     var heading: Int = startHeading
 
+    // Counts blocks actually broken by forward()/up()/down()'s digging
+    // (turtleDig*() returning true — a real block removed, not just an
+    // already-clear space) — callers that need to notice "nothing left to
+    // dig here" (e.g. Digsite's clear-cut mode) can snapshot this before a
+    // sweep and compare after, without threading a separate counter
+    // through every caller.
+    var blocksDug: Int = 0
+
     fun turnLeft() {
         turtleTurnLeft()
         heading = (heading + 3) % 4
@@ -83,7 +91,9 @@ class Movement(
             this.applyDelta(MoveSign.FORWARD)
             return true
         }
-        turtleDig()
+        if (turtleDig()) {
+            blocksDug += 1
+        }
         if (turtleForward()) {
             this.applyDelta(MoveSign.FORWARD)
             return true
@@ -104,7 +114,9 @@ class Movement(
             y += 1
             return true
         }
-        turtleDigUp()
+        if (turtleDigUp()) {
+            blocksDug += 1
+        }
         if (turtleUp()) {
             y += 1
             return true
@@ -117,7 +129,9 @@ class Movement(
             y -= 1
             return true
         }
-        turtleDigDown()
+        if (turtleDigDown()) {
+            blocksDug += 1
+        }
         if (turtleDown()) {
             y -= 1
             return true

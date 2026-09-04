@@ -190,15 +190,34 @@ fun digsiteLayer(m: Movement, xSpan: IntSpan, zSpan: IntSpan, y: Int) {
 
 // -- Clear-cut mode: x/z footprint, floor = home Y, full layers upward --
 //
-// Just digsiteRoom with an auto-computed y-range: home Y as the floor,
-// CLEAR_CUT_HEIGHT blocks of full-layer sweeps above it. Sweeping every
-// layer in full (rather than following each column up until the first
-// gap) is what actually clears overhangs/floating terrain — a gap below
-// a column no longer stops that column's higher blocks from being dug,
-// since every other column at that same height gets visited regardless.
+// Sweeps full layers upward from home Y (the floor) like digsiteRoom would
+// over a fixed y-range, but bails out early once a whole layer dug nothing
+// — that means the turtle has climbed above the terrain (open air/sky on
+// every column), so grinding through the remaining CLEAR_CUT_HEIGHT layers
+// just to confirm it's still empty wastes fuel/time for no benefit. Sweeping
+// every layer in full (rather than following each column up until the first
+// gap) is what actually clears overhangs/floating terrain — a gap below a
+// column doesn't stop that column's higher blocks from being dug, since
+// every other column at that same height gets visited regardless — the
+// per-layer dug-count check preserves that: a layer only counts as "empty"
+// when NONE of its columns dug anything.
+//
+// The floor layer itself is never skipped by this check even if it happens
+// to dig nothing (e.g. the turtle started standing on bedrock/already-clear
+// ground) — the loop always completes at least one full layer before the
+// empty check can trigger a stop.
 
 fun clearCut(m: Movement, xSpan: IntSpan, zSpan: IntSpan) {
     val floorY = m.homeY
-    val ySpan = IntSpan(floorY, floorY + CLEAR_CUT_HEIGHT)
-    digsiteRoom(m, xSpan, ySpan, zSpan)
+    val yStep = stepFor(IntSpan(floorY, floorY + CLEAR_CUT_HEIGHT))
+    var y = floorY
+    while (!pastEnd(y, floorY + CLEAR_CUT_HEIGHT, yStep)) {
+        val dugBefore = m.blocksDug
+        digsiteLayer(m, xSpan, zSpan, y)
+        if (m.blocksDug == dugBefore) {
+            println("Layer at y=${y} dug nothing - assuming clear of terrain, stopping.")
+            return
+        }
+        y += yStep
+    }
 }
