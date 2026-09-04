@@ -45,6 +45,92 @@ Until that's fixed, `GhFetch.kt`'s `files` array (`src/main/kotlin/programs/GhFe
 - **A same-package Kotlin symbol still needs an explicit `import` for correct Lua output.** Kotlin doesn't require importing symbols from the same package, but ktox only emits `ktox_require(...)` for an explicitly imported symbol — even a same-package one. A `lib/` file that uses another `lib/` file's type (e.g. `Shape.kt` calling `IntSpan(...)` from `Span.kt`, both `package lib`) without writing `import lib.IntSpan` produces Lua that runs fine as long as *some other* already-loaded file happened to require the dependency first (easy to miss in testing), but fails standalone with `attempt to index global 'IntSpan' (a nil value)`. Always add the explicit same-package import for any type/function actually used, to make the generated file self-sufficient regardless of what else has already loaded.
 - **`Int / Int` division does NOT stay integer division in the transpiled Lua — confirmed live via CraftOS-PC.** Kotlin's `/` on two `Int`s truncates (`13 / 2` == `6`). ktox transpiles `/` literally to Lua's `/`, which is always floating-point division regardless of operand types — there's no int/float distinction in this Lua at all. So the same source line means different things in each language: the generated Lua computes `13 / 2` as `6.5`, not `6` (verified: `13/2 == 6` evaluates to `false` in the real runtime). This is silent and easy to miss whenever the divisor doesn't evenly divide the numerator at runtime (e.g. an odd width passed as a CLI arg) — the bug was found via ExcavatePro's `centerX`/`centerZ` (`width / 2`), where an odd `width`/`length` produced a `.5` target coordinate that the turtle's always-integer tracked position could never equal, so `navigateTo`'s convergence loop toward it never terminated (the turtle just dug a straight tunnel until something stopped it). Fix: never divide two Kotlin `Int`s directly if the result feeds a comparison, index, or anything else assuming a true integer — subtract off the remainder first so the numerator is guaranteed evenly divisible, e.g. `val half = (n - n % 2) / 2` (matches Kotlin's truncating semantics AND produces an exact whole number under Lua's float division, in both languages, for any sign/parity of `n`).
 
+## Runtime bug: "attempt to call global 'ktox_sourcemap_traceback' (a nil value)" (and similar for any ktox-lib.lua or lib/*.lua function)
+
+Not a codegen quirk (nothing wrong with the Kotlin or the transpiled Lua) —
+a real bug in how the ktox-lua plugin's vendored `ktox-lib.lua` runtime
+interacts with CC:Tweaked's per-program environment sandboxing. Confirmed
+by reading CraftOS-PC's actual `bios.lua`/`rom/programs/shell.lua` source
+(not guessed), and now worked around in `src/main/lua/startup.lua`.
+
+**Symptom:** the first program run after a reboot works; every subsequent
+program run (any program, not just the same one) fails with `attempt to
+call global '<some ktox-lib or lib/*.lua function>' (a nil value)`, until
+the turtle/computer is rebooted again.
+
+**Root cause:** `shell.lua`'s `executeProgram` gives every launched
+program its own fresh, private environment table — including its own
+fresh `require`/`package.loaded` (`cc/require.lua`'s `make_package`,
+called anew per program). Plain `function foo() ... end` definitions in a
+required file land in THAT table, not in the true shared `_G` (global
+reads fall through to `_G` via each env's `__index = _G` metatable, but
+writes never propagate back up). So the first program in a session to
+`require("ktox-lib")` defines `ktox_sourcemap_traceback`/`println`/
+`ktox_require`/etc. only in its OWN env — but `ktox-lib.lua`'s own
+top-of-file module guard (`if _G.ktox_lib_loaded then return end`) is
+keyed on the one true `_G`, so every later program's own fresh
+`require("ktox-lib")` immediately short-circuits on that guard without
+defining anything in ITS OWN env. Same failure mode one layer down for
+`lib/*.lua` files, via `ktox_require`'s own dedup cache (`_ktox_required`
+is a single closure upvalue shared for the whole session once
+`ktox_require` itself is real-global). A reboot resets the real `_G`,
+which is why exactly one program run works right after — then the next
+one poisons it again.
+
+**Fix (`src/main/lua/startup.lua`):** `dofile()` is special-cased in
+`bios.lua` to always load+run its target directly against the true `_G`
+(`loadfile(_sFile, nil, _G)`), regardless of the calling code's own
+environment — unlike a normal program run, or even this very
+startup.lua's own execution (it too runs through `shell.lua`'s sandboxed
+`executeProgram`, via `rom/startup.lua`'s `shell.run(v)`). So
+`startup.lua` now `dofile()`s `ktox-lib.lua` and every `lib/*.lua` file
+once, directly, at boot — making their definitions real, permanent
+globals visible (via inheritance) to every program launched for the rest
+of the session, with no working `require()`/`ktox_require()` needed by
+any of them ever again. The one wrinkle: real `_G` has no `require`
+global at all ("require... is part of the shell" per `shell.lua`'s own
+comment), and every `lib/*.lua` file's own top line is
+`require("ktox-lib")` — run with env=`_G` via `dofile`, that would crash
+immediately. `startup.lua` stubs `_G.require = function() end` first to
+make those top-level calls harmless no-ops; safe, since every actual
+dependency is `dofile`'d explicitly regardless of what those calls do,
+and it can't affect any real program's own `require()` later (each
+program's env always defines its own fresh `require`, shadowing this
+one). A second wrinkle, found by hitting it directly during testing (see
+below): `ktox-lib.lua`'s own module guard (`_G.ktox_lib_loaded`) can
+ALREADY be true by the time `startup.lua` gets to `dofile` it, if
+anything else required "ktox-lib" earlier in the session — which would
+make `startup.lua`'s own `dofile("ktox-lib.lua")` silently no-op too,
+defeating the whole fix. `startup.lua` force-resets
+`_G.ktox_lib_loaded = nil` immediately before its own `dofile` call to
+guarantee its load always actually happens, regardless of what ran
+before it.
+
+**New `lib/*.lua` file added?** Add its `dofile(...)` call to
+`startup.lua` too — same proactive-update requirement as `GhFetch.kt`'s
+`files` array.
+
+**Verification status:** confirmed root cause by reading the actual
+CC:Tweaked source (not guessed). Couldn't exercise the exact real-world
+scenario (reboot, run program A, then run a *different* program B
+without rebooting) end-to-end: `scripts/validate.sh`'s `--script` flag
+bypasses `/startup.lua` on its own (see its own header comment) by
+design, and headless CraftOS-PC doesn't appear to accept piped stdin as
+simulated keystrokes at the shell prompt (tried; input was never echoed
+or executed). But got close by accident: when the `--script` payload
+returns without error (e.g. `digsite -h`), CC:Tweaked's own
+`rom/startup.lua` continues past that point into running the real
+`/startup.lua` — and since the payload's own `Digsite.lua` already ran
+`require("ktox-lib")` first (poisoning the real `_G` guard exactly like
+a first program would), this exercises the actual failure mode and the
+fix for it. First version of this fix (without the guard reset above)
+reproducibly failed this way — `/lib/Span.lua:4: attempt to call global
+'ktox_sourcemap_traceback' (a nil value)` — while running `startup.lua`
+itself; adding the reset made it pass cleanly, 3/3 runs. Still worth
+confirming on a real
+turtle/computer: reboot, run any program successfully, then run a
+*different* program without rebooting and confirm it no longer fails.
+
 ## Roadmap (not yet built)
 
 - A startup script that auto-loads/syncs all Lua scripts from a GitHub host onto a turtle/computer at boot, so scripts don't need to be manually copied on each device.
