@@ -55,10 +55,15 @@ import lib.stepFor
 //   side/radius value in that slot (no separate "length" — see
 //   lib/Shape.kt for what each shape looks like):
 //     -t   isoceles triangle, base = <side>, apex pointing away from home.
+//          Home sits at the MIDDLE of the base, in line with the apex —
+//          not at a base corner — so fuel/cargo trips back to the chest
+//          never have to cut outside the triangle to get there.
 //     -rt  right isoceles triangle (both legs = <side>), right-angle
 //          vertex at home.
-//     -c   filled circle of the given <radius>, centered <radius> blocks
-//          right and forward of home.
+//     -c   filled circle of the given <radius>. Home sits ON the circle's
+//          edge, in line with its center (radius blocks forward of home,
+//          zero blocks to either side) — not at a corner of its bounding
+//          square — same reasoning as -t above.
 //
 // Fueling/storage: assumes a fuel chest directly behind the turtle's start
 // position, with overflow chests extending from there. ASSUMPTION (easy to
@@ -193,6 +198,26 @@ fun ensureFuelAndSpace(m: Movement) {
     }
 }
 
+// Like ensureFuelAndSpace, but for shaped footprints (see
+// digsiteLayerShaped below): detours to this row's spine cell first if a
+// service trip is actually needed. serviceAtBase() (via dumpCargo/
+// restockChest) navigates straight from wherever the turtle currently is
+// to the chest behind home — safe in rectangle mode, where home is a
+// corner of the bounding box, but NOT for an arbitrary mid-row column in
+// a circle/triangle, where that straight line can cut outside the shape
+// entirely (a "teardrop" spike toward the chest). Detouring to the spine
+// first - and mapping home to sit exactly on the spine's own line (see
+// digsiteLayerShaped) - means every leg of the resulting trip only ever
+// moves along a single axis that's guaranteed to already be inside the
+// shape: current column -> spine (same row, row bounds are contiguous)
+// then spine -> home (fixed column, spine valid at every row).
+fun ensureFuelAndSpaceShaped(m: Movement, spineX: Int, y: Int, spineZ: Int) {
+    if (needsService(m)) {
+        navigateTo(m, spineX, y, spineZ)
+        serviceAtBase(m)
+    }
+}
+
 fun serviceAtBase(m: Movement) {
     println("Returning to base to refuel/dump inventory...")
     val returnX = m.x
@@ -307,6 +332,15 @@ fun clearCut(m: Movement, layerFn: (Movement, Int) -> Unit) {
 // of every row, then sweeps outward from the spine to each edge of the
 // row's range and back. Never crosses a cell outside the shape, unlike a
 // naive full-bounding-box sweep would.
+//
+// Column-to-world mapping is offset by `-spine`, so world column 0 (home
+// itself) lines up with the spine rather than with one edge of row 0 —
+// i.e. home sits ON the shape's own centerline (in line with a circle's
+// center, or a triangle's apex-to-base line), not at a corner of its
+// bounding box. This is what makes ensureFuelAndSpaceShaped's fuel/cargo
+// trips below safe: home-to-spine and spine-to-spine legs then never
+// leave the shape's footprint. RIGHT_TRIANGLE's spine is already 0 (its
+// anchor corner IS its spine), so this offset is a no-op there.
 
 fun digsiteLayerShaped(
     m: Movement,
@@ -326,27 +360,27 @@ fun digsiteLayerShaped(
     while (row < rows) {
         val bounds = shapeRowBounds(shape, size, row)
         if (bounds != null) {
-            val spineX = homeX + rgtDx * spine + fwdDx * row
-            val spineZ = homeZ + rgtDz * spine + fwdDz * row
-            ensureFuelAndSpace(m)
+            val spineX = homeX + fwdDx * row
+            val spineZ = homeZ + fwdDz * row
+            ensureFuelAndSpaceShaped(m, spineX, y, spineZ)
             navigateTo(m, spineX, y, spineZ)
 
             var col = spine
             while (col > bounds.start) {
                 col -= 1
-                ensureFuelAndSpace(m)
-                navigateTo(m, homeX + rgtDx * col + fwdDx * row, y, homeZ + rgtDz * col + fwdDz * row)
+                ensureFuelAndSpaceShaped(m, spineX, y, spineZ)
+                navigateTo(m, homeX + rgtDx * (col - spine) + fwdDx * row, y, homeZ + rgtDz * (col - spine) + fwdDz * row)
             }
-            ensureFuelAndSpace(m)
+            ensureFuelAndSpaceShaped(m, spineX, y, spineZ)
             navigateTo(m, spineX, y, spineZ)
 
             col = spine
             while (col < bounds.finish) {
                 col += 1
-                ensureFuelAndSpace(m)
-                navigateTo(m, homeX + rgtDx * col + fwdDx * row, y, homeZ + rgtDz * col + fwdDz * row)
+                ensureFuelAndSpaceShaped(m, spineX, y, spineZ)
+                navigateTo(m, homeX + rgtDx * (col - spine) + fwdDx * row, y, homeZ + rgtDz * (col - spine) + fwdDz * row)
             }
-            ensureFuelAndSpace(m)
+            ensureFuelAndSpaceShaped(m, spineX, y, spineZ)
             navigateTo(m, spineX, y, spineZ)
         }
         row += 1
