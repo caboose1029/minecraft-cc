@@ -39,6 +39,7 @@ fun main() {
         "lib/Position.lua",
         "lib/Span.lua",
         "lib/Chest.lua",
+        "lib/Shape.lua",
         "Digsite.lua",
         "ExcavatePro.lua",
         "DiamondFinder.lua",
