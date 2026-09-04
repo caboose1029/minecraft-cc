@@ -82,10 +82,27 @@
 _G.ktox_lib_loaded = nil
 _G.require = function() end
 
-dofile("ktox-lib.lua")
-dofile("lib/Span.lua")
-dofile("lib/Position.lua")
-dofile("lib/Movement.lua")
-dofile("lib/Chest.lua")
-dofile("lib/Shape.lua")
-dofile("ktox-cc-shim.lua")
+-- Wrapped in pcall, not a bare dofile: a turtle whose files predate a
+-- newly-added dependency (e.g. this list itself just grew, but the
+-- turtle hasn't re-run ghfetch yet) would otherwise hard-error out of
+-- this whole chunk on the FIRST missing file — silently skipping every
+-- dofile after it too, including ktox-cc-shim.lua at the end, which has
+-- nothing to do with whatever was actually missing. Reported live: a
+-- reboot failing on a missing lib/Shape.lua (added the same time as this
+-- fix) because ghfetch hadn't been re-run since. Print a clear pointer
+-- to ghfetch and keep going instead, so everything else still loads.
+local function tryDofile(path)
+    local ok, err = pcall(dofile, path)
+    if not ok then
+        print("startup.lua: couldn't load " .. path .. " (" .. tostring(err) .. ")")
+        print("  -> run ghfetch to sync missing/updated files, then reboot.")
+    end
+end
+
+tryDofile("ktox-lib.lua")
+tryDofile("lib/Span.lua")
+tryDofile("lib/Position.lua")
+tryDofile("lib/Movement.lua")
+tryDofile("lib/Chest.lua")
+tryDofile("lib/Shape.lua")
+tryDofile("ktox-cc-shim.lua")
