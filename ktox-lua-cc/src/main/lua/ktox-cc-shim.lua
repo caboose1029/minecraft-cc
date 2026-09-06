@@ -70,3 +70,60 @@ function ktoxDownloadFile(url, path)
     file.close()
     return true
 end
+
+-- Monitor test-GUI helpers. Assumes exactly one monitor peripheral on the
+-- network (peripheral.find("monitor") returns the first match) — fine for
+-- a single-monitor test rig, not meant to generalize to multiple monitors.
+-- See common/Monitor.kt for the Kotlin side of this binding.
+
+function ktoxMonitorClear()
+    local m = peripheral.find("monitor")
+    if m == nil then
+        return false
+    end
+    m.setTextScale(1)
+    m.setBackgroundColor(colors.black)
+    m.clear()
+    return true
+end
+
+-- monitor.getSize() returns 2 values in Lua; packed as a comma-joined
+-- string, same idiom as ktoxGpsLocate. See lib/Position.kt for the parsed
+-- gps equivalent this mirrors.
+function ktoxMonitorGetSize()
+    local m = peripheral.find("monitor")
+    if m == nil then
+        return nil
+    end
+    local w, h = m.getSize()
+    return tostring(w) .. "," .. tostring(h)
+end
+
+-- Draws a solid, centered-label rectangle "button" at (x, y), size (w, h),
+-- filled with the given CC:Tweaked color constant.
+function ktoxMonitorDrawButton(x, y, w, h, text, bgColor)
+    local m = peripheral.find("monitor")
+    if m == nil then
+        return false
+    end
+    m.setBackgroundColor(bgColor)
+    m.setTextColor(colors.white)
+    local row = 0
+    while row < h do
+        m.setCursorPos(x, y + row)
+        m.write(string.rep(" ", w))
+        row = row + 1
+    end
+    local labelX = x + math.floor((w - #text) / 2)
+    local labelY = y + math.floor(h / 2)
+    m.setCursorPos(labelX, labelY)
+    m.write(text)
+    return true
+end
+
+-- Blocks until the monitor is touched; returns the touch coords packed as
+-- a comma-joined "x,y" string (side is discarded — single-monitor rig).
+function ktoxWaitMonitorTouch()
+    local _, _, x, y = os.pullEvent("monitor_touch")
+    return tostring(x) .. "," .. tostring(y)
+end
