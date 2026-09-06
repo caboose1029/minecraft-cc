@@ -1,0 +1,137 @@
+# AGENTS.md
+
+## Workflow preference
+
+For any non-trivial task in this repo:
+
+1. **Plan first.** Before writing code, produce a concrete implementation plan.
+2. **Ask questions proactively, before finalizing the plan.** Do not guess at requirements, library APIs, folder layout, or tool behavior. If something is unverified or ambiguous, either research it to ground the plan in fact, or ask the user directly — do not present assumptions as decided facts.
+3. **Do not make assumptions.** If a detail matters and isn't known, ask for more info rather than picking a default silently.
+4. **Implement only after alignment** on the plan.
+
+This applies to build/tooling changes, new turtle programs, and changes to the CC/turtle API headers alike.
+
+## Project summary
+
+Kotlin sources are transpiled to Lua via the `ktox-lua` Gradle plugin (`com.isycat.ktox.lua`) for use with Minecraft ComputerCraft/CC:Tweaked — turtles and Create-mod automation. Kotlin is the source of truth; generated `.lua` output is committed so it can be inspected/deployed without rebuilding.
+
+**This is a subproject of [caboose1029/minecraft-cc](https://github.com/caboose1029/minecraft-cc)**, living at `ktox-lua-cc/` alongside his `moonman` package manager. The Gradle build writes generated Lua straight into the monorepo's shared `src/pkg/player/8durt/` tree (not a local `outputDir/`) — moonman's manifest already serves everything under `src/` via a single `raw.githubusercontent.com` base URL, so this needs no changes to `moonman.lua` to be servable. See the PR description / commit history for why (a git submodule was considered and rejected: `raw.githubusercontent.com` and jsDelivr both 404 on paths inside a submodule directory, since the parent repo's tree only stores a commit-SHA pointer there, not the actual blobs — verified empirically before choosing the monorepo-copy approach instead).
+
+Known gap, deliberately not addressed by this PR: moonman's `sync` command flattens every downloaded file to the CC computer's root (`fs.getName(sourcePath)`, basename only), discarding directory structure. That would break `require("lib/Movement")`-style calls the moment someone actually runs `sync` against a multi-file package here (ours or his `test_package`). Raised with the moonman author separately; out of scope for this PR.
+
+Until that's fixed, `GhFetch.kt`'s `files` array (`src/main/kotlin/programs/GhFetch.kt`) is the only way scripts actually reach a fresh turtle/computer, and it's a hand-maintained list — nothing derives it automatically. **Every new program or `lib/` file must be proactively added to that array** (and regenerated via `./gradlew transpileKotlinToLua wireProgramEntryPoints`) as part of the same change, or it will silently be missing from `ghfetch` runs. Drop this requirement once moonman's `sync` is fixed and this project can rely on his manifest/sync instead.
+
+- `src/main/kotlin/common/` — header declarations binding to CC/turtle Lua globals that already exist at runtime (`turtle`, `os`, `term`, `fs`, `gps`, ...) via the `@NativeName` + `externalSource()` idiom. ktox has no built-in knowledge of these APIs, so these headers are hand-maintained. Functions that return multiple Lua values (`gps.locate()`, `turtle.inspect()`) bind through a hand-written shim instead — see below.
+- `src/main/kotlin/lib/` — shared hand-written Kotlin logic (real generated code, not native bindings): position/movement tracking, parsing helpers, etc. Reusable across programs.
+- `src/main/kotlin/programs/` — actual turtle/computer programs, one file per program, each with its own `main()` (or `main(args: Array<String>)` for programs that take shell arguments — see the ktox quirks below for how args actually get wired up). **Every file here shares the same Kotlin `package programs`, compiled as one unit** — a helper with the same name+signature in two program files (e.g. both defining their own `navigateTo`/`IntSpan`/`stepFor`) is a genuine Kotlin compile error ("Conflicting overloads"/"Overload resolution ambiguity"), not just a style nit, and `private` on the top-level declaration does NOT fix it (Kotlin requires top-level names to be unique per package regardless of visibility). This is unrelated to the Lua side, where each program file runs standalone with no collision at all — the constraint is purely a Kotlin/JVM one. Until shared logic like this is worth promoting to `lib/`, the working fix is renaming the second program's copy (e.g. an `ep`-style prefix) — see ExcavatePro.kt's `EpSpan`/`epStepFor`/etc.
+- `src/main/lua/` — hand-written Lua that ships alongside the transpiled output: `ktox-cc-shim.lua` (multi-return native-call wrappers) and `startup.lua` (loads the shim at boot; will grow into the GitHub-sync startup script from the roadmap). Copied into the output tree by a Gradle task, not ktox-generated.
+- `../src/pkg/player/8durt/` — generated Lua output (committed), one level up in the monorepo's shared source tree, not under this subproject.
+- `scripts/` — local tooling, e.g. CraftOS-PC validation helper.
+
+## ktox quirks (found by inspecting real transpiled output — verify empirically before writing more code that might hit these)
+
+- **`?: return` breaks codegen.** `foo() ?: return null` transpiles to invalid Lua (`ktox_elvis(foo(), return nil)` — `return` isn't a valid expression there). Use an explicit `if (x == null) { return null }` block instead.
+- **Same-class method calls need an explicit `this.` prefix.** Calling a sibling method from within another method of the same class without `this.` transpiles to a bare global call (e.g. `turnRight()` instead of `self:turnRight()`), which fails at runtime with "attempt to call a nil value". Always write `this.otherMethod()` for intra-class calls.
+- **`List`/`Array` `[]` indexing is not offset-corrected.** Kotlin is 0-indexed, Lua tables are 1-indexed, but ktox transpiles `list[i]` to the literal Lua index `list[i]` with no adjustment — `list[0]` is always `nil`, and `list[1]` gets Kotlin's `list[0]` element. Write indices as 1-based on purpose when directly indexing (`list[1]` for the first element), and comment why.
+- **String literals containing `[` or `]` produce invalid Lua and fail to load entirely** (`invalid escape sequence near '\['`). Never use square brackets in a Kotlin string literal that gets transpiled — rephrase (e.g. parens instead of brackets in usage messages).
+- **CC shell args need manual wiring.** `fun main()` (zero-arg) is special-cased: ktox makes it `local function main()` and auto-appends a call. `fun main(args: Array<String>)` transpiles to a plain **global** `function main(args)` with no auto-invocation — CC's shell args arrive via `...` at the top of the file. A Gradle task (`wireProgramEntryPoints` in `build.gradle.kts`) appends `main({...})` after transpilation for any entry point using this signature.
+- **Lua reserved words used as Kotlin identifiers transpile literally and break the output.** A parameter/property named `end` (e.g. `fun pastEnd(current: Int, end: Int, ...)`, or a data class field `val end: Int`) transpiles to `end` verbatim, producing invalid Lua (`<name> or '...' expected near 'end'` — confirmed via `scripts/validate.sh`, the file fails to load at all, not just at the call site). ktox does no renaming/escaping. Avoid Lua keywords (`end`, `local`, `function`, `then`, `repeat`, `until`, `nil`, `not`, `and`, `or`, ...) as Kotlin names anywhere they might appear in generated output.
+- **`return if (cond) A else B` is dangerous when A can be `false`/`nil`.** ktox compiles this single-expression form to Lua's `(cond and A or B)` idiom. That's only equivalent to a real ternary when A is never falsy — if A evaluates to `false` (a boolean expression) or `nil`, Lua's `and` short-circuits to `false`, which is itself falsy, so `or` falls through to B *regardless of cond*. Confirmed in production: `fun pastEnd(current, limit, step): Boolean { return if (step > 0) current > limit else current < limit }` transpiled to `(step > 0 and current > limit or current < limit)` — whenever `step > 0` and `current > limit` was `false` (the common "keep looping" case), it wrongly fell through to evaluate `current < limit` instead, so ascending loops using it terminated after ~0 iterations. Fix: write it as a real if/else block with separate `return` statements (see `pastEnd`), which ktox compiles to a genuine Lua `if/then/end`. Rule of thumb: never use the single-expression `return if (...) A else B` form when A or B is a `Boolean` or nullable expression — only safe for values that are always truthy in Lua (non-zero numbers, non-nil objects, non-empty strings — note `0` and `""` ARE truthy in Lua, unlike some languages).
+- **Function-type parameters (lambdas) work, but a multi-statement branch used as an if/else expression value inside one does not.** Passing `(Int) -> Boolean`-style closures and calling them is fine, verified via CraftOS-PC — including one captured in a `val` and one passed as an inline trailing-lambda literal. But `{ name -> if (cond) { sideEffect(); true } else { false } }` (an if/else *expression* — used as the lambda's implicit last-line return — where a branch needs more than one statement) transpiles to `(cond and (function() sideEffect() true end)() or false)`: ktox wraps the multi-statement branch in an IIFE but forgets to put `return` before its final value, so the generated Lua is `... true end)() ...` — a bare `true` as a statement, which is invalid Lua ("unexpected symbol near 'true'", fails to load at all). This is a distinct bug from the one above (it reproduces even when both branches are literal `true`/`false`, so it's not the and/or-falsy trap) — it's specifically the IIFE-wrapping step dropping `return`. Fix: don't use if/else as an expression when a branch has side effects; use an explicit mutable local instead — `var handled = false; if (cond) { sideEffect(); handled = true }; handled` — which transpiles to a plain `if/then/end` followed by `return handled`, confirmed working via CraftOS-PC (side effects ran exactly once, correct boolean out).
+- **`MutableList` has no real runtime backing — confirmed broken, not just unverified.** `mutableListOf<Int>()` transpiles to a plain empty Lua table `{}` with no methods attached, and `.add()`/`.removeAt()`/`.isEmpty()` transpile to naive method calls (`stack:add(5)`, `ktox_isEmpty(stack)`) that assume support that doesn't exist — confirmed via CraftOS-PC: `attempt to call method 'add' (a nil value)`. The underlying Lua table itself is perfectly capable of acting as a dynamic list (`table.insert`/`table.remove` exist natively) — this is a gap in what ktox generates, not a Lua limitation. If a real growable list is needed, it'd have to be a hand-written shim function using `table.insert`/`table.remove` directly (same idiom as `ktoxDownloadFile` etc. in `ktox-cc-shim.lua`), not `MutableList`. For a *bounded* stack/queue, prefer plain recursion (see `followVein` in DiamondFinder.kt) — confirmed working, including self-recursive calls, and it gives you backtracking for free via the call stack.
+- **`Array(size) { init }` (the sized-constructor-with-lambda form) is also broken — no `Array` runtime class exists.** Transpiles to `Array:new(size, function() ... end)`, which fails with `attempt to index global 'Array' (a nil value)` since nothing defines a global `Array` table. `arrayOf(a, b, c, ...)` with explicit literal elements (already used throughout this codebase) is unaffected and works fine — this is specifically about the sized/lambda-initialized constructor form.
+- **String `+` concatenation is broken — transpiles to numeric arithmetic, not Lua's `..`.** `"a" + "b" + c` (even where all operands are `String`) produces a runtime error at the `+` site (`attempt to perform arithmetic on a string value`) rather than concatenating. Always use string templates (`"${a}${b}${c}"`) instead, which are confirmed working throughout this codebase and compile to proper `..` chains.
+- **`enum class` compiles to a Lua table declared `local` — breaks cross-file usage.** Confirmed via CraftOS-PC: `enum class ShapeKind { TRIANGLE, ... }` transpiles to `local ShapeKind = {}` at the top of its generated file. That's invisible to any other file's `ktox_require(...)` of it — e.g. a program file referencing `ShapeKind.TRIANGLE` from a `lib/` file's enum fails at runtime with `attempt to index global 'ShapeKind' (a nil value)`, even though the file loaded and ran without error up to that point. Works fine ONLY when every reference stays inside the same generated file (e.g. `MoveSign` in `lib/Movement.kt`, never used outside it). For anything referenced across files, use plain top-level `const val` constants instead (`String` or `Int`) — those transpile to genuine global assignments (e.g. `SHAPE_TRIANGLE = "TRIANGLE"`), same as `FUEL_SAFETY_MARGIN`-style constants already in this codebase.
+- **A same-package Kotlin symbol still needs an explicit `import` for correct Lua output.** Kotlin doesn't require importing symbols from the same package, but ktox only emits `ktox_require(...)` for an explicitly imported symbol — even a same-package one. A `lib/` file that uses another `lib/` file's type (e.g. `Shape.kt` calling `IntSpan(...)` from `Span.kt`, both `package lib`) without writing `import lib.IntSpan` produces Lua that runs fine as long as *some other* already-loaded file happened to require the dependency first (easy to miss in testing), but fails standalone with `attempt to index global 'IntSpan' (a nil value)`. Always add the explicit same-package import for any type/function actually used, to make the generated file self-sufficient regardless of what else has already loaded.
+- **`Int / Int` division does NOT stay integer division in the transpiled Lua — confirmed live via CraftOS-PC.** Kotlin's `/` on two `Int`s truncates (`13 / 2` == `6`). ktox transpiles `/` literally to Lua's `/`, which is always floating-point division regardless of operand types — there's no int/float distinction in this Lua at all. So the same source line means different things in each language: the generated Lua computes `13 / 2` as `6.5`, not `6` (verified: `13/2 == 6` evaluates to `false` in the real runtime). This is silent and easy to miss whenever the divisor doesn't evenly divide the numerator at runtime (e.g. an odd width passed as a CLI arg) — the bug was found via ExcavatePro's `centerX`/`centerZ` (`width / 2`), where an odd `width`/`length` produced a `.5` target coordinate that the turtle's always-integer tracked position could never equal, so `navigateTo`'s convergence loop toward it never terminated (the turtle just dug a straight tunnel until something stopped it). Fix: never divide two Kotlin `Int`s directly if the result feeds a comparison, index, or anything else assuming a true integer — subtract off the remainder first so the numerator is guaranteed evenly divisible, e.g. `val half = (n - n % 2) / 2` (matches Kotlin's truncating semantics AND produces an exact whole number under Lua's float division, in both languages, for any sign/parity of `n`).
+
+## Runtime bug: "attempt to call global 'ktox_sourcemap_traceback' (a nil value)" (and similar for any ktox-lib.lua or lib/*.lua function)
+
+Not a codegen quirk (nothing wrong with the Kotlin or the transpiled Lua) —
+a real bug in how the ktox-lua plugin's vendored `ktox-lib.lua` runtime
+interacts with CC:Tweaked's per-program environment sandboxing. Confirmed
+by reading CraftOS-PC's actual `bios.lua`/`rom/programs/shell.lua` source
+(not guessed), and now worked around in `src/main/lua/startup.lua`.
+
+**Symptom:** the first program run after a reboot works; every subsequent
+program run (any program, not just the same one) fails with `attempt to
+call global '<some ktox-lib or lib/*.lua function>' (a nil value)`, until
+the turtle/computer is rebooted again.
+
+**Root cause:** `shell.lua`'s `executeProgram` gives every launched
+program its own fresh, private environment table — including its own
+fresh `require`/`package.loaded` (`cc/require.lua`'s `make_package`,
+called anew per program). Plain `function foo() ... end` definitions in a
+required file land in THAT table, not in the true shared `_G` (global
+reads fall through to `_G` via each env's `__index = _G` metatable, but
+writes never propagate back up). So the first program in a session to
+`require("ktox-lib")` defines `ktox_sourcemap_traceback`/`println`/
+`ktox_require`/etc. only in its OWN env — but `ktox-lib.lua`'s own
+top-of-file module guard (`if _G.ktox_lib_loaded then return end`) is
+keyed on the one true `_G`, so every later program's own fresh
+`require("ktox-lib")` immediately short-circuits on that guard without
+defining anything in ITS OWN env. Same failure mode one layer down for
+`lib/*.lua` files, via `ktox_require`'s own dedup cache (`_ktox_required`
+is a single closure upvalue shared for the whole session once
+`ktox_require` itself is real-global). A reboot resets the real `_G`,
+which is why exactly one program run works right after — then the next
+one poisons it again.
+
+**Fix (`src/main/lua/startup.lua`):** `dofile()` is special-cased in
+`bios.lua` to always load+run its target directly against the true `_G`
+(`loadfile(_sFile, nil, _G)`), regardless of the calling code's own
+environment — unlike a normal program run, or even this very
+startup.lua's own execution (it too runs through `shell.lua`'s sandboxed
+`executeProgram`, via `rom/startup.lua`'s `shell.run(v)`). So
+`startup.lua` now `dofile()`s `ktox-lib.lua` and every `lib/*.lua` file
+once, directly, at boot — making their definitions real, permanent
+globals visible (via inheritance) to every program launched for the rest
+of the session, with no working `require()`/`ktox_require()` needed by
+any of them ever again. The one wrinkle: real `_G` has no `require`
+global at all ("require... is part of the shell" per `shell.lua`'s own
+comment), and every `lib/*.lua` file's own top line is
+`require("ktox-lib")` — run with env=`_G` via `dofile`, that would crash
+immediately. `startup.lua` stubs `_G.require = function() end` first to
+make those top-level calls harmless no-ops; safe, since every actual
+dependency is `dofile`'d explicitly regardless of what those calls do,
+and it can't affect any real program's own `require()` later (each
+program's env always defines its own fresh `require`, shadowing this
+one). A second wrinkle, found by hitting it directly during testing (see
+below): `ktox-lib.lua`'s own module guard (`_G.ktox_lib_loaded`) can
+ALREADY be true by the time `startup.lua` gets to `dofile` it, if
+anything else required "ktox-lib" earlier in the session — which would
+make `startup.lua`'s own `dofile("ktox-lib.lua")` silently no-op too,
+defeating the whole fix. `startup.lua` force-resets
+`_G.ktox_lib_loaded = nil` immediately before its own `dofile` call to
+guarantee its load always actually happens, regardless of what ran
+before it.
+
+**New `lib/*.lua` file added?** Add its `dofile(...)` call to
+`startup.lua` too — same proactive-update requirement as `GhFetch.kt`'s
+`files` array.
+
+**Verification status:** confirmed root cause by reading the actual
+CC:Tweaked source (not guessed). Couldn't exercise the exact real-world
+scenario (reboot, run program A, then run a *different* program B
+without rebooting) end-to-end: `scripts/validate.sh`'s `--script` flag
+bypasses `/startup.lua` on its own (see its own header comment) by
+design, and headless CraftOS-PC doesn't appear to accept piped stdin as
+simulated keystrokes at the shell prompt (tried; input was never echoed
+or executed). But got close by accident: when the `--script` payload
+returns without error (e.g. `digsite -h`), CC:Tweaked's own
+`rom/startup.lua` continues past that point into running the real
+`/startup.lua` — and since the payload's own `Digsite.lua` already ran
+`require("ktox-lib")` first (poisoning the real `_G` guard exactly like
+a first program would), this exercises the actual failure mode and the
+fix for it. First version of this fix (without the guard reset above)
+reproducibly failed this way — `/lib/Span.lua:4: attempt to call global
+'ktox_sourcemap_traceback' (a nil value)` — while running `startup.lua`
+itself; adding the reset made it pass cleanly, 3/3 runs. Still worth
+confirming on a real
+turtle/computer: reboot, run any program successfully, then run a
+*different* program without rebooting and confirm it no longer fails.
+
+## Roadmap (not yet built)
+
+- A startup script that auto-loads/syncs all Lua scripts from a GitHub host onto a turtle/computer at boot, so scripts don't need to be manually copied on each device.
+- Real turtle.* validation in CraftOS-PC. The [craftos2-turtle](https://github.com/MCJack123/craftos2-turtle) plugin has no precompiled release and no build script (C++ source only) — building it means reverse-engineering CraftOS-PC's internal plugin SDK. Until that's done, `scripts/validate.sh` validates everything except live turtle.* calls (syntax, ktox-lib runtime, `os.*`/`term.*`/`fs.*` bindings against real CC:Tweaked Lua 5.1).
