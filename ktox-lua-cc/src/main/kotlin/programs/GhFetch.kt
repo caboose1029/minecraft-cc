@@ -54,6 +54,7 @@ fun main(args: Array<String>) {
         "lib/RoleCheck.lua",
         "lib/Planner.lua",
         "lib/PassiveFeeder.lua",
+        "lib/Farm.lua",
         "lib/Cli.lua",
         "common/Monitor.lua",
         "common/Peripheral.lua",

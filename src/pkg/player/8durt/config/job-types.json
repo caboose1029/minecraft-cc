@@ -13,7 +13,8 @@
       "minecraft:iron_ingot",
       "minecraft:gold_ingot",
       "minecraft:copper_ingot",
-      "create:zinc_ingot"
+      "create:zinc_ingot",
+      "minecraft:charcoal"
     ],
     "kind": "machine"
   },
@@ -57,5 +58,30 @@
   "chest_crafter": {
     "produces": ["minecraft:chest"],
     "kind": "crafter"
+  },
+  "wood_farm": {
+    "kind": "farm",
+    "watermarks": [
+      { "item": "minecraft:oak_log", "lowWatermark": 64, "highWatermark": 256 }
+    ]
+  },
+  "kelp_farm": {
+    "kind": "farm",
+    "watermarks": [
+      { "item": "minecraft:kelp", "lowWatermark": 128, "highWatermark": 512 }
+    ]
+  },
+  "iron_andesite_farm": {
+    "kind": "farm",
+    "watermarks": [
+      { "item": "minecraft:iron_ingot", "lowWatermark": 64, "highWatermark": 256 },
+      { "item": "minecraft:andesite", "lowWatermark": 64, "highWatermark": 256 }
+    ]
+  },
+  "copper_farm": {
+    "kind": "farm",
+    "watermarks": [
+      { "item": "minecraft:copper_ingot", "lowWatermark": 64, "highWatermark": 256 }
+    ]
   }
 }

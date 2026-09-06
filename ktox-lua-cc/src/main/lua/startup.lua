@@ -113,6 +113,7 @@ tryDofile("lib/Executor.lua")
 tryDofile("lib/RoleCheck.lua")
 tryDofile("lib/Planner.lua")
 tryDofile("lib/PassiveFeeder.lua")
+tryDofile("lib/Farm.lua")
 tryDofile("lib/Cli.lua")
 
 -- Auto-launch the configured terminal role (see TerminalSetup.kt /

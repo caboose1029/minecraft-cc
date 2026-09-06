@@ -5,6 +5,7 @@ import common.ktoxConfigRelayForJob
 import common.ktoxConfigStorageVaultNames
 import lib.findRecipe
 import lib.jobKind
+import lib.manageFarms
 import lib.topUpPassiveFeeders
 import lib.recipeInputCount
 import lib.recipeInputCountAt
@@ -101,5 +102,9 @@ fun main() {
 
     println("--- topUpPassiveFeeders (no real peripherals - should not crash) ---")
     topUpPassiveFeeders()
+    println("done")
+
+    println("--- manageFarms (no real peripherals - should not crash) ---")
+    manageFarms()
     println("done")
 }

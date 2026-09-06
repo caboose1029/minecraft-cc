@@ -1,7 +1,8 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/PassiveFeeder.kt", {["1-7"]=1,["8"]=21,["9"]=22,["10-11"]=23,["12"]=25,["13"]=26,["14"]=27,["15"]=28,["16"]=29,["17"]=30,["18"]=31,["19"]=32,["20"]=33,["21"]=34,["22-23"]=35,["24-27"]=37}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/PassiveFeeder.kt", {["1-8"]=1,["9"]=33,["10"]=34,["11-12"]=35,["13"]=37,["14"]=38,["15"]=39,["16"]=40,["17"]=41,["18"]=42,["19"]=43,["20"]=44,["21"]=45,["22"]=46,["23"]=47,["24-25"]=48,["26-29"]=50}, "lib")
+ktox_require("lib/Planner")
 ktox_require("lib/Inventory")
 
 function topUpPassiveFeeders()
@@ -19,6 +20,7 @@ function topUpPassiveFeeders()
         local high = ktox_toInt(ktox_toDouble(cols[4]))
         local current = ktoxInventoryCountNamed(vaultName, itemName)
         if current < low then
+            ensureStocked(itemName, high, 0)
             pullFromStoragePool(vaultName, itemName, high - current)
         end
         i = ktox_plusAssign(i, 1)

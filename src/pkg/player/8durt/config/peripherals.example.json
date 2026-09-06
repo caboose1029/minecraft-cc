@@ -105,5 +105,23 @@
       "type": "feeder",
       "job": { "type": "washing" }
     }
+  },
+  "create:item_vault_16": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:charcoal",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
+  },
+  "computercraft:redstone_relay_2": {
+    "type": "relay",
+    "connections": {
+      "right": { "job": { "type": "wood_farm" } },
+      "left": { "job": { "type": "kelp_farm" } },
+      "top": { "job": { "type": "iron_andesite_farm" } },
+      "bottom": { "job": { "type": "copper_farm" } }
+    }
   }
 }

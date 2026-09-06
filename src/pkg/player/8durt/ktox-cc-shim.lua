@@ -456,6 +456,33 @@ function ktoxConfigJobKind(jobType)
     return "machine"
 end
 
+-- Every configured farm (job-types.json entries with kind == "farm" — an
+-- always-running external process, gated on/off by a relay based on
+-- watermarks on its own output(s) in the storage pool, see PLAN.md).
+-- Packed the same way as a recipe's inputs (comma within one watermark,
+-- semicolon between watermarks, since an item ID's own colon rules out
+-- colon as a field separator — see the resource-tree packing comment
+-- above): "jobType|item1,low1,high1;item2,low2,high2". Newline-joined,
+-- one row per farm. Empty string if none configured.
+function ktoxConfigAllFarms()
+    local config = ktoxReadJSONFile("config/job-types.json")
+    if config == nil then
+        return ""
+    end
+    local lines = {}
+    for jobType, entry in pairs(config) do
+        if entry.kind == "farm" and entry.watermarks ~= nil then
+            local parts = {}
+            for _, watermark in pairs(entry.watermarks) do
+                parts[#parts + 1] = watermark.item .. "," .. tostring(watermark.lowWatermark) .. "," ..
+                    tostring(watermark.highWatermark)
+            end
+            lines[#lines + 1] = jobType .. "|" .. table.concat(parts, ";")
+        end
+    end
+    return table.concat(lines, "\n")
+end
+
 -- The pickup vault's peripheral name (job.type == "pickup") — where
 -- `pull`/`craft` results are pushed for a player to grab, since a turtle
 -- targeting its OWN inventory as a named peripheral is not reliably

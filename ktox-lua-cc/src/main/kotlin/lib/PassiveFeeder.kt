@@ -2,6 +2,7 @@ package lib
 
 import common.ktoxConfigPassiveFeeders
 import common.ktoxInventoryCountNamed
+import lib.ensureStocked
 import lib.pullFromStoragePool
 
 // Passive feeders (job.type "passive" — a vault sitting above a
@@ -17,6 +18,17 @@ import lib.pullFromStoragePool
 // with anyway. A head that sits fully idle won't top up passive feeders
 // until the next command — an accepted, disclosed limitation, not
 // something worth a timer's complexity for phase 1.
+//
+// Calls ensureStocked() (the phase-2 planner) before pulling, not just a
+// flat pull from the pool — a passive feeder should be able to trigger
+// real production when the pool itself is short, not just redistribute
+// whatever happens to already exist. The motivating case: a Blaze
+// Burner's charcoal supply is a passive feeder, and charcoal only
+// exists in the pool via the smelter job (log -> charcoal) consuming
+// logs from an always-running wood farm (see lib/Farm.kt) — a flat pool
+// pull alone would never actually smelt more. Targets the feeder's own
+// `high` watermark as the pool-level goal (a reasonable heuristic, not
+// exact accounting for what's already been pulled — see PLAN.md).
 fun topUpPassiveFeeders() {
     val raw = ktoxConfigPassiveFeeders()
     if (raw == "") {
@@ -32,6 +44,7 @@ fun topUpPassiveFeeders() {
         val high = cols[4].toDouble().toInt()
         val current = ktoxInventoryCountNamed(vaultName, itemName)
         if (current < low) {
+            ensureStocked(itemName, high, 0)
             pullFromStoragePool(vaultName, itemName, high - current)
         }
         i += 1

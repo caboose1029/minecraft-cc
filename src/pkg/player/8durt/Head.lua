@@ -1,8 +1,9 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Head.kt", {["1-9"]=1,["10"]=31,["11"]=32,["12"]=33,["13"]=34,["14-15"]=35,["16"]=38,["17"]=39,["18"]=40,["19-20"]=41,["21"]=44,["22"]=45,["23-27"]=46,["28-32"]=52,["33"]=57,["34"]=58,["35-38"]=59,["39"]=67,["40"]=68,["41-42"]=69,["43"]=71,["44"]=72,["45"]=73,["46-47"]=74,["48"]=76,["49"]=77,["50-56"]=78}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Head.kt", {["1-10"]=1,["11"]=32,["12"]=33,["13"]=34,["14"]=35,["15-16"]=36,["17"]=39,["18"]=40,["19"]=41,["20-21"]=42,["22"]=45,["23"]=46,["24-28"]=47,["29"]=53,["30-34"]=54,["35"]=59,["36"]=60,["37-40"]=61,["41"]=69,["42"]=70,["43-44"]=71,["45"]=73,["46"]=74,["47"]=75,["48-49"]=76,["50"]=78,["51"]=79,["52-58"]=80}, "programs")
 ktox_require("lib/RoleCheck")
+ktox_require("lib/Farm")
 ktox_require("lib/Cli")
 ktox_require("lib/PassiveFeeder")
 
@@ -26,6 +27,7 @@ local function main()
             return handleRemoteMessage()
         end)
         topUpPassiveFeeders()
+        manageFarms()
     end
 end
 

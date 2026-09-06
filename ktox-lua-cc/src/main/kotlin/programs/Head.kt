@@ -13,6 +13,7 @@ import lib.VAULT_CMD_PROTOCOL
 import lib.VAULT_ROLE_QUERY_PROTOCOL
 import lib.VAULT_ROLE_REPLY_PROTOCOL
 import lib.VAULT_RESULT_PROTOCOL
+import lib.manageFarms
 import lib.queryForHead
 import lib.runCliCommand
 import lib.topUpPassiveFeeders
@@ -50,6 +51,7 @@ fun main() {
         // Opportunistic, not on an independent timer — see
         // lib/PassiveFeeder.kt for why.
         topUpPassiveFeeders()
+        manageFarms()
     }
 }
 

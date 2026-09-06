@@ -165,12 +165,68 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
   see the code comment for why). This is a narrower, much more
   tractable version of the #3b factory-balancing idea floated earlier
   and deferred entirely — "maintain N of item X" needs none of the
-  cross-item-precedence logic that made #3b hard.
+  cross-item-precedence logic that made #3b hard. The top-up itself calls
+  `ensureStocked()` (the phase-2 planner) before pulling from the pool,
+  not just a flat pull — so a passive feeder can trigger real production
+  when the pool itself is short (e.g. a Blaze Burner's charcoal supply
+  triggers the `smelter` job smelting logs, not just redistributing
+  whatever charcoal already happens to exist).
 
 Stockpile Switch is a good fit for storage-vault fullness (aggregate fill
 %, doesn't care about item identity) but **not** for per-item shortage
 detection on a mixed vault — that still requires software-side counting
 via `list()`/`getItemDetail`. Not wired up in phase 1; noted for later.
+
+## Farms
+
+A **farm** (`job-types.json` entries with `kind: "farm"`) is an external,
+always-running process this system can gate on/off — a cobblestone
+generator feeding a crushing/washing chain, a kelp farm, a wood farm.
+This system doesn't know or care how a farm works internally (chance-
+based crushing, mob farming, crop farming — the internal mechanism is
+irrelevant); it's just a relay toggle plus a list of outputs to watch in
+the storage pool:
+
+```json
+"iron_andesite_farm": {
+  "kind": "farm",
+  "watermarks": [
+    { "item": "minecraft:iron_ingot", "lowWatermark": 64, "highWatermark": 256 },
+    { "item": "minecraft:andesite", "lowWatermark": 64, "highWatermark": 256 }
+  ]
+}
+```
+
+`manageFarms()` (`lib/Farm.kt`) turns a farm **on** if ANY tracked output
+is below its low watermark (something's genuinely short), and **off**
+only once ALL tracked outputs are above their high watermark — a
+multi-output farm (like the one above) only shuts off once every output
+it's responsible for is oversupplied, since turning it off while even
+one is still short would starve that one. Left alone in the hysteresis
+band between low and high, same reasoning as passive feeders (avoids
+flapping on/off near a threshold). Called opportunistically after each
+head interaction, same mechanism and same "not a real timer" reasoning
+as `topUpPassiveFeeders()` — a head sitting fully idle won't gate farms
+until its next command, an accepted limitation for the same reason.
+
+This is why farms exist as a *concept* separate from jobs at all: a farm
+that produces something via a chance-based recipe (Splashing's Gravel →
+Flint 25%/Iron Nugget 12.5%, for instance) can never be modeled as a job
+(no guaranteed yield to poll for), but it very much *can* be watched and
+gated based on its own accumulated output — the farm doesn't need to
+know or report how much it made this cycle, the system just checks the
+pool periodically and decides whether the tap should be open or closed.
+A handful of always-on farms with no gating at all risk quickly
+saturating storage precisely because they never stop — this is the
+actual motivating problem manageFarms() solves.
+
+**A farm's own inputs are the same "raw material" question as an**
+**ungated one** — `wood_farm` produces `minecraft:oak_log` with no
+resource-tree.json entry needed at all (nothing converts *into* a log in
+this system; it just appears via the farm). Downstream consumers (the
+`smelter` job's `oak_log → charcoal` recipe, say) treat farm output
+exactly like any other stocked item — the farm boundary is invisible to
+everything past the storage pool.
 
 ## Redstone control
 
@@ -334,12 +390,18 @@ schema even before considering yield), and it's explicitly "endless" —
 always running, nothing ever needs to start or stop it. That's exactly
 the mining/farming-turtle pattern from early design: an external process
 that just continuously dumps output into a storage vault. Nothing in
-`resource-tree.json` represents this chain at all; the system only picks
-up *after* the farm's output lands in storage (iron ingot → iron sheet,
-already modeled). A general lesson worth keeping: **any Create recipe
-with a percentage chance instead of a guaranteed count belongs in the
-farm bucket, not the job bucket** — don't try to force one in later
-without re-deriving this same conclusion.
+`resource-tree.json` represents this chain's internal steps at all —
+`job-types.json`'s `iron_andesite_farm` entry (see "Farms" above) treats
+it as a black box, watching only the final iron ingot/andesite counts
+and toggling a relay to gate the whole apparatus on or off, exactly like
+`wood_farm`, `kelp_farm`, and `copper_farm`. The system only ever reasons
+about what's *inside* the recipe graph after the farm's output lands in
+storage (iron ingot → iron sheet, already modeled). A general lesson
+worth keeping: **any Create recipe with a percentage chance instead of a
+guaranteed count belongs in the farm bucket, not the job bucket** — it
+can still be watched and gated as a farm, just never expressed as a
+resource-tree recipe — don't try to force one in later without
+re-deriving this same conclusion.
 
 **Redstone relays are optional per job, confirmed necessary by real
 research** (see `lib/Executor.kt`'s `runDirectJob`): plenty of real
