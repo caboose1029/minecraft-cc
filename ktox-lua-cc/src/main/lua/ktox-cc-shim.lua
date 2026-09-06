@@ -321,9 +321,12 @@ function ktoxInventoryListPooled(sourceNamesCsv)
     return table.concat(lines, "\n")
 end
 
--- Config loading. All three files live under config/ and are 100%
--- player-maintained (see PLAN.md) — ghfetch must never fetch or
--- overwrite them. A "job" descriptor is recursive: {type = "<kind>",
+-- Config loading. All three files live under config/. Only
+-- peripherals.json is player-owned (see PLAN.md) — ghfetch must never
+-- fetch or overwrite it. job-types.json and resource-tree.json describe
+-- the game's recipe graph, not per-world physical facts, so they ARE
+-- fetched/overwritten on every ghfetch run, same as any program file. A
+-- "job" descriptor is recursive: {type = "<kind>",
 -- job = <nested job, optional>} — a feeder vault's job nests the machine
 -- it feeds, e.g. {type="feeder", job={type="mechanical_press_depot"}}.
 -- These loaders read + JSON-decode the whole file per call (small files,

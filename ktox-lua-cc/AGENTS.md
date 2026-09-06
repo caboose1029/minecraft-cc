@@ -28,6 +28,22 @@ Until that's fixed, `GhFetch.kt`'s `files` array (`src/main/kotlin/programs/GhFe
 - `../src/pkg/player/8durt/` — generated Lua output (committed), one level up in the monorepo's shared source tree, not under this subproject.
 - `scripts/` — local tooling, e.g. CraftOS-PC validation helper.
 
+## Modpack
+
+The vault terminal's `config/job-types.json`/`config/resource-tree.json` (see `ktox-lua-cc/PLAN.md`) are built against this specific mod list — **Minecraft 1.21.1, NeoForge**. Source of truth for what's installed: `ls -a ~/Downloads/Mods8.16.2026` on the user's machine (that directory name is just where the jars happen to sit, not itself meaningful). Snapshot as of 2026-09-07:
+
+- **Create 6.0.10** — the core automation mod this whole project targets. Primary source for job-types/resource-tree entries.
+- **Create Aeronautics (bundled) 1.3.0** — Create addon, airship/aeronautics-focused. New machines/recipes possible; lower confidence than base Create.
+- **Create: Enchantment Industry 2.4.2** — Create addon automating enchanting.
+- **Create Dragons Plus 1.11.7b** — Create addon, dragon-themed content.
+- **Create Food (createfood) 2.7.1** — Create addon integrating food processing with Create's mechanical systems.
+- **Slice & Dice 4.3.3** — Create-compatible food-processing addon.
+- **Farmer's Delight 1.3.2** — standalone cooking/farming mod (cooking pot, mixing bowl, new crops) with no inherent Create dependency, but a common Create-ecosystem pairing.
+- **Bits n Bobs 0.0.44**, **Climbable Ropes 2.1.1**, **Sable 2.0.3**, **Display Delight 1.7.0** — smaller/decorative-leaning mods; lowest confidence on exact recipes, least likely to matter for automation.
+- Everything else in the list is client-side/utility/performance/API-only, not a recipe source: BetterF3, Clumps, Distant Horizons, Jade + JadeAddons, NoChatReports, AppleSkin, Architectury, cloth-config, FTB Chunks/Library/Teams, JEI (recipe *viewer*, adds none), Kotlin for Forge, Lithium, Sodium, CC:Tweaked itself (the automation platform, not a production mod).
+
+**Confidence levels matter here** — base Create and vanilla Minecraft recipes are well-established, high-confidence knowledge; the smaller addons are not, and this list should be treated as a starting point to verify in-game (e.g. against JEI, which is installed) rather than an authoritative recipe source on its own. Update this section (and re-derive job-types/resource-tree) if the mod list changes.
+
 ## ktox quirks (found by inspecting real transpiled output — verify empirically before writing more code that might hit these)
 
 - **`?: return` breaks codegen.** `foo() ?: return null` transpiles to invalid Lua (`ktox_elvis(foo(), return nil)` — `return` isn't a valid expression there). Use an explicit `if (x == null) { return null }` block instead.

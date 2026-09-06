@@ -194,9 +194,22 @@ via `list()`/`getItemDetail`. Not wired up in phase 1; noted for later.
 ## Configs (JSON — confirmed native via `textutils.serializeJSON`/
 `unserializeJSON`; no XML support exists in CC:Tweaked at all)
 
-**1. `peripherals.json`** — maps peripheral name → type/job. 100% player-
-maintained (this encodes physical facts about a specific world, which the
-code must never hardcode). Example shape:
+**Ownership split, revised:** only `peripherals.json` is 100% player-owned
+— it encodes physical facts about one specific world (which peripheral
+sits where), which the code must never hardcode and `ghfetch` must never
+overwrite; the player maintains it starting from the shipped
+`peripherals.example.json` template. `job-types.json` and
+`resource-tree.json` describe the *game's* recipe graph — the same
+across every world running this mod list — so they're centrally
+maintained in this repo and **fetched fresh every `ghfetch` run**,
+overwriting whatever's on the turtle, same as any other program file.
+That's a change from the original plan (all three were meant to be
+player-owned) — recipes are objective facts about the modpack, not
+per-world configuration, so keeping them in sync centrally is strictly
+better than asking every player to hand-maintain their own copy.
+
+**1. `peripherals.json`** — maps peripheral name → type/job. Example
+shape:
 
 A "job" is recursive — `{"type": "<kind>", "job"?: <nested job>}` — so a
 feeder vault's job nests the machine it feeds:
