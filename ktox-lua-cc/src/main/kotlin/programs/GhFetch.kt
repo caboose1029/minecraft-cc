@@ -4,21 +4,27 @@ import common.fsMakeDir
 import common.ktoxDownloadFile
 
 // Pulls Digsite and its dependencies onto a fresh turtle/computer, straight
-// from GitHub. Each entry is a path relative to REPO_BASE and also the
+// from GitHub. Each entry is a path relative to the repo base and also the
 // local path it's saved to, preserving directory structure — unlike
 // moonman's `sync`, which flattens every file to the CC root via
 // fs.getName() and would break require("lib/Movement") the moment this
 // package's files land there. See AGENTS.md.
 //
-// REPO_BASE points at the feat/add-ktox-lua-cc branch since main doesn't
-// have src/pkg/player/8durt yet — move it to refs/heads/main (matching
-// moonman's manifest convention) once that branch merges.
+// DEFAULT_BRANCH is feat/add-ktox-lua-cc since main doesn't have
+// src/pkg/player/8durt yet — move it to "main" (matching moonman's
+// manifest convention) once that branch merges.
 //
-// Usage: ghfetch (no args)
+// Usage: ghfetch [branch]
+//   - branch (optional): git ref to fetch from, e.g. a feature branch
+//     you're iterating on. Defaults to DEFAULT_BRANCH when omitted.
 
-const val REPO_BASE = "https://raw.githubusercontent.com/caboose1029/minecraft-cc/feat/add-ktox-lua-cc/src/pkg/player/8durt"
+const val DEFAULT_BRANCH = "feat/add-ktox-lua-cc"
 
-fun main() {
+fun main(args: Array<String>) {
+    val branch = if (args.size >= 1) args[1] else DEFAULT_BRANCH
+    val repoBase = "https://raw.githubusercontent.com/caboose1029/minecraft-cc/${branch}/src/pkg/player/8durt"
+    println("Fetching from branch: ${branch}")
+
     val dirs = arrayOf("lib")
     var d = 1
     while (d <= dirs.size) {
@@ -50,7 +56,7 @@ fun main() {
     var failures = 0
     while (i <= files.size) {
         val path = files[i]
-        val url = "${REPO_BASE}/${path}"
+        val url = "${repoBase}/${path}"
         println("Fetching ${path}...")
         val ok = ktoxDownloadFile(url, path)
         if (ok) {
