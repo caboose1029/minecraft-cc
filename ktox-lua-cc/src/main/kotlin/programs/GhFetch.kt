@@ -51,9 +51,12 @@ fun main(args: Array<String>) {
         "lib/Inventory.lua",
         "lib/Config.lua",
         "lib/Executor.lua",
+        "lib/RoleCheck.lua",
         "lib/Cli.lua",
         "common/Monitor.lua",
         "common/Peripheral.lua",
+        "common/Rednet.lua",
+        "common/Parallel.lua",
         "config/peripherals.example.json",
         "config/job-types.example.json",
         "config/resource-tree.example.json",
@@ -63,6 +66,8 @@ fun main(args: Array<String>) {
         "TestMonitor.lua",
         "TestConfig.lua",
         "Terminal.lua",
+        "Head.lua",
+        "Secondary.lua",
         "GhFetch.lua",
     )
 

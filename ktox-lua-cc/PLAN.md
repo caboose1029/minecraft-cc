@@ -272,6 +272,18 @@ does.
 
 ## Known open items (not blocking phase 1, listed so they aren't lost)
 
+- **Head/secondary rednet + `parallel.waitForAny` is unverified in-game.**
+  Implemented (`programs/Head.kt`/`Secondary.kt`, `common/Rednet.kt`,
+  `common/Parallel.kt`) and confirmed to load/compile/run its no-modem
+  and no-head-found fallback paths cleanly via CraftOS-PC, but the actual
+  multi-computer behavior — role collision detection finding a real
+  second head, a secondary's command actually reaching the head and a
+  result coming back, `parallel.waitForAny` genuinely multiplexing local
+  `read()` against `rednet.receive` — has never been exercised, since
+  that needs two real computers with real modems and there's no headless
+  emulation for either. **Test this first**, before relying on any
+  multi-terminal setup: boot a head, boot a secondary, confirm a command
+  round-trips, then boot a second head and confirm it refuses to start.
 - Storage-vault load balancing (push-to-emptiest, farm→vault preference
   routing) — problem #3b territory, deferred.
 - Stockpile Switch integration for fast vault-fullness queries — deferred.

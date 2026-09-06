@@ -464,3 +464,71 @@ function ktoxConfigJobTimeoutSeconds(jobType)
     end
     return -1
 end
+
+-- Rednet helpers. See PLAN.md's "Terminal roles" section for the
+-- protocol this supports (head/secondary, role collision detection,
+-- command forwarding). rednet.open needs a peripheral/side NAME, but
+-- Kotlin code shouldn't need to know or care which modem that is — this
+-- finds the first one present, wired or wireless (rednet itself works
+-- over either, see PLAN.md).
+--
+-- rednet.receive returns THREE values (senderId, message, protocol) —
+-- Kotlin can't express that directly, so rather than pack them into one
+-- delimited string (risky: command/response text can contain almost any
+-- character, so no safe delimiter exists), the three values are cached
+-- here and exposed via three separate single-value getters. Not
+-- reentrant, but this project only ever has one receive in flight per
+-- computer at a time. Kotlin side: common/Rednet.kt.
+
+local ktoxRednetLastSenderIdValue = nil
+local ktoxRednetLastMessageValue = nil
+local ktoxRednetLastProtocolValue = nil
+
+function ktoxRednetOpenAny()
+    for _, name in ipairs(peripheral.getNames()) do
+        if peripheral.getType(name) == "modem" then
+            rednet.open(name)
+            return true
+        end
+    end
+    return false
+end
+
+-- Listens for a message on ANY protocol (the head needs this — it has
+-- to handle more than one message kind on one inbound channel).
+function ktoxRednetReceiveAny(timeoutSeconds)
+    local senderId, message, protocol = rednet.receive(timeoutSeconds)
+    if senderId == nil then
+        return false
+    end
+    ktoxRednetLastSenderIdValue = senderId
+    ktoxRednetLastMessageValue = message
+    ktoxRednetLastProtocolValue = protocol
+    return true
+end
+
+-- Listens for a message on one specific protocol only — used wherever
+-- the expected reply kind is already known (a role reply, a command
+-- result), to avoid an unrelated message being mistaken for it.
+function ktoxRednetReceiveProtocol(protocol, timeoutSeconds)
+    local senderId, message = rednet.receive(protocol, timeoutSeconds)
+    if senderId == nil then
+        return false
+    end
+    ktoxRednetLastSenderIdValue = senderId
+    ktoxRednetLastMessageValue = message
+    ktoxRednetLastProtocolValue = protocol
+    return true
+end
+
+function ktoxRednetLastSenderId()
+    return ktoxRednetLastSenderIdValue
+end
+
+function ktoxRednetLastMessage()
+    return ktoxRednetLastMessageValue
+end
+
+function ktoxRednetLastProtocol()
+    return ktoxRednetLastProtocolValue
+end
