@@ -1,8 +1,15 @@
 {
   "smelter": {
-    "produces": ["minecraft:iron_ingot", "minecraft:copper_ingot"]
+    "produces": ["minecraft:iron_ingot", "minecraft:copper_ingot"],
+    "kind": "machine"
   },
   "mechanical_press_depot": {
-    "produces": ["create:iron_sheet", "create:copper_sheet"]
+    "produces": ["create:iron_sheet", "create:copper_sheet"],
+    "kind": "machine"
+  },
+  "mixer_basin": {
+    "produces": ["create:brass_ingot"],
+    "kind": "machine",
+    "timeoutSeconds": 45
   }
 }

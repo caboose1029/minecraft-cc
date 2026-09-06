@@ -52,6 +52,12 @@ fun ktoxListCatalog(sourceNamesCsv: String, filter: String, substring: String): 
 @NativeName("ktoxConfigJobTimeoutSeconds")
 fun ktoxConfigJobTimeoutSecondsRaw(jobType: String): Int = externalSource()
 
+@NativeName("ktoxConfigJobKind")
+fun ktoxConfigJobKind(jobType: String): String = externalSource()
+
+@NativeName("ktoxInventoryIsEmpty")
+fun ktoxInventoryIsEmpty(vaultName: String): Boolean = externalSource()
+
 // Inventory helpers (ktox-cc-shim.lua) — see lib/Inventory.kt for the
 // idiomatic wrapper.
 

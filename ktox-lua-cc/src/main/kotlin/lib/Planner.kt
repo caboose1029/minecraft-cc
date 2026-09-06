@@ -1,20 +1,24 @@
 package lib
 
 import lib.ceilDiv
-import lib.findDirectConversion
+import lib.findRecipe
 import lib.jobTimeoutSeconds
+import lib.recipeInputCount
+import lib.recipeInputCountAt
+import lib.recipeInputItem
 import lib.runDirectJob
 import lib.storagePoolCount
 
 // Phase 2: the recursive planner (see PLAN.md — deferred behind phase 1
 // on purpose, only attempted once everything else was solid). Chains
-// multiple job levels when a *direct* recipe's own input isn't stocked
-// either (raw log -> stripped log -> casing), which lib/Executor.kt's
-// single-hop runDirectJob deliberately does not attempt.
+// multiple job levels when a recipe's own input isn't stocked either
+// (raw copper -> copper ingot -> copper sheet), and now also handles
+// recipes with more than one ingredient (brass: copper AND zinc) by
+// recursing into every input, not just one.
 //
 // Design note: rather than building an explicit ordered job-list data
 // structure (ktox has no working MutableList/growable collection to
-// hold one — see AGENTS.md), this recurses into the missing INPUT
+// hold one — see AGENTS.md), this recurses into each missing input
 // first, then runs the current level's job — so jobs naturally execute
 // in dependency order (deepest missing ingredient first) purely via
 // normal call-stack unwinding. No job-list needed at all.
@@ -39,20 +43,26 @@ fun ensureStocked(itemName: String, desiredCount: Int, depth: Int): Int {
     }
 
     val shortfall = desiredCount - currentStock
-    val conversion = findDirectConversion(itemName)
-    if (conversion == null) {
+    val recipe = findRecipe(itemName)
+    if (recipe == null) {
         return currentStock
     }
 
-    val batchesNeeded = ceilDiv(shortfall, conversion.outputCount)
-    val inputNeeded = batchesNeeded * conversion.inputCount
-    // Recurse into the input FIRST — guarantees it exists (as far as the
-    // chain can produce it) before this level's own job runs, so the
-    // deepest missing ingredient always gets made before anything that
-    // depends on it.
-    ensureStocked(conversion.inputName, inputNeeded, depth + 1)
+    val batchesNeeded = ceilDiv(shortfall, recipe.outputCount)
+    val inputCount = recipeInputCount(recipe)
+    var i = 1
+    while (i <= inputCount) {
+        val inputItem = recipeInputItem(recipe, i)
+        val perBatch = recipeInputCountAt(recipe, i)
+        // Recurse into each input FIRST — guarantees they exist (as far
+        // as the chain can produce them) before this level's own job
+        // runs, so the deepest missing ingredient always gets made
+        // before anything that depends on it.
+        ensureStocked(inputItem, batchesNeeded * perBatch, depth + 1)
+        i += 1
+    }
 
-    val timeout = jobTimeoutSeconds(conversion.jobType)
-    runDirectJob(conversion, shortfall, timeout)
+    val timeout = jobTimeoutSeconds(recipe.jobType)
+    runDirectJob(recipe, shortfall, timeout)
     return storagePoolCount(itemName)
 }

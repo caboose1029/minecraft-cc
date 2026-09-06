@@ -205,6 +205,20 @@ function ktoxInventoryCountNamed(sourceNamesCsv, itemName)
     return total
 end
 
+-- Whether the named inventory has nothing in it at all. Used to wait for
+-- a feeder vault to actually drain before pushing the next ingredient in
+-- a multi-ingredient job (see lib/Executor.kt's interleaved push) —
+-- dumping several stacks of one ingredient before the other arrives can
+-- clog the funnel/basin downstream (confirmed by observation in-game).
+-- Treats a missing peripheral as "empty" (nothing to wait for).
+function ktoxInventoryIsEmpty(vaultName)
+    local inv = peripheral.wrap(vaultName)
+    if inv == nil then
+        return true
+    end
+    return next(inv.list()) == nil
+end
+
 -- Pulls up to `desired` total of the named item out of `fromName` (a
 -- single source inventory) into `toName`, stopping early once enough has
 -- been moved or the source runs out. Returns how many were actually
@@ -353,21 +367,54 @@ end
 -- Packed as "inputName,jobType,inputCount,outputCount". "MISSING" if no
 -- direct (single-hop) recipe produces it — multi-hop chains are phase 2
 -- (see PLAN.md), this only ever finds one level.
+-- config/resource-tree.json is a flat recipe list (not keyed by a single
+-- input) so multi-ingredient recipes (brass: copper + zinc) and shaped
+-- crafter recipes (a turtle-craft ingredient pinned to a specific grid
+-- slot) both fit — see PLAN.md. Each recipe: {output, outputCount, job,
+-- inputs: [{item, count, slot?}, ...]}. "slot" is only present for
+-- crafter-kind recipes (a turtle's 3x3 crafting grid position);
+-- omitted/nil for ordinary machine recipes.
+--
+-- Packed as "jobType|outputCount|item1,count1,slot1;item2,count2,slot2"
+-- (slot blank when absent) rather than JSON, since Kotlin has no JSON
+-- parser and no working growable collection to hold a variable number of
+-- parsed inputs anyway (see AGENTS.md) — the Kotlin side re-splits this
+-- string per-access instead of materializing a parsed list. Comma (not
+-- colon) separates the fields within one input, since an item ID's own
+-- namespace separator IS a colon ("minecraft:copper_ingot") — confirmed
+-- live: colon-delimited packing broke immediately on the first real item
+-- name, since splitting "minecraft:copper_ingot:1:" on ":" doesn't give
+-- back 3 fields, it gives back 4. "MISSING" if no recipe produces this
+-- output at all.
 function ktoxConfigProducesLookup(outputName)
     local tree = ktoxReadJSONFile("config/resource-tree.json")
-    if tree ~= nil then
-        for inputName, entry in pairs(tree) do
-            if entry.convertsTo ~= nil then
-                for _, conversion in pairs(entry.convertsTo) do
-                    if conversion.output == outputName then
-                        return inputName .. "," .. conversion.job .. "," ..
-                            tostring(conversion.inputCount) .. "," .. tostring(conversion.outputCount)
+    if tree ~= nil and tree.recipes ~= nil then
+        for _, recipe in pairs(tree.recipes) do
+            if recipe.output == outputName and recipe.inputs ~= nil then
+                local inputParts = {}
+                for _, input in pairs(recipe.inputs) do
+                    local slot = ""
+                    if input.slot ~= nil then
+                        slot = tostring(input.slot)
                     end
+                    inputParts[#inputParts + 1] = input.item .. "," .. tostring(input.count) .. "," .. slot
                 end
+                return recipe.job .. "|" .. tostring(recipe.outputCount) .. "|" .. table.concat(inputParts, ";")
             end
         end
     end
     return "MISSING"
+end
+
+-- The execution kind for a job type ("machine" or "crafter"), from
+-- config/job-types.json's optional "kind" field. Defaults to "machine"
+-- when absent (every job type before crafty turtles existed).
+function ktoxConfigJobKind(jobType)
+    local config = ktoxReadJSONFile("config/job-types.json")
+    if config ~= nil and config[jobType] ~= nil and config[jobType].kind ~= nil then
+        return config[jobType].kind
+    end
+    return "machine"
 end
 
 -- The pickup vault's peripheral name (job.type == "pickup") — where
@@ -416,19 +463,32 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
     end
 
     local tree = ktoxReadJSONFile("config/resource-tree.json")
-    local convertsFrom = {}
-    if tree ~= nil then
-        for inputName, entry in pairs(tree) do
-            noteItem(inputName)
-            if entry.convertsTo ~= nil then
-                for _, conversion in pairs(entry.convertsTo) do
-                    noteItem(conversion.output)
-                    if convertsFrom[conversion.output] == nil then
-                        convertsFrom[conversion.output] = inputName
-                    end
+    local recipeFor = {}
+    if tree ~= nil and tree.recipes ~= nil then
+        for _, recipe in pairs(tree.recipes) do
+            noteItem(recipe.output)
+            if recipe.inputs ~= nil then
+                for _, input in pairs(recipe.inputs) do
+                    noteItem(input.item)
+                end
+                if recipeFor[recipe.output] == nil then
+                    recipeFor[recipe.output] = recipe
                 end
             end
         end
+    end
+
+    -- "craftable" (one hop only - see PLAN.md's known gap) needs EVERY
+    -- input of the recipe to be stocked, not just one, now that recipes
+    -- can have multiple ingredients (brass: copper AND zinc).
+    local function allInputsStocked(recipe)
+        for _, input in pairs(recipe.inputs) do
+            local have = totals[input.item]
+            if have == nil or have <= 0 then
+                return false
+            end
+        end
+        return true
     end
 
     local lines = {}
@@ -439,7 +499,7 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
             local status
             if count > 0 then
                 status = "stocked"
-            elseif convertsFrom[name] ~= nil and totals[convertsFrom[name]] ~= nil and totals[convertsFrom[name]] > 0 then
+            elseif recipeFor[name] ~= nil and allInputsStocked(recipeFor[name]) then
                 status = "craftable"
             else
                 status = "unavailable"

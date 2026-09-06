@@ -1,32 +1,37 @@
 {
-  "minecraft:raw_copper": {
-    "convertsTo": [
-      {
-        "output": "minecraft:copper_ingot",
-        "job": "smelter",
-        "inputCount": 1,
-        "outputCount": 1
-      }
-    ]
-  },
-  "minecraft:copper_ingot": {
-    "convertsTo": [
-      {
-        "output": "create:copper_sheet",
-        "job": "mechanical_press_depot",
-        "inputCount": 1,
-        "outputCount": 1
-      }
-    ]
-  },
-  "minecraft:iron_ingot": {
-    "convertsTo": [
-      {
-        "output": "create:iron_sheet",
-        "job": "mechanical_press_depot",
-        "inputCount": 1,
-        "outputCount": 1
-      }
-    ]
-  }
+  "recipes": [
+    {
+      "output": "minecraft:copper_ingot",
+      "outputCount": 1,
+      "job": "smelter",
+      "inputs": [
+        { "item": "minecraft:raw_copper", "count": 1 }
+      ]
+    },
+    {
+      "output": "create:copper_sheet",
+      "outputCount": 1,
+      "job": "mechanical_press_depot",
+      "inputs": [
+        { "item": "minecraft:copper_ingot", "count": 1 }
+      ]
+    },
+    {
+      "output": "create:iron_sheet",
+      "outputCount": 1,
+      "job": "mechanical_press_depot",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 1 }
+      ]
+    },
+    {
+      "output": "create:brass_ingot",
+      "outputCount": 1,
+      "job": "mixer_basin",
+      "inputs": [
+        { "item": "minecraft:copper_ingot", "count": 1 },
+        { "item": "minecraft:zinc_ingot", "count": 1 }
+      ]
+    }
+  ]
 }

@@ -151,42 +151,72 @@ feeder vault's job nests the machine it feeds:
 }
 ```
 
-**2. `job-types.json`** — what each job type can produce. Semi-hardcoded
-but editable (new modpacks/items mean this needs updating over time).
-Seeded with a couple of illustrative entries only — NOT an attempt at a
-complete Create recipe database, to avoid fabricating game data that turns
-out wrong:
+**2. `job-types.json`** — what each job type can produce, its execution
+`kind` (`"machine"` — redstone relay + feeder vault; `"crafter"` — a
+crafty turtle running `turtle.craft()`; defaults to `"machine"` when
+omitted, so every job type from before crafty turtles existed still
+works unchanged), and an optional per-job `timeoutSeconds` override.
+Semi-hardcoded but editable (new modpacks/items mean this needs updating
+over time). Seeded with a couple of illustrative entries only — NOT an
+attempt at a complete Create recipe database, to avoid fabricating game
+data that turns out wrong:
 
 ```json
 {
-  "smelter": { "produces": ["minecraft:iron_ingot", "minecraft:copper_ingot"] },
-  "mechanical_press_depot": { "produces": ["create:iron_sheet", "create:copper_sheet"] }
+  "smelter": { "produces": ["minecraft:iron_ingot", "minecraft:copper_ingot"], "kind": "machine" },
+  "mechanical_press_depot": { "produces": ["create:iron_sheet", "create:copper_sheet"], "kind": "machine" },
+  "mixer_basin": { "produces": ["create:brass_ingot"], "kind": "machine", "timeoutSeconds": 45 }
 }
 ```
 
-**3. `resource-tree.json`** — per item, what direct conversions exist, WITH
-ratios (input:output counts) — required so the executor knows how much raw
-material to push for a requested output quantity:
+**3. `resource-tree.json`** — a **flat list of recipes**, not keyed by a
+single input (see below for why), each with ratios (input:output counts)
+so the executor knows how much raw material to push for a requested
+output quantity, and a list of inputs so multi-ingredient recipes (brass:
+copper + zinc) and shaped crafter recipes (an ingredient pinned to a
+specific turtle crafting-grid slot) both fit the same shape:
 
 ```json
 {
-  "minecraft:copper_ingot": {
-    "convertsTo": [
-      {
-        "output": "create:copper_sheet",
-        "job": "mechanical_press_depot",
-        "inputCount": 1,
-        "outputCount": 1
-      }
-    ]
-  }
+  "recipes": [
+    {
+      "output": "create:copper_sheet",
+      "outputCount": 1,
+      "job": "mechanical_press_depot",
+      "inputs": [
+        { "item": "minecraft:copper_ingot", "count": 1 }
+      ]
+    },
+    {
+      "output": "create:brass_ingot",
+      "outputCount": 1,
+      "job": "mixer_basin",
+      "inputs": [
+        { "item": "minecraft:copper_ingot", "count": 1 },
+        { "item": "minecraft:zinc_ingot", "count": 1 }
+      ]
+    }
+  ]
 }
 ```
+
+`"slot"` (1-9) is an optional third field on an input — present only for
+a `kind: "crafter"` job's recipe, naming which of the turtle's 3x3
+crafting-grid slots that ingredient goes in; absent for ordinary machine
+recipes, where placement doesn't matter.
 
 Note: `job` here is a plain job-type-name string (a leaf reference), unlike
 `peripherals.json`'s recursive `{"type": ..., "job": ...}` descriptor —
 this file only ever needs to *name* which job type performs a conversion,
 never to describe physical routing/nesting.
+
+**Schema history:** this file was originally keyed by a single input item
+("what does X convert into"), which cannot represent a recipe needing two
+different inputs simultaneously — brass needs copper AND zinc, and no
+single top-level key could answer "what produces brass." Restructured to
+a flat recipe list once that limitation became concrete, per the design
+conversation — expect this file's shape to keep evolving as more real
+recipes get defined; the JSON syntax is very much not "done."
 
 **4. Job-types registry** — explicitly skipped as a separate file (per
 discussion: optional, derivable from the union of job types appearing in

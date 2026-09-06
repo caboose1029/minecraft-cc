@@ -3,7 +3,11 @@ package programs
 import common.ktoxConfigFeederForJob
 import common.ktoxConfigRelayForJob
 import common.ktoxConfigStorageVaultNames
-import lib.findDirectConversion
+import lib.findRecipe
+import lib.recipeInputCount
+import lib.recipeInputCountAt
+import lib.recipeInputItem
+import lib.recipeInputSlot
 import lib.runCliCommand
 import lib.setJobPower
 import lib.storagePoolCount
@@ -32,11 +36,30 @@ fun main() {
         println("Relay for smelter: ${relay}")
     }
 
-    val conversion = findDirectConversion("create:copper_sheet")
-    if (conversion == null) {
-        println("Direct conversion for create:copper_sheet: none configured")
+    val recipe = findRecipe("create:copper_sheet")
+    if (recipe == null) {
+        println("Recipe for create:copper_sheet: none configured")
     } else {
-        println("Direct conversion for create:copper_sheet: ${conversion.inputCount}x ${conversion.inputName} via ${conversion.jobType} -> ${conversion.outputCount}x output")
+        val count = recipeInputCount(recipe)
+        println("Recipe for create:copper_sheet: ${count} input(s) via ${recipe.jobType} -> ${recipe.outputCount}x output")
+        var i = 1
+        while (i <= count) {
+            println("  input ${i}: ${recipeInputCountAt(recipe, i)}x ${recipeInputItem(recipe, i)} (slot ${recipeInputSlot(recipe, i)})")
+            i += 1
+        }
+    }
+
+    val brass = findRecipe("create:brass_ingot")
+    if (brass == null) {
+        println("Recipe for create:brass_ingot: none configured")
+    } else {
+        val count = recipeInputCount(brass)
+        println("Recipe for create:brass_ingot: ${count} input(s) via ${brass.jobType} -> ${brass.outputCount}x output")
+        var i = 1
+        while (i <= count) {
+            println("  input ${i}: ${recipeInputCountAt(brass, i)}x ${recipeInputItem(brass, i)}")
+            i += 1
+        }
     }
 
     println("Storage pool count of minecraft:copper_ingot: ${storagePoolCount("minecraft:copper_ingot")}")
@@ -52,4 +75,6 @@ fun main() {
     println(runCliCommand("pull minecraft:copper_ingot 5"))
     println("--- craft (no stock, no input available - should not hang) ---")
     println(runCliCommand("craft create:copper_sheet 5"))
+    println("--- craft brass (2-ingredient recipe, no stock - should not hang) ---")
+    println(runCliCommand("craft create:brass_ingot 5"))
 }

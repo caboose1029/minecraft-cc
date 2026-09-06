@@ -9,11 +9,31 @@
     }
   },
   "create:item_vault_3": { "type": "vault", "job": { "type": "pickup" } },
+  "create:item_vault_4": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "smelter" }
+    }
+  },
+  "create:item_vault_5": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "mixer_basin" }
+    }
+  },
   "computercraft:redstone_relay_0": {
     "type": "relay",
     "connections": {
       "right": { "job": { "type": "smelter" } },
       "left": { "job": { "type": "mechanical_press_depot" } }
+    }
+  },
+  "computercraft:redstone_relay_1": {
+    "type": "relay",
+    "connections": {
+      "right": { "job": { "type": "mixer_basin" } }
     }
   }
 }
