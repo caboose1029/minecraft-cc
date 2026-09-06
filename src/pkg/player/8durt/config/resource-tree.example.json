@@ -1,4 +1,14 @@
 {
+  "minecraft:raw_copper": {
+    "convertsTo": [
+      {
+        "output": "minecraft:copper_ingot",
+        "job": "smelter",
+        "inputCount": 1,
+        "outputCount": 1
+      }
+    ]
+  },
   "minecraft:copper_ingot": {
     "convertsTo": [
       {

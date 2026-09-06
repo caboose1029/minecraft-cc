@@ -9,14 +9,23 @@ left stale — this is a working doc, not a changelog.
 
 ## Scope
 
-**In scope now:** vault terminal (list/pull/craft CLI), single-hop craft
-(pull what's stocked + trigger one direct job for the shortfall), head/
-secondary terminal roles over rednet, config-driven peripheral/job/resource
-mapping.
+**Built (phase 1):** vault terminal (list/pull/craft CLI), head/secondary
+terminal roles over rednet, config-driven peripheral/job/resource mapping.
 
-**Explicitly phase 2 (build only if phase-1 is solid and time remains):**
-a recursive planner that chains multiple job levels (e.g. raw log → stripped
-log → casing) when a *direct* recipe isn't enough to cover a shortfall.
+**Built (phase 2):** `craft`'s executor now chains multiple job levels via
+`lib/Planner.kt`'s `ensureStocked` (e.g. raw copper → copper ingot →
+copper sheet) rather than only a single direct recipe — see "CLI" below.
+Recurses into a missing input before running the current level's job, so
+jobs execute in dependency order purely via call-stack unwinding (no
+explicit job-list data structure, which ktox has no good collection type
+for anyway). Guarded by `MAX_PLANNER_DEPTH` (5) against a cyclic
+resource-tree config. **Known gap:** `list --craftable`'s classification
+(`ktoxListCatalog` in ktox-cc-shim.lua) still only checks ONE hop — an
+item needing a 2+-level chain to produce shows as "unavailable" in `list`
+even though `craft` could actually produce it. Left as-is for now
+(disclosed here rather than fixed) since `list`'s job is just a quick
+status glance, not a plan preview — worth revisiting if that mismatch
+turns out to confuse people in practice.
 
 **Explicitly out of scope for this pass:** factory-floor load balancing
 (problem #3b, config-driven stock-percentage preferences — deferred entire
@@ -194,24 +203,23 @@ secondary over rednet — same dispatcher either way:
   exists whose inputs *are* stocked), or unavailable (neither).
 - `pull <name> <qty>` — straight withdrawal from the pool into the
   pickup vault via `pullItems`, no job logic involved.
-- `craft <name> <qty>` — **combined craft+pull, single-hop only** (this is
-  "the first planner pass" per discussion, not the real phase-2 planner):
-  pull whatever's already stocked toward the requested quantity, and for
-  the remaining shortfall, if a *direct* recipe exists (one level, not a
-  chain), trigger it — push the input materials into the feeder vault,
-  toggle the machine on via its Relay, poll the storage pool for the
-  expected output count to appear, with a **configurable per-job timeout**
-  (different machines have different throughput/delay). Timeout resets to
-  zero whenever the output count increases (progress, not stalled). One
-  retry after a timeout; if the retry also times out, fail the job and any
-  jobs that depended on it, and move on to the next queued request or go
-  back to waiting for input. Double-feeding a machine on retry is
-  acceptable (confirmed) — no dedup/interlock needed there.
-
-Multi-hop requests (need sheets, only raw ore exists, no direct
-ore→sheet recipe) are exactly what phase 2's planner is for; phase 1's
-`craft` should simply report "not directly craftable" for those rather
-than attempting to chain jobs itself.
+- `craft <name> <qty>` — **combined craft+pull, chained** (phase 2's
+  planner is live — see "Scope" above): pulls whatever's already stocked
+  toward the requested quantity, and for the remaining shortfall,
+  recursively ensures each level of the resource-tree chain exists —
+  producing a missing input before the level that needs it, however many
+  levels deep — then triggers the actual job: pushes input materials
+  into the feeder vault, toggles the machine on via its Relay, polls the
+  storage pool for the expected output count to appear, with a
+  **configurable per-job timeout** (different machines have different
+  throughput/delay). Timeout resets to zero whenever the output count
+  increases (progress, not stalled). One retry after a timeout; if the
+  retry also times out, that level's job gives up and everything above
+  it in the chain gives up too (no input to work with) — double-feeding
+  a machine on retry is acceptable (confirmed), no dedup/interlock needed
+  there. A chain that bottoms out at an unstocked, non-convertible item
+  (or hits `MAX_PLANNER_DEPTH`) just produces as much as it can, which
+  may be nothing.
 
 ## Generic peripheral-call shim
 
