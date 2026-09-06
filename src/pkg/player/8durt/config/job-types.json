@@ -50,6 +50,10 @@
     "produces": ["farmersdelight:beef_stew"],
     "kind": "machine"
   },
+  "washing": {
+    "produces": ["minecraft:packed_ice", "farmersdelight:dough", "minecraft:obsidian"],
+    "kind": "machine"
+  },
   "chest_crafter": {
     "produces": ["minecraft:chest"],
     "kind": "crafter"

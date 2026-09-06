@@ -140,6 +140,24 @@
       ]
     },
     {
+      "output": "minecraft:packed_ice",
+      "outputCount": 1,
+      "job": "washing",
+      "inputs": [{ "item": "minecraft:ice", "count": 1 }]
+    },
+    {
+      "output": "farmersdelight:dough",
+      "outputCount": 1,
+      "job": "washing",
+      "inputs": [{ "item": "farmersdelight:wheat_flour", "count": 1 }]
+    },
+    {
+      "output": "minecraft:obsidian",
+      "outputCount": 1,
+      "job": "washing",
+      "inputs": [{ "item": "minecraft:magma_block", "count": 1 }]
+    },
+    {
       "output": "minecraft:chest",
       "outputCount": 1,
       "job": "chest_crafter",

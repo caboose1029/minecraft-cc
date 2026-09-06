@@ -313,6 +313,34 @@ quantity at all. Revisit if fluid automation ever becomes a real
 requirement; it'd need a new peripheral type and its own counting
 primitive, not a small patch to the existing item-counting code.
 
+**Probabilistic-yield recipes are entirely out of scope too, same
+category as fluids.** Create's "Splashing" mechanic (colloquially
+"washing" — an Encased Fan blowing air through a water source block;
+*not* a Water Wheel, an earlier assumption here that turned out wrong)
+is mostly chance-based with no deterministic yield at all — e.g. Gravel
+→ Flint (25%) *or* Iron Nugget (12.5%), nothing guaranteed either way.
+That can't fit a schema built entirely around "push N in, get exactly
+M out." Only Splashing's few genuinely deterministic 1:1 recipes made it
+into `resource-tree.json` (a `"washing"` job type: Ice → Packed Ice,
+Wheat Flour → Dough, Magma Block → Obsidian) — everything chance-based
+was excluded, not approximated.
+
+**This directly resolves how the "endless cobblestone → iron/andesite"
+automation pattern should be modeled: as an external farm, not a job.**
+It's built entirely on chance-based Splashing/crushing steps (Cobblestone
+→ Gravel → Flint/Iron Nugget via Splashing, Andesite via a fluid-
+consuming Press+Basin recipe — two more reasons it doesn't fit the job
+schema even before considering yield), and it's explicitly "endless" —
+always running, nothing ever needs to start or stop it. That's exactly
+the mining/farming-turtle pattern from early design: an external process
+that just continuously dumps output into a storage vault. Nothing in
+`resource-tree.json` represents this chain at all; the system only picks
+up *after* the farm's output lands in storage (iron ingot → iron sheet,
+already modeled). A general lesson worth keeping: **any Create recipe
+with a percentage chance instead of a guaranteed count belongs in the
+farm bucket, not the job bucket** — don't try to force one in later
+without re-deriving this same conclusion.
+
 **Redstone relays are optional per job, confirmed necessary by real
 research** (see `lib/Executor.kt`'s `runDirectJob`): plenty of real
 Create machines — a Deployer applying an ingredient to a passing item, a
@@ -332,7 +360,9 @@ confidence:
 - **High confidence** (direct wiki/source-verified): Milling (ore → crushed
   ore, 4 metals), smelting (crushed ore → ingot, vanilla furnace),
   Pressing (ingot → sheet), Andesite Alloy, Brass Ingot (2x output per the
-  real recipe — an earlier placeholder had this wrong at 1x).
+  real recipe — an earlier placeholder had this wrong at 1x), Washing/
+  Splashing's deterministic recipes (Ice, Wheat Flour, Magma Block — see
+  above for why the chance-based majority of this mechanic is excluded).
 - **Medium confidence** (mechanism confirmed, exact item IDs plausible but
   not individually verified): Andesite/Brass/Copper Casing (Deployer +
   stripped log + alloy/ingot — modeled as a 2-input machine job with the
@@ -358,7 +388,12 @@ confidence:
   cutting's bonus bone meal) are ignored throughout — only the primary,
   effectively-guaranteed yield is modeled, to keep the schema's single-
   deterministic-output assumption intact rather than adding chance
-  handling for comparatively low value.
+  handling for comparatively low value. Sandpaper Polishing (Rose Quartz
+  → Polished Rose Quartz) is real but a single niche recipe with
+  unconfirmed Deployer-automation status — excluded as not worth the
+  uncertainty. The full "endless cobblestone → iron/andesite" chain is
+  excluded for a different reason: see "Probabilistic-yield recipes"
+  above — it's a farm, not a job, by design, not by omission.
 
 **4. Job-types registry** — explicitly skipped as a separate file (per
 discussion: optional, derivable from the union of job types appearing in

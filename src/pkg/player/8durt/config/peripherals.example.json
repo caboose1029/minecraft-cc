@@ -98,5 +98,12 @@
       "type": "feeder",
       "job": { "type": "cooking_pot" }
     }
+  },
+  "create:item_vault_15": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "washing" }
+    }
   }
 }
