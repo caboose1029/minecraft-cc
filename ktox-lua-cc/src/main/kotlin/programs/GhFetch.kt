@@ -10,15 +10,16 @@ import common.ktoxDownloadFile
 // fs.getName() and would break require("lib/Movement") the moment this
 // package's files land there. See AGENTS.md.
 //
-// DEFAULT_BRANCH is feat/add-ktox-lua-cc since main doesn't have
-// src/pkg/player/8durt yet — move it to "main" (matching moonman's
-// manifest convention) once that branch merges.
+// DEFAULT_BRANCH tracks whichever branch is under active iteration —
+// currently feat/ktox-lua-storage. main doesn't have
+// src/pkg/player/8durt yet, so this can't point there — move it to
+// "main" (matching moonman's manifest convention) once that merges.
 //
 // Usage: ghfetch [branch]
 //   - branch (optional): git ref to fetch from, e.g. a feature branch
 //     you're iterating on. Defaults to DEFAULT_BRANCH when omitted.
 
-const val DEFAULT_BRANCH = "feat/add-ktox-lua-cc"
+const val DEFAULT_BRANCH = "feat/ktox-lua-storage"
 
 fun main(args: Array<String>) {
     val branch = if (args.size >= 1) args[1] else DEFAULT_BRANCH
