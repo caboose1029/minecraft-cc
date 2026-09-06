@@ -1,0 +1,22 @@
+{
+  "minecraft:copper_ingot": {
+    "convertsTo": [
+      {
+        "output": "create:copper_sheet",
+        "job": "mechanical_press_depot",
+        "inputCount": 1,
+        "outputCount": 1
+      }
+    ]
+  },
+  "minecraft:iron_ingot": {
+    "convertsTo": [
+      {
+        "output": "create:iron_sheet",
+        "job": "mechanical_press_depot",
+        "inputCount": 1,
+        "outputCount": 1
+      }
+    ]
+  }
+}

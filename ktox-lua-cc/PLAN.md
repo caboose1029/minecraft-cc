@@ -110,18 +110,24 @@ via `list()`/`getItemDetail`. Not wired up in phase 1; noted for later.
 maintained (this encodes physical facts about a specific world, which the
 code must never hardcode). Example shape:
 
+A "job" is recursive — `{"type": "<kind>", "job"?: <nested job>}` — so a
+feeder vault's job nests the machine it feeds:
+
 ```json
 {
   "create:item_vault_0": { "type": "vault", "job": { "type": "storage" } },
   "create:item_vault_1": {
     "type": "vault",
-    "job": { "type": "feeder", "machine": "mechanical_press_depot" }
+    "job": {
+      "type": "feeder",
+      "job": { "type": "mechanical_press_depot" }
+    }
   },
   "computercraft:redstone_relay_0": {
     "type": "relay",
     "connections": {
-      "right": { "job": "smelter" },
-      "left": { "job": "mechanical_press_depot" }
+      "right": { "job": { "type": "smelter" } },
+      "left": { "job": { "type": "mechanical_press_depot" } }
     }
   }
 }
@@ -158,6 +164,11 @@ material to push for a requested output quantity:
   }
 }
 ```
+
+Note: `job` here is a plain job-type-name string (a leaf reference), unlike
+`peripherals.json`'s recursive `{"type": ..., "job": ...}` descriptor —
+this file only ever needs to *name* which job type performs a conversion,
+never to describe physical routing/nesting.
 
 **4. Job-types registry** — explicitly skipped as a separate file (per
 discussion: optional, derivable from the union of job types appearing in
@@ -203,31 +214,52 @@ packing, confirming that one example wasn't enough to generalize correctly.
 Design: one generic Lua dispatcher —
 
 ```lua
-function ktoxPeripheralCall(peripheralName, methodName, argsJSON)
+function ktoxPeripheralCall(peripheralName, methodName, argsPacked)
     local p = peripheral.wrap(peripheralName)
-    if p == nil then return nil end
-    local args = argsJSON and textutils.unserializeJSON(argsJSON) or {}
+    if p == nil then return "MISSING" end
     local method = p[methodName]
-    if method == nil then return nil end
-    local results = table.pack(method(table.unpack(args)))
-    return textutils.serializeJSON(results)
+    if method == nil then return "MISSING" end
+    local args = {}
+    if argsPacked ~= "" then
+        for piece in string.gmatch(argsPacked, "[^|]+") do
+            local tag = string.sub(piece, 1, 1)
+            local value = string.sub(piece, 3)
+            if tag == "B" then args[#args + 1] = (value == "true")
+            elseif tag == "N" then args[#args + 1] = tonumber(value)
+            else args[#args + 1] = value end
+        end
+    end
+    local result = method(table.unpack(args, 1, #args))
+    if result == nil then return "null" end
+    return textutils.serializeJSON(result)
 end
 ```
 
-This solves both problems the monitor work hit at once: dynamic-handle
-dispatch (index by method name string) and multi-return (`table.pack`
-captures everything, JSON round-trips heterogeneous/nested values cleanly
-— unlike the old comma-string hack). ktox still has no `Map`/working
-`MutableList` and no JSON parser on the Kotlin side, so Kotlin never
-receives a raw JSON blob to deserialize itself — instead, small
-purpose-built Lua helpers sit on top of `ktoxPeripheralCall` and do the
-final narrowing to a scalar/flat-string *in Lua*, exactly like the
-existing `ktoxGpsLocate`/`ktoxInspectName` shims, just now built from a
-shared dispatcher instead of each reimplementing `peripheral.wrap` +
-the method call from scratch. That's the actual scope of "generic" here:
-the find-and-call step is unified; the narrowing-for-Kotlin step is still
-bespoke per operation, because ktox's data-modeling gap (no collections)
-doesn't go away just because the dispatch does.
+This solves the dynamic-handle dispatch problem the monitor work hit
+(index by method name string, instead of one bespoke shim per operation).
+Arguments are deliberately **not** JSON array syntax: a Kotlin string
+literal containing `[` or `]` transpiles to invalid Lua (confirmed live —
+`"[\"${side}\"]"` came out as `"\[" .. "\"" ...`, matching the documented
+ktox escaping bug in AGENTS.md), so the Kotlin call site can never safely
+build `"[...]"` text. Arguments are instead packed as `"<tag>:<value>"`
+pairs joined by `"|"` (tag `S`/`B`/`N` for string/boolean/number), which
+only ever needs `:`/`|`/word characters in a Kotlin string literal —
+already-proven-safe territory. Multi-return isn't handled (no caller here
+needs more than one return value — `table.pack` was in an earlier draft
+of this design but added complexity for a case that doesn't exist yet).
+
+ktox still has no `Map`/working `MutableList` and no JSON parser on the
+Kotlin side, so Kotlin never receives a raw JSON blob to deserialize
+itself — instead, small purpose-built Lua helpers sit on top of
+`ktoxPeripheralCall` (or bypass it and talk to `peripheral.wrap` directly,
+for operations needing real logic over a table's contents, like inventory
+aggregation) and do the final narrowing to a scalar/flat-string *in Lua*,
+exactly like the existing `ktoxGpsLocate`/`ktoxInspectName` shims. That's
+the actual scope of "generic" here: the find-and-call step is unified for
+simple single-call operations; anything needing real logic over a
+peripheral's returned data still needs its own function, because ktox's
+data-modeling gap (no collections) doesn't go away just because dispatch
+does.
 
 ## Known open items (not blocking phase 1, listed so they aren't lost)
 

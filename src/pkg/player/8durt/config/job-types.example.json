@@ -1,0 +1,8 @@
+{
+  "smelter": {
+    "produces": ["minecraft:iron_ingot", "minecraft:copper_ingot"]
+  },
+  "mechanical_press_depot": {
+    "produces": ["create:iron_sheet", "create:copper_sheet"]
+  }
+}

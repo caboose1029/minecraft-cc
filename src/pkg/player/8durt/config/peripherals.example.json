@@ -1,0 +1,18 @@
+{
+  "create:item_vault_0": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_1": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_2": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "mechanical_press_depot" }
+    }
+  },
+  "computercraft:redstone_relay_0": {
+    "type": "relay",
+    "connections": {
+      "right": { "job": { "type": "smelter" } },
+      "left": { "job": { "type": "mechanical_press_depot" } }
+    }
+  }
+}
