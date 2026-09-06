@@ -57,6 +57,7 @@ fun main(args: Array<String>) {
         "common/Peripheral.lua",
         "common/Rednet.lua",
         "common/Parallel.lua",
+        "common/Role.lua",
         "config/peripherals.example.json",
         "config/job-types.example.json",
         "config/resource-tree.example.json",
@@ -68,6 +69,7 @@ fun main(args: Array<String>) {
         "Terminal.lua",
         "Head.lua",
         "Secondary.lua",
+        "TerminalSetup.lua",
         "GhFetch.lua",
     )
 

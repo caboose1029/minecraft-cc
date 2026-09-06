@@ -532,3 +532,35 @@ end
 function ktoxRednetLastProtocol()
     return ktoxRednetLastProtocolValue
 end
+
+-- Per-machine role persistence (see TerminalSetup.kt / PLAN.md). A plain
+-- text file rather than the `settings` API — this project already has a
+-- proven fs.open/readAll/write/close idiom (ktoxReadJSONFile,
+-- ktoxDownloadFile) and no reason to introduce a second, unverified
+-- persistence mechanism just for one string.
+
+function ktoxReadRoleFile()
+    if not fs.exists("role.txt") then
+        return ""
+    end
+    local file = fs.open("role.txt", "r")
+    if file == nil then
+        return ""
+    end
+    local data = file.readAll()
+    file.close()
+    if data == nil then
+        return ""
+    end
+    return data
+end
+
+function ktoxWriteRoleFile(role)
+    local file = fs.open("role.txt", "w")
+    if file == nil then
+        return false
+    end
+    file.write(role)
+    file.close()
+    return true
+end

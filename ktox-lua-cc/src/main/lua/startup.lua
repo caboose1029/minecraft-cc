@@ -112,3 +112,22 @@ tryDofile("lib/Config.lua")
 tryDofile("lib/Executor.lua")
 tryDofile("lib/RoleCheck.lua")
 tryDofile("lib/Cli.lua")
+
+-- Auto-launch the configured terminal role (see TerminalSetup.kt /
+-- PLAN.md), if any. role.txt is written once by TerminalSetup and never
+-- touched by ghfetch (same player-owned, never-overwritten principle as
+-- config/*.json) — a machine with no role configured (a mining turtle,
+-- or a fresh computer before TerminalSetup has run) just skips this and
+-- falls through to the normal shell prompt.
+if fs.exists("role.txt") then
+    local roleFile = fs.open("role.txt", "r")
+    if roleFile ~= nil then
+        local role = roleFile.readAll()
+        roleFile.close()
+        if role == "head" then
+            shell.run("Head")
+        elseif role == "secondary" then
+            shell.run("Secondary")
+        end
+    end
+end
