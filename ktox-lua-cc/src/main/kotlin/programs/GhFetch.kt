@@ -53,6 +53,7 @@ fun main(args: Array<String>) {
         "lib/Executor.lua",
         "lib/RoleCheck.lua",
         "lib/Planner.lua",
+        "lib/PassiveFeeder.lua",
         "lib/Cli.lua",
         "common/Monitor.lua",
         "common/Peripheral.lua",

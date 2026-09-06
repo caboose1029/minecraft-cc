@@ -694,3 +694,23 @@ function ktoxWriteRoleFile(role)
     file.close()
     return true
 end
+
+-- Every configured passive feeder (job.type == "passive" — a vault that
+-- tries to always hold a full stack of one item, sitting above a
+-- deployer, see PLAN.md). Returns newline-joined
+-- "vaultName,item,lowWatermark,highWatermark" rows, one per configured
+-- passive feeder. Empty string if none configured.
+function ktoxConfigPassiveFeeders()
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config == nil then
+        return ""
+    end
+    local lines = {}
+    for name, entry in pairs(config) do
+        if entry.type == "vault" and entry.job ~= nil and entry.job.type == "passive" then
+            lines[#lines + 1] = name .. "," .. entry.job.item .. "," ..
+                tostring(entry.job.lowWatermark) .. "," .. tostring(entry.job.highWatermark)
+        end
+    end
+    return table.concat(lines, "\n")
+end

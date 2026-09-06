@@ -121,7 +121,7 @@ end to end.
 
 ## Vaults
 
-Four kinds, distinguished by `job.type` in `peripherals.json` (see below):
+Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
 
 - **Storage vaults** — raw pooled storage. Machines/farms drop output into
   these. All storage-job vaults are treated as **one logical resource
@@ -150,6 +150,22 @@ Four kinds, distinguished by `job.type` in `peripherals.json` (see below):
   a target for anything automatic (no resource-tree.json entry, nothing
   routes to it implicitly) — only the explicit `trash <name> <qty>`
   command touches it, since destroying items is irreversible.
+- **Passive feeder** (`job.type: "passive"`, with `item`, `lowWatermark`,
+  `highWatermark` fields alongside `type`) — sits above a Deployer (the
+  vault+chute+deployer pattern is a very consistent piece of Create
+  logistics, and lets the deployer pull what it needs on its own once
+  the feeder above it is stocked). Unlike a job-input feeder, nothing
+  *triggers* this — the head opportunistically tops it up (pulling from
+  the storage pool up to `highWatermark`) whenever its current count
+  drops below `lowWatermark`, checked after handling each local or
+  remote command (see "Terminal roles" → Head.kt, and
+  `lib/PassiveFeeder.kt`) rather than on an independent timer. A head
+  sitting fully idle won't top these up until its next command — an
+  accepted, disclosed limitation (a real timer risks starving itself:
+  see the code comment for why). This is a narrower, much more
+  tractable version of the #3b factory-balancing idea floated earlier
+  and deferred entirely — "maintain N of item X" needs none of the
+  cross-item-precedence logic that made #3b hard.
 
 Stockpile Switch is a good fit for storage-vault fullness (aggregate fill
 %, doesn't care about item identity) but **not** for per-item shortage

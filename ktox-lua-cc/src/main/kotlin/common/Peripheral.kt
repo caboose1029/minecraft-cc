@@ -52,6 +52,9 @@ fun ktoxConfigTrashVault(): String = externalSource()
 @NativeName("ktoxConfigCrafterForJob")
 fun ktoxConfigCrafterForJob(jobType: String): String = externalSource()
 
+@NativeName("ktoxConfigPassiveFeeders")
+fun ktoxConfigPassiveFeeders(): String = externalSource()
+
 @NativeName("ktoxListCatalog")
 fun ktoxListCatalog(sourceNamesCsv: String, filter: String, substring: String): String = externalSource()
 

@@ -15,6 +15,7 @@ import lib.VAULT_ROLE_REPLY_PROTOCOL
 import lib.VAULT_RESULT_PROTOCOL
 import lib.queryForHead
 import lib.runCliCommand
+import lib.topUpPassiveFeeders
 
 // The head vault terminal (see PLAN.md "Terminal roles") — the sole
 // decision-maker. Runs the shared CLI dispatcher (lib/Cli.kt) against
@@ -46,6 +47,9 @@ fun main() {
             { handleLocalInput() },
             { handleRemoteMessage() },
         )
+        // Opportunistic, not on an independent timer — see
+        // lib/PassiveFeeder.kt for why.
+        topUpPassiveFeeders()
     }
 }
 

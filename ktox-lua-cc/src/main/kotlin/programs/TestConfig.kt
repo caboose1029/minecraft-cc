@@ -5,6 +5,7 @@ import common.ktoxConfigRelayForJob
 import common.ktoxConfigStorageVaultNames
 import lib.findRecipe
 import lib.jobKind
+import lib.topUpPassiveFeeders
 import lib.recipeInputCount
 import lib.recipeInputCountAt
 import lib.recipeInputItem
@@ -97,4 +98,8 @@ fun main() {
     println("Job kind for smelter: ${jobKind("smelter")}")
     println("--- craft chest (crafter-kind job, no modem - should not hang) ---")
     println(runCliCommand("craft minecraft:chest 1"))
+
+    println("--- topUpPassiveFeeders (no real peripherals - should not crash) ---")
+    topUpPassiveFeeders()
+    println("done")
 }

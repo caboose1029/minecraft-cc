@@ -1,9 +1,10 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Head.kt", {["1-8"]=1,["9"]=30,["10"]=31,["11"]=32,["12"]=33,["13-14"]=34,["15"]=37,["16"]=38,["17"]=39,["18-19"]=40,["20"]=43,["21"]=44,["22-30"]=45,["31"]=53,["32"]=54,["33-36"]=55,["37"]=63,["38"]=64,["39-40"]=65,["41"]=67,["42"]=68,["43"]=69,["44-45"]=70,["46"]=72,["47"]=73,["48-54"]=74}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Head.kt", {["1-9"]=1,["10"]=31,["11"]=32,["12"]=33,["13"]=34,["14-15"]=35,["16"]=38,["17"]=39,["18"]=40,["19-20"]=41,["21"]=44,["22"]=45,["23-27"]=46,["28-32"]=52,["33"]=57,["34"]=58,["35-38"]=59,["39"]=67,["40"]=68,["41-42"]=69,["43"]=71,["44"]=72,["45"]=73,["46-47"]=74,["48"]=76,["49"]=77,["50-56"]=78}, "programs")
 ktox_require("lib/RoleCheck")
 ktox_require("lib/Cli")
+ktox_require("lib/PassiveFeeder")
 
 local function main()
     println("Head terminal starting...")
@@ -24,6 +25,7 @@ local function main()
         end, function()
             return handleRemoteMessage()
         end)
+        topUpPassiveFeeders()
     end
 end
 

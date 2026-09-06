@@ -40,5 +40,14 @@
   "computercraft:turtle_advanced_0": {
     "type": "crafter",
     "job": { "type": "chest_crafter" }
+  },
+  "create:item_vault_7": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:golden_sheet",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
   }
 }
