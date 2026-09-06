@@ -1,8 +1,9 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-9"]=1,["10"]=18,["11"]=20,["12"]=21,["13-14"]=22,["15-16"]=24,["17"]=27,["18"]=28,["19-20"]=29,["21-22"]=31,["23"]=34,["24"]=35,["25-26"]=36,["27-28"]=38,["29"]=41,["30"]=43,["31-36"]=44}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-10"]=1,["11"]=19,["12"]=21,["13"]=22,["14-15"]=23,["16-17"]=25,["18"]=28,["19"]=29,["20-21"]=30,["22-23"]=32,["24"]=35,["25"]=36,["26-27"]=37,["28-29"]=39,["30"]=42,["31"]=44,["32"]=45,["33"]=47,["34"]=48,["35"]=49,["36"]=50,["37"]=51,["38-43"]=52}, "programs")
 ktox_require("lib/Config")
+ktox_require("lib/Cli")
 ktox_require("lib/Redstone")
 ktox_require("lib/Inventory")
 
@@ -29,6 +30,12 @@ local function main()
     println("Storage pool count of minecraft:copper_ingot: " .. tostring(storagePoolCount("minecraft:copper_ingot")))
     local powered = setJobPower("smelter", true)
     println("setJobPower(smelter, true) reached a relay: " .. tostring(powered))
+    println("--- list ---")
+    println(runCliCommand("list"))
+    println("--- list --unavailable ---")
+    println(runCliCommand("list --unavailable"))
+    println("--- pull with no pickup vault configured ---")
+    println(runCliCommand("pull minecraft:copper_ingot 5"))
 end
 
 

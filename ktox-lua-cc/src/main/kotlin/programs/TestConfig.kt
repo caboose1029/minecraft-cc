@@ -4,6 +4,7 @@ import common.ktoxConfigFeederForJob
 import common.ktoxConfigRelayForJob
 import common.ktoxConfigStorageVaultNames
 import lib.findDirectConversion
+import lib.runCliCommand
 import lib.setJobPower
 import lib.storagePoolCount
 
@@ -42,4 +43,11 @@ fun main() {
 
     val powered = setJobPower("smelter", true)
     println("setJobPower(smelter, true) reached a relay: ${powered}")
+
+    println("--- list ---")
+    println(runCliCommand("list"))
+    println("--- list --unavailable ---")
+    println(runCliCommand("list --unavailable"))
+    println("--- pull with no pickup vault configured ---")
+    println(runCliCommand("pull minecraft:copper_ingot 5"))
 }

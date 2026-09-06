@@ -369,3 +369,85 @@ function ktoxConfigProducesLookup(outputName)
     end
     return "MISSING"
 end
+
+-- The pickup vault's peripheral name (job.type == "pickup") — where
+-- `pull`/`craft` results are pushed for a player to grab, since a turtle
+-- targeting its OWN inventory as a named peripheral is not reliably
+-- supported by CC:Tweaked (see PLAN.md's open items). "MISSING" if none
+-- configured.
+function ktoxConfigPickupVault()
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        for name, entry in pairs(config) do
+            if entry.type == "vault" and entry.job ~= nil and entry.job.type == "pickup" then
+                return name
+            end
+        end
+    end
+    return "MISSING"
+end
+
+-- Builds the full item catalog for the `list` CLI command: every item
+-- either currently stocked in the pool, or mentioned anywhere in
+-- config/resource-tree.json, classified as "stocked" (count > 0 in the
+-- pool), "craftable" (not stocked, but its direct conversion's input IS
+-- stocked), or "unavailable" (neither). Optionally filtered to one
+-- status ("" = all) and/or a substring of the item name ("" = no
+-- filter). Returns newline-joined "status,name,count" rows (count is 0
+-- for craftable/unavailable). Kotlin side: lib/Cli.kt.
+function ktoxListCatalog(sourceNamesCsv, filter, substring)
+    local totals = {}
+    local order = {}
+    local function noteItem(name)
+        if totals[name] == nil then
+            totals[name] = 0
+            order[#order + 1] = name
+        end
+    end
+
+    for sourceName in string.gmatch(sourceNamesCsv, "[^,]+") do
+        local inv = peripheral.wrap(sourceName)
+        if inv ~= nil then
+            for _, item in pairs(inv.list()) do
+                noteItem(item.name)
+                totals[item.name] = totals[item.name] + item.count
+            end
+        end
+    end
+
+    local tree = ktoxReadJSONFile("config/resource-tree.json")
+    local convertsFrom = {}
+    if tree ~= nil then
+        for inputName, entry in pairs(tree) do
+            noteItem(inputName)
+            if entry.convertsTo ~= nil then
+                for _, conversion in pairs(entry.convertsTo) do
+                    noteItem(conversion.output)
+                    if convertsFrom[conversion.output] == nil then
+                        convertsFrom[conversion.output] = inputName
+                    end
+                end
+            end
+        end
+    end
+
+    local lines = {}
+    for i = 1, #order do
+        local name = order[i]
+        if substring == "" or string.find(name, substring, 1, true) ~= nil then
+            local count = totals[name]
+            local status
+            if count > 0 then
+                status = "stocked"
+            elseif convertsFrom[name] ~= nil and totals[convertsFrom[name]] ~= nil and totals[convertsFrom[name]] > 0 then
+                status = "craftable"
+            else
+                status = "unavailable"
+            end
+            if filter == "" or filter == status then
+                lines[#lines + 1] = status .. "," .. name .. "," .. tostring(count)
+            end
+        end
+    end
+    return table.concat(lines, "\n")
+end

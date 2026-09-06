@@ -43,6 +43,12 @@ fun ktoxConfigRelayForJob(jobType: String): String = externalSource()
 @NativeName("ktoxConfigProducesLookup")
 fun ktoxConfigProducesLookup(outputName: String): String = externalSource()
 
+@NativeName("ktoxConfigPickupVault")
+fun ktoxConfigPickupVault(): String = externalSource()
+
+@NativeName("ktoxListCatalog")
+fun ktoxListCatalog(sourceNamesCsv: String, filter: String, substring: String): String = externalSource()
+
 // Inventory helpers (ktox-cc-shim.lua) — see lib/Inventory.kt for the
 // idiomatic wrapper.
 

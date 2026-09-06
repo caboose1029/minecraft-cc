@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
     val repoBase = "https://raw.githubusercontent.com/caboose1029/minecraft-cc/${branch}/src/pkg/player/8durt"
     println("Fetching from branch: ${branch}")
 
-    val dirs = arrayOf("lib", "common")
+    val dirs = arrayOf("lib", "common", "config")
     var d = 1
     while (d <= dirs.size) {
         fsMakeDir(dirs[d])
@@ -47,11 +47,21 @@ fun main(args: Array<String>) {
         "lib/Span.lua",
         "lib/Chest.lua",
         "lib/Shape.lua",
+        "lib/Redstone.lua",
+        "lib/Inventory.lua",
+        "lib/Config.lua",
+        "lib/Cli.lua",
         "common/Monitor.lua",
+        "common/Peripheral.lua",
+        "config/peripherals.example.json",
+        "config/job-types.example.json",
+        "config/resource-tree.example.json",
         "Digsite.lua",
         "ExcavatePro.lua",
         "DiamondFinder.lua",
         "TestMonitor.lua",
+        "TestConfig.lua",
+        "Terminal.lua",
         "GhFetch.lua",
     )
 

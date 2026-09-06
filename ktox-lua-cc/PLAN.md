@@ -63,7 +63,7 @@ will manually reboot one that's stuck. Not worth the complexity.
 
 ## Vaults
 
-Two kinds, distinguished by `job.type` in `peripherals.json` (see below):
+Three kinds, distinguished by `job.type` in `peripherals.json` (see below):
 
 - **Storage vaults** — raw pooled storage. Machines/farms drop output into
   these. All storage-job vaults are treated as **one logical resource
@@ -78,6 +78,14 @@ Two kinds, distinguished by `job.type` in `peripherals.json` (see below):
   (`job.type`, e.g. `"mechanical_press_depot"`). Triggering a job means
   toggling the relevant Clutch/Funnel via a Redstone Relay (see below),
   then pushing the required input material into the feeder vault.
+- **Pickup vault** (`job.type: "pickup"`) — where `pull`/`craft` results
+  land for a player to grab, exactly one per terminal. This exists
+  because a turtle targeting **its own inventory** as a named
+  `pushItems`/`pullItems` peripheral isn't reliably supported by
+  CC:Tweaked (an open upstream request, not a shipped feature) — so
+  rather than assume it works, results are pushed to an ordinary vault
+  peripheral next to the terminal instead. Revisit if/when turtle-as-
+  inventory-peripheral is confirmed to work.
 
 Stockpile Switch is a good fit for storage-vault fullness (aggregate fill
 %, doesn't care about item identity) but **not** for per-item shortage
@@ -123,6 +131,7 @@ feeder vault's job nests the machine it feeds:
       "job": { "type": "mechanical_press_depot" }
     }
   },
+  "create:item_vault_2": { "type": "vault", "job": { "type": "pickup" } },
   "computercraft:redstone_relay_0": {
     "type": "relay",
     "connections": {
@@ -183,8 +192,8 @@ secondary over rednet — same dispatcher either way:
   counts across the storage pool; classify each item as stocked (count >
   0), craftable (not stocked, but a direct `resource-tree.json` conversion
   exists whose inputs *are* stocked), or unavailable (neither).
-- `pull <name> <qty>` — straight withdrawal from the pool via
-  `pullItems`, no job logic involved.
+- `pull <name> <qty>` — straight withdrawal from the pool into the
+  pickup vault via `pullItems`, no job logic involved.
 - `craft <name> <qty>` — **combined craft+pull, single-hop only** (this is
   "the first planner pass" per discussion, not the real phase-2 planner):
   pull whatever's already stocked toward the requested quantity, and for

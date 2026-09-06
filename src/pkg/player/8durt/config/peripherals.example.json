@@ -8,6 +8,7 @@
       "job": { "type": "mechanical_press_depot" }
     }
   },
+  "create:item_vault_3": { "type": "vault", "job": { "type": "pickup" } },
   "computercraft:redstone_relay_0": {
     "type": "relay",
     "connections": {
