@@ -49,5 +49,54 @@
       "lowWatermark": 16,
       "highWatermark": 64
     }
+  },
+  "create:item_vault_8": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "milling" }
+    }
+  },
+  "create:item_vault_9": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "andesite_mixer" }
+    }
+  },
+  "create:item_vault_10": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "andesite_casing_deployer" }
+    }
+  },
+  "create:item_vault_11": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "brass_casing_deployer" }
+    }
+  },
+  "create:item_vault_12": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "copper_casing_deployer" }
+    }
+  },
+  "create:item_vault_13": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "slicer" }
+    }
+  },
+  "create:item_vault_14": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "cooking_pot" }
+    }
   }
 }

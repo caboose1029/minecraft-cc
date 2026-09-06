@@ -1,16 +1,54 @@
 {
+  "milling": {
+    "produces": [
+      "create:crushed_iron_ore",
+      "create:crushed_gold_ore",
+      "create:crushed_copper_ore",
+      "create:crushed_zinc_ore"
+    ],
+    "kind": "machine"
+  },
   "smelter": {
-    "produces": ["minecraft:iron_ingot", "minecraft:copper_ingot"],
+    "produces": [
+      "minecraft:iron_ingot",
+      "minecraft:gold_ingot",
+      "minecraft:copper_ingot",
+      "create:zinc_ingot"
+    ],
     "kind": "machine"
   },
   "mechanical_press_depot": {
-    "produces": ["create:iron_sheet", "create:copper_sheet"],
+    "produces": ["create:iron_sheet", "create:copper_sheet", "create:golden_sheet"],
+    "kind": "machine"
+  },
+  "andesite_mixer": {
+    "produces": ["create:andesite_alloy"],
     "kind": "machine"
   },
   "mixer_basin": {
     "produces": ["create:brass_ingot"],
     "kind": "machine",
     "timeoutSeconds": 45
+  },
+  "andesite_casing_deployer": {
+    "produces": ["create:andesite_casing"],
+    "kind": "machine"
+  },
+  "brass_casing_deployer": {
+    "produces": ["create:brass_casing"],
+    "kind": "machine"
+  },
+  "copper_casing_deployer": {
+    "produces": ["create:copper_casing"],
+    "kind": "machine"
+  },
+  "slicer": {
+    "produces": ["minecraft:stripped_oak_log", "farmersdelight:chicken_cuts", "farmersdelight:pumpkin_slice"],
+    "kind": "machine"
+  },
+  "cooking_pot": {
+    "produces": ["farmersdelight:beef_stew"],
+    "kind": "machine"
   },
   "chest_crafter": {
     "produces": ["minecraft:chest"],

@@ -302,6 +302,64 @@ a flat recipe list once that limitation became concrete, per the design
 conversation — expect this file's shape to keep evolving as more real
 recipes get defined; the JSON syntax is very much not "done."
 
+**Fluids are entirely out of scope.** `list()`/`getItemDetail()` only see
+solid inventory slots — a Tank peripheral (or any fluid container) isn't
+modeled anywhere in this system. Several real, verified Create recipes
+were excluded from the actual content specifically for this reason (Lava
+from stone/cobble, Builder's Tea, Chocolate as a fluid, Enchantment
+Industry's Liquid Experience → Liquid Hyper Experience) — not because
+they're unconfirmed, but because this system has no way to track a fluid
+quantity at all. Revisit if fluid automation ever becomes a real
+requirement; it'd need a new peripheral type and its own counting
+primitive, not a small patch to the existing item-counting code.
+
+**Redstone relays are optional per job, confirmed necessary by real
+research** (see `lib/Executor.kt`'s `runDirectJob`): plenty of real
+Create machines — a Deployer applying an ingredient to a passing item, a
+Mixer basin fed by an always-lit Blaze Burner — run continuously with no
+redstone control at all. A job type with no relay configured in
+`peripherals.json` is treated as "always on," not as a configuration
+error; only a relay that's configured but unreachable in-world counts as
+a real failure. This was a genuine bug until the real-recipe research
+surfaced it — casing production (a Deployer recipe) would have always
+failed under the original "no relay = give up" logic.
+
+**Content build (2026-09-07):** `job-types.json`/`resource-tree.json` now
+carry real content, built from two research passes (see `AGENTS.md`
+"Modpack" section for the full mod list and per-mod confidence notes)
+rather than the earlier one-or-two-entry placeholders. Coverage, by
+confidence:
+- **High confidence** (direct wiki/source-verified): Milling (ore → crushed
+  ore, 4 metals), smelting (crushed ore → ingot, vanilla furnace),
+  Pressing (ingot → sheet), Andesite Alloy, Brass Ingot (2x output per the
+  real recipe — an earlier placeholder had this wrong at 1x).
+- **Medium confidence** (mechanism confirmed, exact item IDs plausible but
+  not individually verified): Andesite/Brass/Copper Casing (Deployer +
+  stripped log + alloy/ingot — modeled as a 2-input machine job with the
+  physical assumption that one feeder vault's output splits, via separate
+  funnels/chutes, to reach both the belt-fed log and the deployer's held
+  item; a real physical build the player has to arrange, not something
+  this system verifies), log stripping via the Slicer (Create: Slice &
+  Dice automating Farmer's Delight's Cutting Board mechanic).
+- **Lower confidence** (plausible item IDs, not individually confirmed —
+  spot-check against JEI before relying on these): Farmer's Delight items
+  via Slice & Dice (`farmersdelight:chicken_cuts`,
+  `farmersdelight:pumpkin_slice`, `farmersdelight:beef_stew` via the
+  Cooking Pot → Heated Mixing bridge).
+- **Deliberately excluded, not overlooked:** Precision Mechanism (Create's
+  Sequenced Assembly is a genuinely different recipe shape — an ordered
+  multi-step sequence with a final success-*chance*, not expressible in
+  the current single-batch schema; would need real schema work, not a
+  content addition — treat as a manually-supplied/raw item for now).
+  Create Aeronautics, Create Dragons Plus, and Create Food were
+  researched and found to add nothing both concrete and fluid-free enough
+  to include confidently — excluded rather than guessed at. Byproduct/
+  bonus-chance outputs (e.g., milling's secondary cobblestone, chicken
+  cutting's bonus bone meal) are ignored throughout — only the primary,
+  effectively-guaranteed yield is modeled, to keep the schema's single-
+  deterministic-output assumption intact rather than adding chance
+  handling for comparatively low value.
+
 **4. Job-types registry** — explicitly skipped as a separate file (per
 discussion: optional, derivable from the union of job types appearing in
 configs 1/2/3 — no need for a fourth source of truth).

@@ -3,6 +3,7 @@ package lib
 import common.ktoxConfigCrafterForJob
 import common.ktoxConfigFeederForJob
 import common.ktoxConfigJobTimeoutSecondsRaw
+import common.ktoxConfigRelayForJob
 import common.ktoxInventoryIsEmpty
 import common.osSleep
 import common.rednetSend
@@ -125,11 +126,20 @@ fun pushRecipeInputs(feederVault: String, recipe: Recipe, batches: Int) {
 // never leaves a machine running unattended. Returns how many were
 // actually produced in total (may be less than desiredOutput if input
 // ran out or both attempts timed out).
+//
+// A redstone relay is OPTIONAL, not required — confirmed via research
+// that plenty of real Create machines (a Deployer applying an ingredient
+// to a passing item, a Mixer basin fed by an always-lit Blaze Burner)
+// run continuously with no redstone control at all; the player only
+// wires a relay to a job type if they actually want on/off control. No
+// relay configured is NOT treated as failure here — only a relay that's
+// configured but unreachable in-world is.
 fun runDirectJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
     val feederVault = ktoxConfigFeederForJob(recipe.jobType)
     if (feederVault == "MISSING") {
         return 0
     }
+    val relayConfigured = ktoxConfigRelayForJob(recipe.jobType) != "MISSING"
 
     var totalProduced = 0
     var attempt = 1
@@ -146,7 +156,7 @@ fun runDirectJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
             pushRecipeInputs(feederVault, recipe, batches)
 
             val startingOutput = storagePoolCount(recipe.outputName)
-            val powered = setJobPower(recipe.jobType, true)
+            val powered = if (relayConfigured) setJobPower(recipe.jobType, true) else true
             if (!powered) {
                 giveUp = true
             } else {
@@ -164,7 +174,9 @@ fun runDirectJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
                         secondsSinceProgress += 1
                     }
                 }
-                setJobPower(recipe.jobType, false)
+                if (relayConfigured) {
+                    setJobPower(recipe.jobType, false)
+                }
                 totalProduced += madeThisAttempt
             }
         }

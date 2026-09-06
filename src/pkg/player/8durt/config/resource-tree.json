@@ -1,36 +1,142 @@
 {
   "recipes": [
     {
+      "output": "create:crushed_iron_ore",
+      "outputCount": 1,
+      "job": "milling",
+      "inputs": [{ "item": "minecraft:raw_iron", "count": 1 }]
+    },
+    {
+      "output": "create:crushed_gold_ore",
+      "outputCount": 1,
+      "job": "milling",
+      "inputs": [{ "item": "minecraft:raw_gold", "count": 1 }]
+    },
+    {
+      "output": "create:crushed_copper_ore",
+      "outputCount": 1,
+      "job": "milling",
+      "inputs": [{ "item": "minecraft:raw_copper", "count": 1 }]
+    },
+    {
+      "output": "create:crushed_zinc_ore",
+      "outputCount": 1,
+      "job": "milling",
+      "inputs": [{ "item": "create:raw_zinc", "count": 1 }]
+    },
+    {
+      "output": "minecraft:iron_ingot",
+      "outputCount": 1,
+      "job": "smelter",
+      "inputs": [{ "item": "create:crushed_iron_ore", "count": 1 }]
+    },
+    {
+      "output": "minecraft:gold_ingot",
+      "outputCount": 1,
+      "job": "smelter",
+      "inputs": [{ "item": "create:crushed_gold_ore", "count": 1 }]
+    },
+    {
       "output": "minecraft:copper_ingot",
       "outputCount": 1,
       "job": "smelter",
-      "inputs": [
-        { "item": "minecraft:raw_copper", "count": 1 }
-      ]
+      "inputs": [{ "item": "create:crushed_copper_ore", "count": 1 }]
     },
     {
-      "output": "create:copper_sheet",
+      "output": "create:zinc_ingot",
       "outputCount": 1,
-      "job": "mechanical_press_depot",
-      "inputs": [
-        { "item": "minecraft:copper_ingot", "count": 1 }
-      ]
+      "job": "smelter",
+      "inputs": [{ "item": "create:crushed_zinc_ore", "count": 1 }]
     },
     {
       "output": "create:iron_sheet",
       "outputCount": 1,
       "job": "mechanical_press_depot",
+      "inputs": [{ "item": "minecraft:iron_ingot", "count": 1 }]
+    },
+    {
+      "output": "create:copper_sheet",
+      "outputCount": 1,
+      "job": "mechanical_press_depot",
+      "inputs": [{ "item": "minecraft:copper_ingot", "count": 1 }]
+    },
+    {
+      "output": "create:golden_sheet",
+      "outputCount": 1,
+      "job": "mechanical_press_depot",
+      "inputs": [{ "item": "minecraft:gold_ingot", "count": 1 }]
+    },
+    {
+      "output": "create:andesite_alloy",
+      "outputCount": 1,
+      "job": "andesite_mixer",
       "inputs": [
-        { "item": "minecraft:iron_ingot", "count": 1 }
+        { "item": "minecraft:andesite", "count": 1 },
+        { "item": "minecraft:iron_nugget", "count": 1 }
       ]
     },
     {
       "output": "create:brass_ingot",
-      "outputCount": 1,
+      "outputCount": 2,
       "job": "mixer_basin",
       "inputs": [
         { "item": "minecraft:copper_ingot", "count": 1 },
-        { "item": "minecraft:zinc_ingot", "count": 1 }
+        { "item": "create:zinc_ingot", "count": 1 }
+      ]
+    },
+    {
+      "output": "minecraft:stripped_oak_log",
+      "outputCount": 1,
+      "job": "slicer",
+      "inputs": [{ "item": "minecraft:oak_log", "count": 1 }]
+    },
+    {
+      "output": "create:andesite_casing",
+      "outputCount": 1,
+      "job": "andesite_casing_deployer",
+      "inputs": [
+        { "item": "minecraft:stripped_oak_log", "count": 1 },
+        { "item": "create:andesite_alloy", "count": 1 }
+      ]
+    },
+    {
+      "output": "create:brass_casing",
+      "outputCount": 1,
+      "job": "brass_casing_deployer",
+      "inputs": [
+        { "item": "minecraft:stripped_oak_log", "count": 1 },
+        { "item": "create:brass_ingot", "count": 1 }
+      ]
+    },
+    {
+      "output": "create:copper_casing",
+      "outputCount": 1,
+      "job": "copper_casing_deployer",
+      "inputs": [
+        { "item": "minecraft:stripped_oak_log", "count": 1 },
+        { "item": "minecraft:copper_ingot", "count": 1 }
+      ]
+    },
+    {
+      "output": "farmersdelight:chicken_cuts",
+      "outputCount": 2,
+      "job": "slicer",
+      "inputs": [{ "item": "minecraft:chicken", "count": 1 }]
+    },
+    {
+      "output": "farmersdelight:pumpkin_slice",
+      "outputCount": 4,
+      "job": "slicer",
+      "inputs": [{ "item": "minecraft:pumpkin", "count": 1 }]
+    },
+    {
+      "output": "farmersdelight:beef_stew",
+      "outputCount": 1,
+      "job": "cooking_pot",
+      "inputs": [
+        { "item": "minecraft:beef", "count": 1 },
+        { "item": "minecraft:carrot", "count": 1 },
+        { "item": "minecraft:potato", "count": 1 }
       ]
     },
     {
