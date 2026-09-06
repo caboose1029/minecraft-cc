@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "GhFetch.kt", {["1-9"]=1,["10"]=25,["11"]=26,["12"]=27,["13"]=29,["14"]=30,["15"]=31,["16"]=32,["17-18"]=33,["19"]=41,["20"]=68,["21"]=69,["22"]=70,["23"]=71,["24"]=72,["25"]=73,["26"]=74,["27"]=75,["28-29"]=76,["30"]=78,["31-32"]=79,["33-34"]=81,["35"]=84,["36-37"]=85,["38-41"]=87}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "GhFetch.kt", {["1-9"]=1,["10"]=25,["11"]=26,["12"]=27,["13"]=29,["14"]=30,["15"]=31,["16"]=32,["17-18"]=33,["19"]=41,["20"]=69,["21"]=70,["22"]=71,["23"]=72,["24"]=73,["25"]=74,["26"]=75,["27"]=76,["28-29"]=77,["30"]=79,["31-32"]=80,["33-34"]=82,["35"]=85,["36-37"]=86,["38-41"]=88}, "programs")
 
 DEFAULT_BRANCH = "feat/ktox-lua-storage"
 
@@ -16,7 +16,7 @@ function main(args)
         fs.makeDir(dirs[d])
         d = ktox_plusAssign(d, 1)
     end
-    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "lib/Span.lua", "lib/Chest.lua", "lib/Shape.lua", "lib/Redstone.lua", "lib/Inventory.lua", "lib/Config.lua", "lib/Cli.lua", "common/Monitor.lua", "common/Peripheral.lua", "config/peripherals.example.json", "config/job-types.example.json", "config/resource-tree.example.json", "Digsite.lua", "ExcavatePro.lua", "DiamondFinder.lua", "TestMonitor.lua", "TestConfig.lua", "Terminal.lua", "GhFetch.lua"}
+    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "lib/Span.lua", "lib/Chest.lua", "lib/Shape.lua", "lib/Redstone.lua", "lib/Inventory.lua", "lib/Config.lua", "lib/Executor.lua", "lib/Cli.lua", "common/Monitor.lua", "common/Peripheral.lua", "config/peripherals.example.json", "config/job-types.example.json", "config/resource-tree.example.json", "Digsite.lua", "ExcavatePro.lua", "DiamondFinder.lua", "TestMonitor.lua", "TestConfig.lua", "Terminal.lua", "GhFetch.lua"}
     local i = 1
     local failures = 0
     while i <= #(files) do

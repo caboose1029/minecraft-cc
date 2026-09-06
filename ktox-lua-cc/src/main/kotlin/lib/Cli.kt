@@ -3,7 +3,10 @@ package lib
 import common.ktoxConfigPickupVault
 import common.ktoxConfigStorageVaultNames
 import common.ktoxListCatalog
+import lib.findDirectConversion
+import lib.jobTimeoutSeconds
 import lib.pullFromStoragePool
+import lib.runDirectJob
 
 // Shared command dispatcher for both a terminal's own local input and
 // rednet-forwarded input from a secondary terminal (see PLAN.md — same
@@ -21,6 +24,9 @@ fun runCliCommand(commandLine: String): String {
     }
     if (verb == "pull") {
         return runPullCommand(parts)
+    }
+    if (verb == "craft") {
+        return runCraftCommand(parts)
     }
     return "Unknown command: ${verb}. Try: list, pull, craft."
 }
@@ -85,4 +91,43 @@ fun runPullCommand(parts: List<String>): String {
 
     val pulled = pullFromStoragePool(pickupVault, itemName, qty)
     return "Pulled ${pulled} of ${itemName} into the pickup vault (requested ${qty})."
+}
+
+// Combined craft+pull, single-hop only — see PLAN.md. Pulls whatever's
+// already stocked first, then for any shortfall, runs the one direct
+// conversion that produces it (if any). Multi-hop chains (need sheets,
+// only raw ore exists) are phase 2's planner, not this command — this
+// just reports "not directly craftable" for those.
+fun runCraftCommand(parts: List<String>): String {
+    if (parts.size < 3) {
+        return "Usage: craft <name> <qty>"
+    }
+    val itemName = parts[2]
+    val qty = parts[3].toDouble().toInt()
+
+    val pickupVault = ktoxConfigPickupVault()
+    if (pickupVault == "MISSING") {
+        return "No pickup vault configured (job.type \"pickup\" in config/peripherals.json)."
+    }
+
+    val pulledFromStock = pullFromStoragePool(pickupVault, itemName, qty)
+    val stillNeeded = qty - pulledFromStock
+    if (stillNeeded <= 0) {
+        return "Pulled ${pulledFromStock} of ${itemName} from stock (requested ${qty})."
+    }
+
+    val conversion = findDirectConversion(itemName)
+    if (conversion == null) {
+        return "Pulled ${pulledFromStock} of ${itemName} from stock; ${stillNeeded} more not directly craftable (requested ${qty})."
+    }
+
+    val timeout = jobTimeoutSeconds(conversion.jobType)
+    val produced = runDirectJob(conversion, stillNeeded, timeout)
+    if (produced <= 0) {
+        return "Pulled ${pulledFromStock} of ${itemName} from stock; craft job produced none of the remaining ${stillNeeded} (requested ${qty})."
+    }
+
+    val pulledAfterCraft = pullFromStoragePool(pickupVault, itemName, produced)
+    val totalPulled = pulledFromStock + pulledAfterCraft
+    return "Pulled ${totalPulled} of ${itemName} total (${pulledFromStock} from stock, ${pulledAfterCraft} freshly crafted) - requested ${qty}."
 }

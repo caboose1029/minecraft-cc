@@ -50,4 +50,6 @@ fun main() {
     println(runCliCommand("list --unavailable"))
     println("--- pull with no pickup vault configured ---")
     println(runCliCommand("pull minecraft:copper_ingot 5"))
+    println("--- craft (no stock, no input available - should not hang) ---")
+    println(runCliCommand("craft create:copper_sheet 5"))
 }

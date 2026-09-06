@@ -49,6 +49,9 @@ fun ktoxConfigPickupVault(): String = externalSource()
 @NativeName("ktoxListCatalog")
 fun ktoxListCatalog(sourceNamesCsv: String, filter: String, substring: String): String = externalSource()
 
+@NativeName("ktoxConfigJobTimeoutSeconds")
+fun ktoxConfigJobTimeoutSecondsRaw(jobType: String): Int = externalSource()
+
 // Inventory helpers (ktox-cc-shim.lua) — see lib/Inventory.kt for the
 // idiomatic wrapper.
 

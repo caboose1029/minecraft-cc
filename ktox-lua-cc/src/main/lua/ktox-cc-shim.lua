@@ -451,3 +451,16 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
     end
     return table.concat(lines, "\n")
 end
+
+-- The configured timeout (in seconds) for a job type, from
+-- config/job-types.json's optional "timeoutSeconds" field. Returns -1 if
+-- not configured (job type missing, file missing, or field absent) —
+-- Kotlin falls back to a sensible default in that case (see
+-- lib/Executor.kt's DEFAULT_JOB_TIMEOUT_SECONDS).
+function ktoxConfigJobTimeoutSeconds(jobType)
+    local config = ktoxReadJSONFile("config/job-types.json")
+    if config ~= nil and config[jobType] ~= nil and config[jobType].timeoutSeconds ~= nil then
+        return config[jobType].timeoutSeconds
+    end
+    return -1
+end

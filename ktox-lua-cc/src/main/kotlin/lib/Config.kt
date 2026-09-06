@@ -4,6 +4,7 @@ import common.ktoxConfigProducesLookup
 
 data class DirectConversion(
     val inputName: String,
+    val outputName: String,
     val jobType: String,
     val inputCount: Int,
     val outputCount: Int,
@@ -24,6 +25,7 @@ fun findDirectConversion(outputName: String): DirectConversion? {
     val parts = raw.split(",")
     return DirectConversion(
         parts[1],
+        outputName,
         parts[2],
         parts[3].toDouble().toInt(),
         parts[4].toDouble().toInt(),

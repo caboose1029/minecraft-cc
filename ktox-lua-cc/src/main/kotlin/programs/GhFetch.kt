@@ -50,6 +50,7 @@ fun main(args: Array<String>) {
         "lib/Redstone.lua",
         "lib/Inventory.lua",
         "lib/Config.lua",
+        "lib/Executor.lua",
         "lib/Cli.lua",
         "common/Monitor.lua",
         "common/Peripheral.lua",
