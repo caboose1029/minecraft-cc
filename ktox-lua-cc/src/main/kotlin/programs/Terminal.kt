@@ -14,7 +14,7 @@ import lib.runCliCommand
 // Usage: terminal (no args)
 
 fun main() {
-    println("Vault terminal ready. Commands: list, pull, craft.")
+    println("Vault terminal ready. Commands: list, pull, craft, trash.")
     while (true) {
         termWrite("> ")
         val commandLine = readInput()

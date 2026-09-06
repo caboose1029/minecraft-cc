@@ -72,7 +72,7 @@ will manually reboot one that's stuck. Not worth the complexity.
 
 ## Vaults
 
-Three kinds, distinguished by `job.type` in `peripherals.json` (see below):
+Four kinds, distinguished by `job.type` in `peripherals.json` (see below):
 
 - **Storage vaults** — raw pooled storage. Machines/farms drop output into
   these. All storage-job vaults are treated as **one logical resource
@@ -95,6 +95,12 @@ Three kinds, distinguished by `job.type` in `peripherals.json` (see below):
   rather than assume it works, results are pushed to an ordinary vault
   peripheral next to the terminal instead. Revisit if/when turtle-as-
   inventory-peripheral is confirmed to work.
+- **Trash vault** (`job.type: "trash"`) — dumps whatever's pushed into it
+  into lava, permanently. Functionally identical wiring to a feeder
+  vault (a vault + funnel), but semantically very different: it's never
+  a target for anything automatic (no resource-tree.json entry, nothing
+  routes to it implicitly) — only the explicit `trash <name> <qty>`
+  command touches it, since destroying items is irreversible.
 
 Stockpile Switch is a good fit for storage-vault fullness (aggregate fill
 %, doesn't care about item identity) but **not** for per-item shortage
@@ -250,6 +256,8 @@ secondary over rednet — same dispatcher either way:
   there. A chain that bottoms out at an unstocked, non-convertible item
   (or hits `MAX_PLANNER_DEPTH`) just produces as much as it can, which
   may be nothing.
+- `trash <name> <qty>` — permanently destroys items via the trash vault.
+  Its own explicit command on purpose; nothing else ever routes here.
 
 ## Generic peripheral-call shim
 

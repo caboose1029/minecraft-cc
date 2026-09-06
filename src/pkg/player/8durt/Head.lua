@@ -17,7 +17,7 @@ local function main()
         println("Another head is already running (id " .. tostring(existingHead) .. ") - refusing to start. Only one head terminal is allowed on the network.")
         return
     end
-    println("Head terminal ready. Commands: list, pull, craft.")
+    println("Head terminal ready. Commands: list, pull, craft, trash.")
     while true do
         parallel.waitForAny(function()
             return handleLocalInput()

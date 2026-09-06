@@ -5,7 +5,7 @@ ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).sh
 ktox_require("lib/Cli")
 
 local function main()
-    println("Vault terminal ready. Commands: list, pull, craft.")
+    println("Vault terminal ready. Commands: list, pull, craft, trash.")
     while true do
         term.write("> ")
         local commandLine = read()

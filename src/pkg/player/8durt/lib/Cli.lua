@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=15,["12-13"]=16,["14"]=18,["15"]=19,["16"]=20,["17-18"]=21,["19"]=23,["20-21"]=24,["22"]=26,["23-24"]=27,["25-30"]=29,["31"]=33,["32"]=34,["33"]=35,["34"]=36,["35"]=37,["36"]=38,["37"]=39,["38-39"]=40,["40"]=42,["41-42"]=43,["43"]=44,["44"]=45,["45-48"]=46,["49"]=49,["50-51"]=50,["52"]=53,["53"]=54,["54-55"]=55,["56"]=58,["57"]=59,["58"]=60,["59"]=61,["60"]=62,["61"]=63,["62"]=64,["63"]=65,["64"]=66,["65-66"]=67,["67-68"]=69,["69-70"]=71,["71-72"]=73,["73-78"]=75,["79"]=79,["80-81"]=80,["82"]=82,["83"]=83,["84"]=85,["85"]=86,["86-87"]=87,["88"]=90,["89-94"]=91,["95"]=100,["96-97"]=101,["98"]=103,["99"]=104,["100"]=106,["101"]=107,["102-103"]=108,["104"]=111,["105"]=112,["106-108"]=113}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=16,["12-13"]=17,["14"]=19,["15"]=20,["16"]=21,["17-18"]=22,["19"]=24,["20-21"]=25,["22"]=27,["23-24"]=28,["25"]=30,["26-27"]=31,["28-33"]=33,["34"]=37,["35"]=38,["36"]=39,["37"]=40,["38"]=41,["39"]=42,["40"]=43,["41-42"]=44,["43"]=46,["44-45"]=47,["46"]=48,["47"]=49,["48-51"]=50,["52"]=53,["53-54"]=54,["55"]=57,["56"]=58,["57-58"]=59,["59"]=62,["60"]=63,["61"]=64,["62"]=65,["63"]=66,["64"]=67,["65"]=68,["66"]=69,["67"]=70,["68-69"]=71,["70-71"]=73,["72-73"]=75,["74-75"]=77,["76-81"]=79,["82"]=83,["83-84"]=84,["85"]=86,["86"]=87,["87"]=89,["88"]=90,["89-90"]=91,["91"]=94,["92-97"]=95,["98"]=104,["99-100"]=105,["101"]=107,["102"]=108,["103"]=110,["104"]=111,["105-106"]=112,["107"]=115,["108"]=116,["109-114"]=117,["115"]=125,["116-117"]=126,["118"]=128,["119"]=129,["120"]=131,["121"]=132,["122-123"]=133,["124"]=136,["125-127"]=137}, "lib")
 ktox_require("lib/Planner")
 ktox_require("lib/Inventory")
 
@@ -22,7 +22,10 @@ function runCliCommand(commandLine)
     if verb == "craft" then
         return runCraftCommand(parts)
     end
-    return "Unknown command: " .. tostring(verb) .. ". Try: list, pull, craft."
+    if verb == "trash" then
+        return runTrashCommand(parts)
+    end
+    return "Unknown command: " .. tostring(verb) .. ". Try: list, pull, craft, trash."
 end
 
 ---@param parts table
@@ -104,5 +107,21 @@ function runCraftCommand(parts)
     ensureStocked(itemName, qty, 0)
     local pulled = pullFromStoragePool(pickupVault, itemName, qty)
     return "Pulled " .. tostring(pulled) .. " of " .. tostring(itemName) .. " (requested " .. tostring(qty) .. ")."
+end
+
+---@param parts table
+---@return string
+function runTrashCommand(parts)
+    if #(parts) < 3 then
+        return "Usage: trash <name> <qty>"
+    end
+    local itemName = parts[2]
+    local qty = ktox_toInt(ktox_toDouble(parts[3]))
+    local trashVault = ktoxConfigTrashVault()
+    if trashVault == "MISSING" then
+        return "No trash vault configured (job.type " .. "\"" .. "trash" .. "\"" .. " in config/peripherals.json)."
+    end
+    local trashed = pullFromStoragePool(trashVault, itemName, qty)
+    return "Destroyed " .. tostring(trashed) .. " of " .. tostring(itemName) .. " (requested " .. tostring(qty) .. ")."
 end
 

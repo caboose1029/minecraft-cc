@@ -77,4 +77,6 @@ fun main() {
     println(runCliCommand("craft create:copper_sheet 5"))
     println("--- craft brass (2-ingredient recipe, no stock - should not hang) ---")
     println(runCliCommand("craft create:brass_ingot 5"))
+    println("--- trash ---")
+    println(runCliCommand("trash minecraft:cobblestone 64"))
 }

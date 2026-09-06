@@ -26,7 +26,7 @@ fun main() {
         return
     }
 
-    println("Secondary terminal ready (head id ${headId}). Commands: list, pull, craft.")
+    println("Secondary terminal ready (head id ${headId}). Commands: list, pull, craft, trash.")
     while (true) {
         termWrite("> ")
         val commandLine = readInput()

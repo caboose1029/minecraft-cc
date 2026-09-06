@@ -11,7 +11,7 @@ local function main()
         println("No head terminal found on the network. Make sure exactly one head is running, then reboot this secondary.")
         return
     end
-    println("Secondary terminal ready (head id " .. tostring(headId) .. "). Commands: list, pull, craft.")
+    println("Secondary terminal ready (head id " .. tostring(headId) .. "). Commands: list, pull, craft, trash.")
     while true do
         term.write("> ")
         local commandLine = read()

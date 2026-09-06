@@ -434,6 +434,24 @@ function ktoxConfigPickupVault()
     return "MISSING"
 end
 
+-- The trash vault's peripheral name (job.type == "trash") — a vault that
+-- dumps whatever's pushed into it into lava, permanently destroying it.
+-- Functionally identical wiring to a feeder vault; semantically very
+-- different (irreversible), so it's never targeted by anything except an
+-- explicit `trash` CLI command — it has no entry in resource-tree.json
+-- and nothing routes to it automatically. "MISSING" if none configured.
+function ktoxConfigTrashVault()
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        for name, entry in pairs(config) do
+            if entry.type == "vault" and entry.job ~= nil and entry.job.type == "trash" then
+                return name
+            end
+        end
+    end
+    return "MISSING"
+end
+
 -- Builds the full item catalog for the `list` CLI command: every item
 -- either currently stocked in the pool, or mentioned anywhere in
 -- config/resource-tree.json, classified as "stocked" (count > 0 in the

@@ -46,6 +46,9 @@ fun ktoxConfigProducesLookup(outputName: String): String = externalSource()
 @NativeName("ktoxConfigPickupVault")
 fun ktoxConfigPickupVault(): String = externalSource()
 
+@NativeName("ktoxConfigTrashVault")
+fun ktoxConfigTrashVault(): String = externalSource()
+
 @NativeName("ktoxListCatalog")
 fun ktoxListCatalog(sourceNamesCsv: String, filter: String, substring: String): String = externalSource()
 

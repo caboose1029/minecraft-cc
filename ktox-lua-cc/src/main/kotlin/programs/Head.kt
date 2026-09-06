@@ -40,7 +40,7 @@ fun main() {
         return
     }
 
-    println("Head terminal ready. Commands: list, pull, craft.")
+    println("Head terminal ready. Commands: list, pull, craft, trash.")
     while (true) {
         parallelWaitForAny(
             { handleLocalInput() },

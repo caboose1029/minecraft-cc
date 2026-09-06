@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-10"]=1,["11"]=23,["12"]=25,["13"]=26,["14-15"]=27,["16-17"]=29,["18"]=32,["19"]=33,["20-21"]=34,["22-23"]=36,["24"]=39,["25"]=40,["26-27"]=41,["28"]=43,["29"]=44,["30"]=45,["31"]=46,["32"]=47,["33-35"]=48,["36"]=52,["37"]=53,["38-39"]=54,["40"]=56,["41"]=57,["42"]=58,["43"]=59,["44"]=60,["45-47"]=61,["48"]=65,["49"]=67,["50"]=68,["51"]=70,["52"]=71,["53"]=72,["54"]=73,["55"]=74,["56"]=75,["57"]=76,["58"]=77,["59"]=78,["60-65"]=79}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-10"]=1,["11"]=23,["12"]=25,["13"]=26,["14-15"]=27,["16-17"]=29,["18"]=32,["19"]=33,["20-21"]=34,["22-23"]=36,["24"]=39,["25"]=40,["26-27"]=41,["28"]=43,["29"]=44,["30"]=45,["31"]=46,["32"]=47,["33-35"]=48,["36"]=52,["37"]=53,["38-39"]=54,["40"]=56,["41"]=57,["42"]=58,["43"]=59,["44"]=60,["45-47"]=61,["48"]=65,["49"]=67,["50"]=68,["51"]=70,["52"]=71,["53"]=72,["54"]=73,["55"]=74,["56"]=75,["57"]=76,["58"]=77,["59"]=78,["60"]=79,["61"]=80,["62-67"]=81}, "programs")
 ktox_require("lib/Config")
 ktox_require("lib/Cli")
 ktox_require("lib/Redstone")
@@ -58,6 +58,8 @@ local function main()
     println(runCliCommand("craft create:copper_sheet 5"))
     println("--- craft brass (2-ingredient recipe, no stock - should not hang) ---")
     println(runCliCommand("craft create:brass_ingot 5"))
+    println("--- trash ---")
+    println(runCliCommand("trash minecraft:cobblestone 64"))
 end
 
 

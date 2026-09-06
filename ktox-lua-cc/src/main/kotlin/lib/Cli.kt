@@ -2,6 +2,7 @@ package lib
 
 import common.ktoxConfigPickupVault
 import common.ktoxConfigStorageVaultNames
+import common.ktoxConfigTrashVault
 import common.ktoxListCatalog
 import lib.ensureStocked
 import lib.pullFromStoragePool
@@ -26,7 +27,10 @@ fun runCliCommand(commandLine: String): String {
     if (verb == "craft") {
         return runCraftCommand(parts)
     }
-    return "Unknown command: ${verb}. Try: list, pull, craft."
+    if (verb == "trash") {
+        return runTrashCommand(parts)
+    }
+    return "Unknown command: ${verb}. Try: list, pull, craft, trash."
 }
 
 fun runListCommand(parts: List<String>): String {
@@ -111,4 +115,24 @@ fun runCraftCommand(parts: List<String>): String {
     ensureStocked(itemName, qty, 0)
     val pulled = pullFromStoragePool(pickupVault, itemName, qty)
     return "Pulled ${pulled} of ${itemName} (requested ${qty})."
+}
+
+// Permanently destroys items from the storage pool via the trash vault
+// (job.type "trash", dumps into lava — see PLAN.md). Deliberately its
+// own explicit command, never something another command routes to
+// automatically.
+fun runTrashCommand(parts: List<String>): String {
+    if (parts.size < 3) {
+        return "Usage: trash <name> <qty>"
+    }
+    val itemName = parts[2]
+    val qty = parts[3].toDouble().toInt()
+
+    val trashVault = ktoxConfigTrashVault()
+    if (trashVault == "MISSING") {
+        return "No trash vault configured (job.type \"trash\" in config/peripherals.json)."
+    }
+
+    val trashed = pullFromStoragePool(trashVault, itemName, qty)
+    return "Destroyed ${trashed} of ${itemName} (requested ${qty})."
 }
