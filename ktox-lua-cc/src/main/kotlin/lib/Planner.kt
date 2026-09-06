@@ -2,10 +2,12 @@ package lib
 
 import lib.ceilDiv
 import lib.findRecipe
+import lib.jobKind
 import lib.jobTimeoutSeconds
 import lib.recipeInputCount
 import lib.recipeInputCountAt
 import lib.recipeInputItem
+import lib.runCrafterJob
 import lib.runDirectJob
 import lib.storagePoolCount
 
@@ -63,6 +65,10 @@ fun ensureStocked(itemName: String, desiredCount: Int, depth: Int): Int {
     }
 
     val timeout = jobTimeoutSeconds(recipe.jobType)
-    runDirectJob(recipe, shortfall, timeout)
+    if (jobKind(recipe.jobType) == "crafter") {
+        runCrafterJob(recipe, shortfall, timeout)
+    } else {
+        runDirectJob(recipe, shortfall, timeout)
+    }
     return storagePoolCount(itemName)
 }

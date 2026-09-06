@@ -36,5 +36,9 @@
     "connections": {
       "right": { "job": { "type": "mixer_basin" } }
     }
+  },
+  "computercraft:turtle_advanced_0": {
+    "type": "crafter",
+    "job": { "type": "chest_crafter" }
   }
 }

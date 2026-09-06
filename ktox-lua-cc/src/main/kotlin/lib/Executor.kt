@@ -1,12 +1,21 @@
 package lib
 
+import common.ktoxConfigCrafterForJob
 import common.ktoxConfigFeederForJob
 import common.ktoxConfigJobTimeoutSecondsRaw
 import common.ktoxInventoryIsEmpty
 import common.osSleep
+import common.rednetSend
 import lib.pullFromStoragePool
+import lib.pullFromStoragePoolToSlot
+import lib.queryForCrafter
+import lib.recipeInputCount
+import lib.recipeInputCountAt
+import lib.recipeInputItem
+import lib.recipeInputSlot
 import lib.setJobPower
 import lib.storagePoolCount
+import lib.VAULT_CRAFTER_CMD_PROTOCOL
 
 const val DEFAULT_JOB_TIMEOUT_SECONDS = 30
 
@@ -156,6 +165,72 @@ fun runDirectJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
                     }
                 }
                 setJobPower(recipe.jobType, false)
+                totalProduced += madeThisAttempt
+            }
+        }
+        attempt += 1
+    }
+    return totalProduced
+}
+
+// Runs one crafter-kind job (a crafty turtle running turtle.craft() —
+// see PLAN.md "Crafter role") to produce up to `desiredOutput` more of
+// the recipe's output. Same batching/timeout/polling shape as
+// runDirectJob, but pushes each ingredient into the crafter turtle's
+// SPECIFIC crafting-grid slot (recipeInputSlot) instead of a generic
+// feeder vault, and signals "craft now" over rednet instead of toggling
+// a redstone relay — the crafter turtle itself drops the result toward
+// an adjacent storage vault once done (see Crafter.kt), so this still
+// polls the storage pool for progress exactly like a machine job.
+fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
+    val crafterName = ktoxConfigCrafterForJob(recipe.jobType)
+    if (crafterName == "MISSING") {
+        return 0
+    }
+
+    var totalProduced = 0
+    var attempt = 1
+    var giveUp = false
+    while (attempt <= 2 && totalProduced < desiredOutput && !giveUp) {
+        val remaining = desiredOutput - totalProduced
+        val desiredBatches = ceilDiv(remaining, recipe.outputCount)
+        val batches = maxAffordableBatches(recipe, desiredBatches)
+
+        if (batches <= 0) {
+            giveUp = true
+        } else {
+            val crafterId = queryForCrafter(recipe.jobType, 2.0)
+            if (crafterId == -1) {
+                giveUp = true
+            } else {
+                val expectedThisAttempt = batches * recipe.outputCount
+                val inputCount = recipeInputCount(recipe)
+                var i = 1
+                while (i <= inputCount) {
+                    val itemName = recipeInputItem(recipe, i)
+                    val perBatch = recipeInputCountAt(recipe, i)
+                    val slot = recipeInputSlot(recipe, i)
+                    pullFromStoragePoolToSlot(crafterName, slot, itemName, perBatch * batches)
+                    i += 1
+                }
+
+                val startingOutput = storagePoolCount(recipe.outputName)
+                rednetSend(crafterId, "${batches}", VAULT_CRAFTER_CMD_PROTOCOL)
+
+                var lastCount = startingOutput
+                var secondsSinceProgress = 0
+                var madeThisAttempt = 0
+                while (secondsSinceProgress < timeoutSeconds && madeThisAttempt < expectedThisAttempt) {
+                    osSleep(1.0)
+                    val currentCount = storagePoolCount(recipe.outputName)
+                    madeThisAttempt = currentCount - startingOutput
+                    if (currentCount > lastCount) {
+                        secondsSinceProgress = 0
+                        lastCount = currentCount
+                    } else {
+                        secondsSinceProgress += 1
+                    }
+                }
                 totalProduced += madeThisAttempt
             }
         }

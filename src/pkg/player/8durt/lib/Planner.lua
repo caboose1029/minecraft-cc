@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Planner.kt", {["1-15"]=1,["16"]=37,["17"]=38,["18-19"]=39,["20"]=41,["21-22"]=42,["23"]=45,["24"]=46,["25"]=47,["26-27"]=48,["28"]=51,["29"]=52,["30"]=53,["31"]=54,["32"]=55,["33"]=56,["34"]=61,["35-36"]=62,["37"]=65,["38"]=66,["39-41"]=67}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Planner.kt", {["1-15"]=1,["16"]=39,["17"]=40,["18-19"]=41,["20"]=43,["21-22"]=44,["23"]=47,["24"]=48,["25"]=49,["26-27"]=50,["28"]=53,["29"]=54,["30"]=55,["31"]=56,["32"]=57,["33"]=58,["34"]=63,["35-36"]=64,["37"]=67,["38"]=68,["39-40"]=69,["41-42"]=71,["43-45"]=73}, "lib")
 ktox_require("lib/Executor")
 ktox_require("lib/Config")
 ktox_require("lib/Inventory")
@@ -35,7 +35,11 @@ function ensureStocked(itemName, desiredCount, depth)
         i = ktox_plusAssign(i, 1)
     end
     local timeout = jobTimeoutSeconds(recipe.jobType)
-    runDirectJob(recipe, shortfall, timeout)
+    if jobKind(recipe.jobType) == "crafter" then
+        runCrafterJob(recipe, shortfall, timeout)
+    else
+        runDirectJob(recipe, shortfall, timeout)
+    end
     return storagePoolCount(itemName)
 end
 

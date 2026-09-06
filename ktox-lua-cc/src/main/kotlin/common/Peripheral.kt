@@ -49,6 +49,9 @@ fun ktoxConfigPickupVault(): String = externalSource()
 @NativeName("ktoxConfigTrashVault")
 fun ktoxConfigTrashVault(): String = externalSource()
 
+@NativeName("ktoxConfigCrafterForJob")
+fun ktoxConfigCrafterForJob(jobType: String): String = externalSource()
+
 @NativeName("ktoxListCatalog")
 fun ktoxListCatalog(sourceNamesCsv: String, filter: String, substring: String): String = externalSource()
 
@@ -73,3 +76,7 @@ fun ktoxInventoryPullNamedFromPool(toName: String, sourceNamesCsv: String, itemN
 
 @NativeName("ktoxInventoryListPooled")
 fun ktoxInventoryListPooled(sourceNamesCsv: String): String = externalSource()
+
+@NativeName("ktoxInventoryPullNamedToSlotFromPool")
+fun ktoxInventoryPullNamedToSlotFromPool(toName: String, toSlot: Int, sourceNamesCsv: String, itemName: String, desired: Int): Int =
+    externalSource()

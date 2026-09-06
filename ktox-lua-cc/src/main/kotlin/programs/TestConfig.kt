@@ -4,6 +4,7 @@ import common.ktoxConfigFeederForJob
 import common.ktoxConfigRelayForJob
 import common.ktoxConfigStorageVaultNames
 import lib.findRecipe
+import lib.jobKind
 import lib.recipeInputCount
 import lib.recipeInputCountAt
 import lib.recipeInputItem
@@ -79,4 +80,21 @@ fun main() {
     println(runCliCommand("craft create:brass_ingot 5"))
     println("--- trash ---")
     println(runCliCommand("trash minecraft:cobblestone 64"))
+
+    val chestRecipe = findRecipe("minecraft:chest")
+    if (chestRecipe == null) {
+        println("Recipe for minecraft:chest: none configured")
+    } else {
+        val count = recipeInputCount(chestRecipe)
+        println("Recipe for minecraft:chest: ${count} input(s) via ${chestRecipe.jobType}")
+        var i = 1
+        while (i <= count) {
+            println("  input ${i}: ${recipeInputCountAt(chestRecipe, i)}x ${recipeInputItem(chestRecipe, i)} -> slot ${recipeInputSlot(chestRecipe, i)}")
+            i += 1
+        }
+    }
+    println("Job kind for chest_crafter: ${jobKind("chest_crafter")}")
+    println("Job kind for smelter: ${jobKind("smelter")}")
+    println("--- craft chest (crafter-kind job, no modem - should not hang) ---")
+    println(runCliCommand("craft minecraft:chest 1"))
 }

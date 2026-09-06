@@ -1,8 +1,10 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Executor.kt", {["1-14"]=1,["15"]=24,["16"]=25,["17-18"]=26,["19-25"]=28,["26-32"]=36,["33"]=40,["34-40"]=41,["41"]=47,["42"]=48,["43"]=49,["44"]=50,["45"]=51,["46"]=52,["47"]=53,["48"]=54,["49"]=55,["50-51"]=56,["52-53"]=58,["54-58"]=60,["59"]=69,["60"]=70,["61"]=71,["62-69"]=72,["70"]=85,["71"]=86,["72"]=87,["73"]=88,["74"]=89,["75-76"]=90,["77"]=93,["78"]=94,["79"]=95,["80"]=96,["81"]=97,["82"]=98,["83"]=99,["84"]=100,["85-86"]=101,["87-95"]=103,["96"]=120,["97"]=121,["98-99"]=122,["100"]=125,["101"]=126,["102"]=127,["103"]=128,["104"]=129,["105"]=130,["106"]=131,["107"]=133,["108-109"]=134,["110"]=136,["111"]=137,["112"]=139,["113"]=140,["114"]=141,["115-116"]=142,["117"]=144,["118"]=145,["119"]=146,["120"]=147,["121"]=148,["122"]=149,["123"]=150,["124"]=151,["125"]=152,["126-127"]=153,["128-130"]=155,["131"]=158,["132-134"]=159,["135-136"]=162,["137-139"]=164}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Executor.kt", {["1-16"]=1,["17"]=33,["18"]=34,["19-20"]=35,["21-27"]=37,["28-34"]=45,["35"]=49,["36-42"]=50,["43"]=56,["44"]=57,["45"]=58,["46"]=59,["47"]=60,["48"]=61,["49"]=62,["50"]=63,["51"]=64,["52-53"]=65,["54-55"]=67,["56-60"]=69,["61"]=78,["62"]=79,["63"]=80,["64-71"]=81,["72"]=94,["73"]=95,["74"]=96,["75"]=97,["76"]=98,["77-78"]=99,["79"]=102,["80"]=103,["81"]=104,["82"]=105,["83"]=106,["84"]=107,["85"]=108,["86"]=109,["87-88"]=110,["89-97"]=112,["98"]=129,["99"]=130,["100-101"]=131,["102"]=134,["103"]=135,["104"]=136,["105"]=137,["106"]=138,["107"]=139,["108"]=140,["109"]=142,["110-111"]=143,["112"]=145,["113"]=146,["114"]=148,["115"]=149,["116"]=150,["117-118"]=151,["119"]=153,["120"]=154,["121"]=155,["122"]=156,["123"]=157,["124"]=158,["125"]=159,["126"]=160,["127"]=161,["128-129"]=162,["130-132"]=164,["133"]=167,["134-136"]=168,["137-138"]=171,["139-146"]=173,["147"]=186,["148"]=187,["149-150"]=188,["151"]=191,["152"]=192,["153"]=193,["154"]=194,["155"]=195,["156"]=196,["157"]=197,["158"]=199,["159-160"]=200,["161"]=202,["162"]=203,["163-164"]=204,["165"]=206,["166"]=207,["167"]=208,["168"]=209,["169"]=210,["170"]=211,["171"]=212,["172"]=213,["173-174"]=214,["175"]=217,["176"]=218,["177"]=220,["178"]=221,["179"]=222,["180"]=223,["181"]=224,["182"]=225,["183"]=226,["184"]=227,["185"]=228,["186-187"]=229,["188-190"]=231,["191-193"]=234,["194-195"]=237,["196-198"]=239}, "lib")
 ktox_require("lib/Inventory")
+ktox_require("lib/RoleCheck")
+ktox_require("lib/Config")
 ktox_require("lib/Redstone")
 
 DEFAULT_JOB_TIMEOUT_SECONDS = 30
@@ -129,6 +131,63 @@ function runDirectJob(recipe, desiredOutput, timeoutSeconds)
                     end
                 end
                 setJobPower(recipe.jobType, false)
+                totalProduced = ktox_plusAssign(totalProduced, madeThisAttempt)
+            end
+        end
+        attempt = ktox_plusAssign(attempt, 1)
+    end
+    return totalProduced
+end
+
+---@param recipe Recipe
+---@param desiredOutput number
+---@param timeoutSeconds number
+---@return number
+function runCrafterJob(recipe, desiredOutput, timeoutSeconds)
+    local crafterName = ktoxConfigCrafterForJob(recipe.jobType)
+    if crafterName == "MISSING" then
+        return 0
+    end
+    local totalProduced = 0
+    local attempt = 1
+    local giveUp = false
+    while attempt <= 2 and totalProduced < desiredOutput and not giveUp do
+        local remaining = desiredOutput - totalProduced
+        local desiredBatches = ceilDiv(remaining, recipe.outputCount)
+        local batches = maxAffordableBatches(recipe, desiredBatches)
+        if batches <= 0 then
+            giveUp = true
+        else
+            local crafterId = queryForCrafter(recipe.jobType, 2.0)
+            if crafterId == -1 then
+                giveUp = true
+            else
+                local expectedThisAttempt = batches * recipe.outputCount
+                local inputCount = recipeInputCount(recipe)
+                local i = 1
+                while i <= inputCount do
+                    local itemName = recipeInputItem(recipe, i)
+                    local perBatch = recipeInputCountAt(recipe, i)
+                    local slot = recipeInputSlot(recipe, i)
+                    pullFromStoragePoolToSlot(crafterName, slot, itemName, perBatch * batches)
+                    i = ktox_plusAssign(i, 1)
+                end
+                local startingOutput = storagePoolCount(recipe.outputName)
+                rednet.send(crafterId, tostring(batches), VAULT_CRAFTER_CMD_PROTOCOL)
+                local lastCount = startingOutput
+                local secondsSinceProgress = 0
+                local madeThisAttempt = 0
+                while secondsSinceProgress < timeoutSeconds and madeThisAttempt < expectedThisAttempt do
+                    os.sleep(1.0)
+                    local currentCount = storagePoolCount(recipe.outputName)
+                    madeThisAttempt = currentCount - startingOutput
+                    if currentCount > lastCount then
+                        secondsSinceProgress = 0
+                        lastCount = currentCount
+                    else
+                        secondsSinceProgress = ktox_plusAssign(secondsSinceProgress, 1)
+                    end
+                end
                 totalProduced = ktox_plusAssign(totalProduced, madeThisAttempt)
             end
         end

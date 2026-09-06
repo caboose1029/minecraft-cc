@@ -129,6 +129,8 @@ if fs.exists("role.txt") then
             shell.run("Head")
         elseif role == "secondary" then
             shell.run("Secondary")
+        elseif string.sub(role, 1, 8) == "crafter:" then
+            shell.run("Crafter", string.sub(role, 9))
         end
     end
 end

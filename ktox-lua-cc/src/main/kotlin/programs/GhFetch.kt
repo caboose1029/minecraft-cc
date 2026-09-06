@@ -70,6 +70,7 @@ fun main(args: Array<String>) {
         "Terminal.lua",
         "Head.lua",
         "Secondary.lua",
+        "Crafter.lua",
         "TerminalSetup.lua",
         "GhFetch.lua",
     )

@@ -4,6 +4,7 @@ import common.ktoxConfigStorageVaultNames
 import common.ktoxInventoryCountNamed
 import common.ktoxInventoryListPooled
 import common.ktoxInventoryPullNamedFromPool
+import common.ktoxInventoryPullNamedToSlotFromPool
 
 // Storage is treated as one logical resource pool spread across every
 // vault whose config/peripherals.json job.type is "storage" — see
@@ -29,6 +30,17 @@ fun pullFromStoragePool(toName: String, itemName: String, desired: Int): Int {
         return 0
     }
     return ktoxInventoryPullNamedFromPool(toName, vaultNames, itemName, desired)
+}
+
+// Same as pullFromStoragePool, but lands the items in a specific slot of
+// `toName` — needed for a crafter turtle's crafting grid, where
+// placement matters (see PLAN.md "Crafter role").
+fun pullFromStoragePoolToSlot(toName: String, toSlot: Int, itemName: String, desired: Int): Int {
+    val vaultNames = ktoxConfigStorageVaultNames()
+    if (vaultNames == "") {
+        return 0
+    }
+    return ktoxInventoryPullNamedToSlotFromPool(toName, toSlot, vaultNames, itemName, desired)
 }
 
 // Raw "name,count" lines (one per distinct item across the whole pool,

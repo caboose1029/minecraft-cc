@@ -119,6 +119,14 @@ fun turtleSuckUp(count: Int): Boolean = externalSource()
 @NativeName("turtle.suckDown")
 fun turtleSuckDown(count: Int): Boolean = externalSource()
 
+// Crafts using the turtle's own inventory as a crafting grid (slots
+// 1, 2, 3, 5, 6, 7, 9, 10, 11 form the 3x3 grid — see PLAN.md "Crafter
+// role"). Result lands wherever Minecraft's own crafting result
+// placement puts it — not modeled/assumed here, see Crafter.kt's
+// dump-everything approach instead of tracking a specific output slot.
+@NativeName("turtle.craft")
+fun turtleCraft(limit: Int): Boolean = externalSource()
+
 // -- Fuel --
 
 @NativeName("turtle.getFuelLevel")

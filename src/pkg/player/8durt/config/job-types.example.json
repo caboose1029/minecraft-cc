@@ -11,5 +11,9 @@
     "produces": ["create:brass_ingot"],
     "kind": "machine",
     "timeoutSeconds": 45
+  },
+  "chest_crafter": {
+    "produces": ["minecraft:chest"],
+    "kind": "crafter"
   }
 }

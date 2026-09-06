@@ -63,12 +63,61 @@ with whichever ones happen to already be running.
    net, in case setup was bypassed — refuses to proceed if another head
    answers.
 
-Ping responses carry role directly (`rednet` messages can be whole Lua
-tables, not just strings — `{role = "head", ...}` / `{role = "secondary",
-...}`), so this needs no separate protocol.
+Ping responses carry role directly, over their own `rednet` protocol tag
+(`"vault-role-query"`/`"vault-role-reply"`). As-built this uses plain
+string payloads, not Lua tables as originally sketched here — Kotlin's
+native bindings need concrete scalar types, and a fixed protocol tag
+already does the job of separating message kinds cleanly (see "Generic
+peripheral-call shim" below for the same lesson learned the hard way with
+`ktoxPeripheralCall`'s argument packing).
 
 **No retry/self-heal loop for terminals** — they don't move, and a player
 will manually reboot one that's stuck. Not worth the complexity.
+
+**Crafter role** — a third kind of terminal, for a crafty turtle running
+`turtle.craft()`. Like a secondary, it never decides anything and is a
+thin client to the head's commands — but unlike a secondary, it has no
+player-facing CLI at all, it just sits listening on rednet for two things
+on its own dedicated protocols:
+- `"vault-crafter-query"` (payload: a job type) — if the payload matches
+  this crafter's own configured job type (set at provisioning time, see
+  below), reply "yes" (echoing the job type back) on
+  `"vault-crafter-reply"`. This is how the head finds "who handles job
+  X" — same broadcast-and-listen shape as head discovery, just filtered
+  by job type instead of role, and deliberately with **no** collision
+  detection: multiple crafters answering the same job type isn't guarded
+  against in phase 1 (unlike a second head, which is refused outright).
+- `"vault-crafter-cmd"` (payload: a quantity) — craft that many, then
+  drop everything the turtle is holding toward whatever it's physically
+  facing. This turtle is expected to be positioned facing an ordinary
+  storage vault, so the drop lands the result straight back in the pool —
+  a **physical `turtle.drop()`**, not a network push, since turtle-as-
+  peripheral-target is the same unresolved capability flagged for the
+  pickup vault (see "Vaults" below). The head never needs an explicit
+  "done" signal back — it just polls the storage pool for the output
+  count exactly like a machine job (see "CLI" below), so a crafter job
+  and a machine job look identical from the executor's point of view
+  once the craft command has been sent.
+
+The head still does all the deciding: it computes how many ingredient
+sets are needed, pushes each ingredient into the crafter turtle's
+*specific* crafting-grid slot (`pushItems`'s optional 4th argument,
+target slot — slot numbers 1, 2, 3, 5, 6, 7, 9, 10, 11 form the 3x3 grid
+inside the turtle's 16 slots; this mapping is my best understanding of
+`turtle.craft()`'s expected layout, **unverified in-game**), then sends
+the craft command. The crafter turtle only ever executes, never plans.
+
+Provisioning: `terminalsetup crafter <jobType>` writes `role.txt` as
+`crafter:<jobType>` (vs. plain `head`/`secondary`) — `startup.lua` parses
+the `crafter:` prefix and launches `Crafter <jobType>` automatically on
+every boot, same auto-launch mechanism as the other two roles.
+
+**Unverified, flagged for in-game testing** (same caveat as the rest of
+the rednet/parallel work — see "Known open items"): the exact
+`turtle.craft()` grid-slot mapping, whether `turtle.craft()`'s result
+lands somewhere `dumpAllForward()`'s "select every slot, drop if
+non-empty" sweep actually catches, and the full head→crafter round trip
+end to end.
 
 ## Vaults
 
@@ -330,6 +379,13 @@ does.
   emulation for either. **Test this first**, before relying on any
   multi-terminal setup: boot a head, boot a secondary, confirm a command
   round-trips, then boot a second head and confirm it refuses to start.
+- **Crafter role is equally unverified, plus two extra unknowns beyond
+  the rednet/parallel question above:** the exact `turtle.craft()`
+  crafting-grid slot mapping (assumed 1, 2, 3, 5, 6, 7, 9, 10, 11), and
+  where the craft result actually lands (assumed `dumpAllForward()`'s
+  sweep-every-slot approach catches it regardless). Test with a real
+  crafter turtle and a simple known recipe before trusting this for
+  anything real.
 - Storage-vault load balancing (push-to-emptiest, farm→vault preference
   routing) — problem #3b territory, deferred.
 - Stockpile Switch integration for fast vault-fullness queries — deferred.

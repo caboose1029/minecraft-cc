@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-10"]=1,["11"]=23,["12"]=25,["13"]=26,["14-15"]=27,["16-17"]=29,["18"]=32,["19"]=33,["20-21"]=34,["22-23"]=36,["24"]=39,["25"]=40,["26-27"]=41,["28"]=43,["29"]=44,["30"]=45,["31"]=46,["32"]=47,["33-35"]=48,["36"]=52,["37"]=53,["38-39"]=54,["40"]=56,["41"]=57,["42"]=58,["43"]=59,["44"]=60,["45-47"]=61,["48"]=65,["49"]=67,["50"]=68,["51"]=70,["52"]=71,["53"]=72,["54"]=73,["55"]=74,["56"]=75,["57"]=76,["58"]=77,["59"]=78,["60"]=79,["61"]=80,["62-67"]=81}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-10"]=1,["11"]=24,["12"]=26,["13"]=27,["14-15"]=28,["16-17"]=30,["18"]=33,["19"]=34,["20-21"]=35,["22-23"]=37,["24"]=40,["25"]=41,["26-27"]=42,["28"]=44,["29"]=45,["30"]=46,["31"]=47,["32"]=48,["33-35"]=49,["36"]=53,["37"]=54,["38-39"]=55,["40"]=57,["41"]=58,["42"]=59,["43"]=60,["44"]=61,["45-47"]=62,["48"]=66,["49"]=68,["50"]=69,["51"]=71,["52"]=72,["53"]=73,["54"]=74,["55"]=75,["56"]=76,["57"]=77,["58"]=78,["59"]=79,["60"]=80,["61"]=81,["62"]=82,["63"]=84,["64"]=85,["65-66"]=86,["67"]=88,["68"]=89,["69"]=90,["70"]=91,["71"]=92,["72-74"]=93,["75"]=96,["76"]=97,["77"]=98,["78-83"]=99}, "programs")
 ktox_require("lib/Config")
 ktox_require("lib/Cli")
 ktox_require("lib/Redstone")
@@ -60,6 +60,22 @@ local function main()
     println(runCliCommand("craft create:brass_ingot 5"))
     println("--- trash ---")
     println(runCliCommand("trash minecraft:cobblestone 64"))
+    local chestRecipe = findRecipe("minecraft:chest")
+    if chestRecipe == nil then
+        println("Recipe for minecraft:chest: none configured")
+    else
+        local count = recipeInputCount(chestRecipe)
+        println("Recipe for minecraft:chest: " .. tostring(count) .. " input(s) via " .. tostring(chestRecipe.jobType))
+        local i = 1
+        while i <= count do
+            println("  input " .. tostring(i) .. ": " .. tostring(recipeInputCountAt(chestRecipe, i)) .. "x " .. tostring(recipeInputItem(chestRecipe, i)) .. " -> slot " .. tostring(recipeInputSlot(chestRecipe, i)))
+            i = ktox_plusAssign(i, 1)
+        end
+    end
+    println("Job kind for chest_crafter: " .. tostring(jobKind("chest_crafter")))
+    println("Job kind for smelter: " .. tostring(jobKind("smelter")))
+    println("--- craft chest (crafter-kind job, no modem - should not hang) ---")
+    println(runCliCommand("craft minecraft:chest 1"))
 end
 
 

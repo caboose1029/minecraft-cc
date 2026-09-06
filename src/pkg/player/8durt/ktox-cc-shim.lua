@@ -258,6 +258,42 @@ function ktoxInventoryPullNamedFromPool(toName, sourceNamesCsv, itemName, desire
     return pulled
 end
 
+-- Same as ktoxInventoryPullNamed, but lands the items in a SPECIFIC slot
+-- of `toName` rather than wherever the destination's own pullItems
+-- logic would put them — needed for a crafter turtle's crafting grid,
+-- where placement matters (see PLAN.md "Crafter role"). Uses
+-- pullItems's optional 4th (toSlot) argument.
+function ktoxInventoryPullNamedToSlot(toName, toSlot, fromName, itemName, desired)
+    local dest = peripheral.wrap(toName)
+    local source = peripheral.wrap(fromName)
+    if dest == nil or source == nil then
+        return 0
+    end
+    local pulled = 0
+    for slot, item in pairs(source.list()) do
+        if pulled >= desired then
+            break
+        end
+        if item.name == itemName then
+            pulled = pulled + dest.pullItems(fromName, slot, desired - pulled, toSlot)
+        end
+    end
+    return pulled
+end
+
+-- Pool version of ktoxInventoryPullNamedToSlot — searches every vault in
+-- sourceNamesCsv until `desired` is satisfied or all are exhausted.
+function ktoxInventoryPullNamedToSlotFromPool(toName, toSlot, sourceNamesCsv, itemName, desired)
+    local pulled = 0
+    for sourceName in string.gmatch(sourceNamesCsv, "[^,]+") do
+        if pulled >= desired then
+            break
+        end
+        pulled = pulled + ktoxInventoryPullNamedToSlot(toName, toSlot, sourceName, itemName, desired - pulled)
+    end
+    return pulled
+end
+
 -- Returns a newline-joined "name,count" row per distinct item found
 -- across all of the given source inventories (comma-joined peripheral
 -- names), aggregated by name. Used by the `list` CLI command. Empty
@@ -445,6 +481,22 @@ function ktoxConfigTrashVault()
     if config ~= nil then
         for name, entry in pairs(config) do
             if entry.type == "vault" and entry.job ~= nil and entry.job.type == "trash" then
+                return name
+            end
+        end
+    end
+    return "MISSING"
+end
+
+-- The crafty turtle's peripheral name for the given job type
+-- (top-level "type": "crafter", not a vault — see PLAN.md "Crafter
+-- role"). Used to push ingredients into its crafting-grid slots.
+-- "MISSING" if none configured.
+function ktoxConfigCrafterForJob(jobType)
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        for name, entry in pairs(config) do
+            if entry.type == "crafter" and entry.job ~= nil and entry.job.type == jobType then
                 return name
             end
         end
