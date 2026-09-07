@@ -112,7 +112,3 @@ fun ktoxInventoryPullNamedToSlotFromPool(toName: String, toSlot: Int, sourceName
 @NativeName("ktoxInventoryPushNamedFromPool")
 fun ktoxInventoryPushNamedFromPool(sourceNamesCsv: String, toName: String, itemName: String, desired: Int): Int =
     externalSource()
-
-@NativeName("ktoxInventoryPushNamedToSlotFromPool")
-fun ktoxInventoryPushNamedToSlotFromPool(sourceNamesCsv: String, toName: String, toSlot: Int, itemName: String, desired: Int): Int =
-    externalSource()

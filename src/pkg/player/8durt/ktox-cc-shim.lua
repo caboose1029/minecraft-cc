@@ -420,38 +420,6 @@ function ktoxInventoryPushNamedFromPool(sourceNamesCsv, toName, itemName, desire
     return pushed
 end
 
--- Same as ktoxInventoryPushNamed, but targets a SPECIFIC slot of
--- `toName` — needed for a crafter turtle's crafting grid, where
--- placement matters (see PLAN.md "Crafter role"). Mirrors
--- ktoxInventoryPullNamedToSlot.
-function ktoxInventoryPushNamedToSlot(fromName, toName, toSlot, itemName, desired)
-    local source = peripheral.wrap(fromName)
-    if source == nil then
-        return 0
-    end
-    local pushed = 0
-    for slot, item in pairs(source.list()) do
-        if pushed >= desired then
-            break
-        end
-        if item.name == itemName then
-            pushed = pushed + source.pushItems(toName, slot, desired - pushed, toSlot)
-        end
-    end
-    return pushed
-end
-
-function ktoxInventoryPushNamedToSlotFromPool(sourceNamesCsv, toName, toSlot, itemName, desired)
-    local pushed = 0
-    for sourceName in string.gmatch(sourceNamesCsv, "[^,]+") do
-        if pushed >= desired then
-            break
-        end
-        pushed = pushed + ktoxInventoryPushNamedToSlot(sourceName, toName, toSlot, itemName, desired - pushed)
-    end
-    return pushed
-end
-
 -- Returns a newline-joined "name,count" row per distinct item found
 -- across all of the given source inventories (comma-joined peripheral
 -- names), aggregated by name. Used by the `list` CLI command. Empty

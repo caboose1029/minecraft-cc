@@ -22,6 +22,18 @@ const val VAULT_CRAFTER_QUERY_PROTOCOL = "vault-crafter-query"
 const val VAULT_CRAFTER_REPLY_PROTOCOL = "vault-crafter-reply"
 const val VAULT_CRAFTER_CMD_PROTOCOL = "vault-crafter-cmd"
 
+// "Suck ingredient into a specific grid slot" - payload packed as
+// "slot,count" (e.g. "1,9"). See PLAN.md "Crafter role" for why
+// ingredient delivery uses a physical turtle.suckUp() instead of a
+// network push into the turtle: confirmed live that a turtle exposed as
+// a peripheral has no inventory methods at all, and the follow-up
+// source-pushes-into-turtle hypothesis also didn't pan out in practice.
+// No reply protocol needed - the head confirms completion by polling the
+// staging feeder vault's own emptiness (an ordinary vault peripheral
+// check, already proven, see lib/Executor.kt's waitForFeederEmpty),
+// not a rednet round trip.
+const val VAULT_CRAFTER_SUCK_PROTOCOL = "vault-crafter-suck"
+
 // Broadcasts a role query and waits up to `listenSeconds` for a head to
 // answer. Returns the head's rednet ID if one replied, -1 otherwise (no
 // modem, no head present, or timeout). Shared by both the head's own

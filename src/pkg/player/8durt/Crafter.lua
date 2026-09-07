@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Crafter.kt", {["1-8"]=1,["9"]=32,["10"]=33,["11-12"]=34,["13"]=36,["14"]=38,["15"]=39,["16"]=40,["17"]=41,["18-19"]=42,["20"]=45,["21"]=46,["22-27"]=47,["28"]=55,["29"]=56,["30-31"]=57,["32"]=59,["33"]=60,["34"]=61,["35-36"]=62,["37"]=64,["38"]=82,["39"]=83,["40"]=84,["41-47"]=85,["48"]=91,["49"]=92,["50"]=93,["51-52"]=94,["53-54"]=96,["55-58"]=98,["59"]=108,["60"]=109,["61"]=110,["62"]=111,["63-64"]=112,["65-68"]=114}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Crafter.kt", {["1-8"]=1,["9"]=42,["10"]=43,["11-12"]=44,["13"]=46,["14"]=48,["15"]=49,["16"]=50,["17"]=51,["18-19"]=52,["20"]=55,["21"]=56,["22-27"]=57,["28"]=65,["29"]=66,["30-31"]=67,["32"]=69,["33"]=70,["34"]=71,["35-36"]=72,["37"]=79,["38"]=80,["39"]=81,["40"]=82,["41-42"]=83,["43"]=84,["44"]=85,["45"]=103,["46"]=104,["47"]=105,["48-55"]=106,["56"]=112,["57"]=113,["58"]=114,["59-60"]=115,["61-62"]=117,["63-66"]=119,["67"]=129,["68"]=130,["69"]=131,["70"]=132,["71-72"]=133,["73-76"]=135}, "programs")
 ktox_require("lib/RoleCheck")
 
 ---@param args table
@@ -33,12 +33,20 @@ function handleOneMessage(jobType)
     local protocol = ktoxRednetLastProtocol()
     if protocol == VAULT_CRAFTER_QUERY_PROTOCOL and ktoxRednetLastMessage() == jobType then
         rednet.send(senderId, jobType, VAULT_CRAFTER_REPLY_PROTOCOL)
-    elseif protocol == VAULT_CRAFTER_CMD_PROTOCOL then
-        local quantity = ktox_toInt(ktox_toDouble(ktoxRednetLastMessage()))
-        dumpAllForward()
-        if isInventoryEmpty() then
-            turtle.craft(quantity)
+    elseif protocol == VAULT_CRAFTER_SUCK_PROTOCOL then
+        local parts = ktox_split(ktoxRednetLastMessage(), ",")
+        local slot = ktox_toInt(ktox_toDouble(parts[1]))
+        local count = ktox_toInt(ktox_toDouble(parts[2]))
+        turtle.select(slot)
+        turtle.suckUp(count)
+    else
+        if protocol == VAULT_CRAFTER_CMD_PROTOCOL then
+            local quantity = ktox_toInt(ktox_toDouble(ktoxRednetLastMessage()))
             dumpAllForward()
+            if isInventoryEmpty() then
+                turtle.craft(quantity)
+                dumpAllForward()
+            end
         end
     end
 end

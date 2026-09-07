@@ -108,21 +108,28 @@ on its own dedicated protocols:
   by job type instead of role, and deliberately with **no** collision
   detection: multiple crafters answering the same job type isn't guarded
   against in phase 1 (unlike a second head, which is refused outright).
+- `"vault-crafter-suck"` (payload: `"slot,count"`) — suck a staged
+  ingredient batch from directly above into a specific crafting-grid
+  slot. No reply — the head confirms completion by polling the staging
+  feeder vault's own emptiness (an ordinary vault peripheral check,
+  already proven — `waitForFeederEmpty`), not a rednet round trip.
 - `"vault-crafter-cmd"` (payload: a quantity) — craft that many, then
   drop everything the turtle is holding toward whatever it's physically
   facing. This turtle is expected to be positioned facing an ordinary
   storage vault, so the drop lands the result straight back in the pool —
-  a **physical `turtle.drop()`**, not a network push. (Not a workaround
-  for anything unsupported — see "Vaults" below, a network push/pull
-  targeting the turtle's own inventory is now assumed to work fine, same
-  as a pickup vault — this is just the simpler, already-working mechanism
-  and hasn't been changed.) The head never needs an explicit
-  "done" signal back — it just polls the storage pool for the output
-  count exactly like a machine job (see "CLI" below), so a crafter job
-  and a machine job look identical from the executor's point of view
-  once the craft command has been sent. **Now clears its grid FIRST and
-  refuses to craft unless that verifiably succeeded** (`isInventoryEmpty`
-  in `programs/Crafter.kt`) — see the real incident below for why.
+  a **physical `turtle.drop()`**, not a network push (see "Turtle-as-
+  network-inventory-peripheral" below — confirmed broken for pulling,
+  and the push-based workaround tried after that didn't pan out either;
+  the crafter's ingredient delivery went through two failed network-
+  based designs before landing on `"vault-crafter-suck"`, both physical
+  turtle.\* operations, same proven pattern as this drop). The head
+  never needs an explicit "done" signal back — it just polls the storage
+  pool for the output count exactly like a machine job (see "CLI"
+  below), so a crafter job and a machine job look identical from the
+  executor's point of view once the craft command has been sent. Also
+  clears its grid FIRST and refuses to craft unless that verifiably
+  succeeded (`isInventoryEmpty` in `programs/Crafter.kt`) — see the real
+  incident below for why.
 
 **Real incident, found during physical build-out testing: the crafter
 turtle crafted `create:brass_block` on every request, regardless of what
@@ -183,12 +190,29 @@ causes, confirmed via direct inspection rather than guessing:
    into a safe no-op.
 
 The head still does all the deciding: it computes how many ingredient
-sets are needed, pushes each ingredient into the crafter turtle's
-*specific* crafting-grid slot (`pushItems`'s optional 4th argument,
-target slot — slot numbers 1, 2, 3, 5, 6, 7, 9, 10, 11 form the 3x3 grid
-inside the turtle's 16 slots; this mapping is my best understanding of
-`turtle.craft()`'s expected layout, **unverified in-game**), then sends
-the craft command. The crafter turtle only ever executes, never plans.
+sets are needed and, for each one, stages it into a feeder vault
+positioned directly above the crafter turtle (`ktoxConfigFeederForJob`
+now also resolves `"crafter"` as a job type, same generic feeder-vault
+lookup machine jobs already use — reused, not a new config path),
+signals `"vault-crafter-suck"` naming the *specific* crafting-grid slot
+(slot numbers 1, 2, 3, 5, 6, 7, 9, 10, 11 form the 3x3 grid inside the
+turtle's 16 slots; this mapping is my best understanding of
+`turtle.craft()`'s expected layout, **still unverified in-game**), waits
+for the feeder to drain, then repeats for the next ingredient before
+finally sending the craft command. The crafter turtle only ever
+executes, never plans — this replaced a network push directly into the
+turtle's grid slots (`pushItems`'s optional 4th argument), which turned
+out not to work in practice (see "Turtle-as-network-inventory-
+peripheral" below) — `lib/Executor.kt`'s `runCrafterJob` doc comment has
+the full mechanism.
+
+**Physical setup requirement, new:** a feeder vault must sit directly
+above the crafter turtle (`turtle.suckUp()` — see
+`peripherals.example.json`'s `create:item_vault_32` for the config
+shape: `job.type: "feeder"`, `job.job.type: "crafter"`). Without one
+configured, `runCrafterJob` refuses to run at all (`ktoxConfigFeederForJob`
+returns `"MISSING"`) rather than silently doing nothing — same fail-
+loud-not-silent posture as a missing crafter turtle itself.
 
 Provisioning: `terminalsetup crafter <jobType>` writes `role.txt` as
 `crafter:<jobType>` (vs. plain `head`/`secondary`) — `startup.lua` parses
@@ -199,8 +223,9 @@ every boot, same auto-launch mechanism as the other two roles.
 the rednet/parallel work — see "Known open items"): the exact
 `turtle.craft()` grid-slot mapping, whether `turtle.craft()`'s result
 lands somewhere `dumpAllForward()`'s "select every slot, drop if
-non-empty" sweep actually catches, and the full head→crafter round trip
-end to end.
+non-empty" sweep actually catches, whether `turtle.suckUp()` actually
+sucks from a feeder vault sitting above the turtle the way this assumes,
+and the full head→crafter round trip end to end.
 
 ## Vaults
 
@@ -222,13 +247,20 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
 - **Pickup vault** (`job.type: "pickup"`) — where `pull`/`craft` results
   land for a player (or turtle) to grab. Any addressable inventory
   peripheral can be a pickup vault, **including a turtle's own
-  inventory** — earlier revisions of this doc treated "a turtle
-  targeting its own inventory as a named `pushItems`/`pullItems`
+  inventory in principle** — earlier revisions of this doc treated "a
+  turtle targeting its own inventory as a named `pushItems`/`pullItems`
   peripheral" as unreliable and routed around it (an ordinary vault
-  block next to the terminal, always). That caveat was never actually
-  verified against real hardware — it was an untested assumption, not a
-  confirmed CC:Tweaked limitation — and is now treated as working; see
-  "Known open items" below. `peripherals.json` can configure any number
+  block next to the terminal, always). That caveat turned out to be
+  right, just for a different reason than assumed: confirmed live that a
+  turtle wrapped as a peripheral exposes no inventory methods at all
+  (only generic remote-control ones), so it can never do the pulling
+  itself. `lib/Cli.kt`'s `deliverToPickupLocation` currently works around
+  this by having the SOURCE vault push into the turtle by name instead
+  (`pushToStoragePoolTarget`) — the same fallback tried for crafter
+  ingredient delivery, which did NOT hold up once actually tested (see
+  "Crafter role" above and "Turtle-as-network-inventory-peripheral"
+  below) — so this is now suspected to have the same problem, not yet
+  confirmed or fixed. `peripherals.json` can configure any number
   of pickup vaults, each optionally labeled with a `"name"` (its
   routable location name — see "CLI" below for `craft --location=`) and
   at most one marked `"default": true` (a missing `"default"` field
@@ -1227,35 +1259,44 @@ does.
   sweep-every-slot approach catches it regardless). Test with a real
   crafter turtle and a simple known recipe before trusting this for
   anything real.
-- **Turtle-as-network-inventory-peripheral: partially CONFIRMED BROKEN
-  in-game, partially still an unverified hypothesis.** Confirmed live
-  (real turtle, real `peripheral.getMethods("turtle_1")` from another
-  networked computer): wrapping a turtle as a peripheral exposes ONLY
-  the generic remote-control surface — `reboot`, `getLabel`, `turnOn`,
-  `isOn`, `getID`, `shutdown` — no `pullItems`/`pushItems`/`list` at all.
-  So the destination-initiated pull idiom this whole codebase otherwise
-  uses (`dest.pullItems(fromName, ...)`) can NEVER work when `dest` is a
-  turtle — not "unverified," actually broken, reproduced via
-  `runCrafterJob`'s ingredient delivery erroring exactly this way
-  (`attempt to call field 'pullItems' (a nil value)`). Fixed by flipping
-  direction: `ktoxInventoryPushNamed(ToSlot)(FromPool)`
-  (`ktox-cc-shim.lua`, `lib/Inventory.kt`'s `pushToStoragePoolTarget(Slot)`)
-  has the SOURCE vault call `pushItems(turtleName, ...)` instead — the
-  turtle is just a routing-target string there, not something a method
-  is called ON. Applied to both `runCrafterJob`'s ingredient delivery
-  and `lib/Cli.kt`'s `deliverToPickupLocation` (pull/craft results
-  landing in a turtle-based pickup location like `turtle_0`). **This
-  push-based direction is itself still an unverified hypothesis, not
-  confirmed** — plausible given how CC:Tweaked's wired-network item
-  routing works (by peripheral NAME, not by which methods a given wrap
-  happens to expose), but genuinely untested against a real turtle.
-  `ktoxSelfPeripheralName()`'s `getID()`-matching approach, by contrast,
-  IS confirmed working — `getID` is right there in the real
-  `getMethods()` output above. If the push hypothesis also turns out
-  wrong, both call sites silently move 0 items rather than crash (same
-  "MISSING"/zero-moved failure shape already established throughout this
-  codebase) — but "silently moves nothing" is exactly the kind of
-  mismatch worth testing for deliberately, not just trusting.
+- **Turtle-as-network-inventory-peripheral: CONFIRMED BROKEN in-game, in
+  BOTH directions tried so far.** Confirmed live (real turtle, real
+  `peripheral.getMethods("turtle_1")` from another networked computer):
+  wrapping a turtle as a peripheral exposes ONLY the generic remote-
+  control surface — `reboot`, `getLabel`, `turnOn`, `isOn`, `getID`,
+  `shutdown` — no `pullItems`/`pushItems`/`list` at all. So the
+  destination-initiated pull idiom this whole codebase otherwise uses
+  (`dest.pullItems(fromName, ...)`) can never work when `dest` is a
+  turtle — reproduced via `runCrafterJob`'s old ingredient delivery
+  erroring exactly this way (`attempt to call field 'pullItems' (a nil
+  value)`). The first fix attempt flipped direction instead — have the
+  SOURCE vault call `pushItems(turtleName, ...)`, the turtle just a
+  routing-target string, never something a method is called on — a
+  reasonable hypothesis given how CC:Tweaked's wired-network item
+  routing works by peripheral NAME, not by which methods a given wrap
+  happens to expose. **Also did not work in practice** — reproduced live
+  as the crafter always producing the wrong item (stale/repeated
+  grid contents from a delivery that silently moved nothing, see the
+  brass incident above) and, separately, as `craft`/`pull` hanging for a
+  full timeout with nothing ever arriving. **Fixed for the crafter's
+  ingredient delivery** by abandoning network peripheral calls into a
+  turtle entirely — `runCrafterJob` now stages each ingredient into an
+  ordinary feeder vault (a ktoxConfigFeederForJob("crafter") vault
+  positioned above the turtle — a normal vault-to-vault transfer,
+  already proven working elsewhere) and tells the crafter turtle to
+  `turtle.suckUp()` it into a specific grid slot itself — the same
+  physical, locally-executed pattern already proven for output
+  (`turtle.drop()`). **`lib/Cli.kt`'s `deliverToPickupLocation` (pull/
+  craft results landing in a turtle-based pickup location like
+  `turtle_0`) still uses the unfixed push-based approach** and is very
+  likely broken the same way — not yet confirmed or fixed, since the
+  actively reported bug was specifically about the crafter. If/when
+  this needs fixing, the pattern is the same: turtle_0 IS the machine
+  running `lib/Cli.kt`, so it can call `turtle.suckUp()` on itself
+  directly (no rednet needed at all) from a staging vault positioned
+  above it, rather than going through a network push. `ktoxSelfPeripheralName()`'s
+  `getID()`-matching approach, by contrast, IS confirmed working — `getID`
+  is right there in the real `getMethods()` output above.
 - Storage-vault load balancing (push-to-emptiest, farm→vault preference
   routing) — problem #3b territory, deferred.
 - Stockpile Switch integration for fast vault-fullness queries — deferred.

@@ -8,7 +8,6 @@ import common.ktoxInventoryIsEmpty
 import common.osSleep
 import common.rednetSend
 import lib.pullFromStoragePool
-import lib.pushToStoragePoolTargetSlot
 import lib.queryForCrafter
 import lib.recipeInputCount
 import lib.recipeInputCountAt
@@ -17,6 +16,7 @@ import lib.recipeInputSlot
 import lib.setJobPower
 import lib.storagePoolCount
 import lib.VAULT_CRAFTER_CMD_PROTOCOL
+import lib.VAULT_CRAFTER_SUCK_PROTOCOL
 
 const val DEFAULT_JOB_TIMEOUT_SECONDS = 30
 
@@ -188,15 +188,28 @@ fun runDirectJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
 // Runs one crafter-kind job (a crafty turtle running turtle.craft() —
 // see PLAN.md "Crafter role") to produce up to `desiredOutput` more of
 // the recipe's output. Same batching/timeout/polling shape as
-// runDirectJob, but pushes each ingredient into the crafter turtle's
-// SPECIFIC crafting-grid slot (recipeInputSlot) instead of a generic
-// feeder vault, and signals "craft now" over rednet instead of toggling
-// a redstone relay — the crafter turtle itself drops the result toward
-// an adjacent storage vault once done (see Crafter.kt), so this still
-// polls the storage pool for progress exactly like a machine job.
+// runDirectJob. Ingredient delivery is PHYSICAL, not a network push:
+// stages each ingredient into a feeder vault positioned above the
+// crafter (ktoxConfigFeederForJob(recipe.jobType) - the same generic
+// feeder-lookup machine jobs already use, just now also configured for
+// job type "crafter"), then tells the crafter turtle to suck it into
+// its SPECIFIC crafting-grid slot (recipeInputSlot) via
+// VAULT_CRAFTER_SUCK_PROTOCOL, waiting for the feeder to drain
+// (waitForFeederEmpty - an ordinary vault peripheral check, already
+// proven) before moving to the next ingredient. This replaced a network
+// push directly into the turtle - confirmed live that doesn't work
+// (a turtle exposed as a peripheral has no inventory methods at all),
+// see PLAN.md's "Crafter role" for the two failed attempts before this
+// one. The crafter itself drops the result toward an adjacent storage
+// vault once done (see Crafter.kt), so this still polls the storage
+// pool for progress exactly like a machine job.
 fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
     val crafterName = ktoxConfigCrafterForJob(recipe.jobType)
     if (crafterName == "MISSING") {
+        return 0
+    }
+    val feederVault = ktoxConfigFeederForJob(recipe.jobType)
+    if (feederVault == "MISSING") {
         return 0
     }
 
@@ -222,7 +235,10 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
                     val itemName = recipeInputItem(recipe, i)
                     val perBatch = recipeInputCountAt(recipe, i)
                     val slot = recipeInputSlot(recipe, i)
-                    pushToStoragePoolTargetSlot(crafterName, slot, itemName, perBatch * batches)
+                    val stageCount = perBatch * batches
+                    pullFromStoragePool(feederVault, itemName, stageCount)
+                    rednetSend(crafterId, "${slot},${stageCount}", VAULT_CRAFTER_SUCK_PROTOCOL)
+                    waitForFeederEmpty(feederVault)
                     i += 1
                 }
 

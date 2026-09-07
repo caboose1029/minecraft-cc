@@ -10,20 +10,30 @@ import common.turtleCraft
 import common.turtleDrop
 import common.turtleGetItemCount
 import common.turtleSelect
+import common.turtleSuckUp
 import lib.VAULT_CRAFTER_CMD_PROTOCOL
 import lib.VAULT_CRAFTER_QUERY_PROTOCOL
 import lib.VAULT_CRAFTER_REPLY_PROTOCOL
+import lib.VAULT_CRAFTER_SUCK_PROTOCOL
 
 // A crafty turtle (see PLAN.md "Crafter role") — a third terminal role
 // alongside head/secondary, but not a CLI: it never talks to a player
-// directly, just sits waiting for the head to push ingredients into its
-// crafting-grid slots (1, 2, 3, 5, 6, 7, 9, 10, 11) and send a craft
-// command. Runs turtle.craft(), then drops everything it's holding
-// toward whatever it's physically facing — expected to be an ordinary
-// storage vault (see PLAN.md for why this is a physical drop, not a
-// network push). Never decides anything itself, same principle as
-// SecondaryTerminal.kt, just a different kind of thin client — the head is
-// still the only thing that knows what to craft, how much, or why.
+// directly, just sits waiting for the head to (1) tell it to suck a
+// staged ingredient batch, from directly above, into a specific
+// crafting-grid slot (1, 2, 3, 5, 6, 7, 9, 10, 11), one ingredient at a
+// time, and (2) send a craft command once every ingredient has landed.
+// Runs turtle.craft(), then drops everything it's holding toward
+// whatever it's physically facing — expected to be an ordinary storage
+// vault. Both the suck-in and drop-out sides are PHYSICAL turtle.*
+// calls, never a network push/pull targeting this turtle's own
+// inventory — confirmed live that a turtle exposed as a peripheral has
+// no inventory methods at all (only generic remote-control ones), and a
+// follow-up "have the SOURCE push into the turtle by name instead"
+// hypothesis didn't pan out in practice either — see PLAN.md's "Crafter
+// role" for the two failed attempts before landing on this. Never
+// decides anything itself, same principle as SecondaryTerminal.kt, just
+// a different kind of thin client — the head is still the only thing
+// that knows what to craft, how much, or why.
 //
 // Usage: crafter <jobType> (normally auto-launched by startup.lua via
 // role.txt, not run by hand — see TerminalSetup.kt)
@@ -60,6 +70,17 @@ fun handleOneMessage(jobType: String) {
     val protocol = ktoxRednetLastProtocol()
     if (protocol == VAULT_CRAFTER_QUERY_PROTOCOL && ktoxRednetLastMessage() == jobType) {
         rednetSend(senderId, jobType, VAULT_CRAFTER_REPLY_PROTOCOL)
+    } else if (protocol == VAULT_CRAFTER_SUCK_PROTOCOL) {
+        // "slot,count" - suck a staged ingredient batch from directly
+        // above (see PLAN.md - the head stages it into a feeder vault
+        // positioned there first) into a specific crafting-grid slot.
+        // No reply - the head confirms completion by polling the feeder
+        // vault's own emptiness, not a rednet round trip.
+        val parts = ktoxRednetLastMessage().split(",")
+        val slot = parts[1].toDouble().toInt()
+        val count = parts[2].toDouble().toInt()
+        turtleSelect(slot)
+        turtleSuckUp(count)
     } else if (protocol == VAULT_CRAFTER_CMD_PROTOCOL) {
         val quantity = ktoxRednetLastMessage().toDouble().toInt()
         // turtle.craft() matches whatever's PHYSICALLY in the grid right

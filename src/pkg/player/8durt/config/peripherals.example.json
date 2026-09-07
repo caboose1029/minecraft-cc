@@ -45,6 +45,13 @@
     "type": "crafter",
     "job": { "type": "crafter" }
   },
+  "create:item_vault_32": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "crafter" }
+    }
+  },
   "create:item_vault_7": {
     "type": "vault",
     "job": {

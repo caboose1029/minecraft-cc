@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Inventory.kt", {["1-8"]=1,["9"]=18,["10"]=19,["11-12"]=20,["13-20"]=22,["21"]=30,["22"]=31,["23-24"]=32,["25-33"]=34,["34"]=41,["35"]=42,["36-37"]=43,["38-45"]=45,["46"]=58,["47"]=59,["48-49"]=60,["50-58"]=62,["59"]=68,["60"]=69,["61-62"]=70,["63-67"]=72,["68"]=88,["69-71"]=89}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Inventory.kt", {["1-8"]=1,["9"]=17,["10"]=18,["11-12"]=19,["13-20"]=21,["21"]=29,["22"]=30,["23-24"]=31,["25-33"]=33,["34"]=40,["35"]=41,["36-37"]=42,["38-45"]=44,["46"]=65,["47"]=66,["48-49"]=67,["50-54"]=69,["55"]=85,["56-58"]=86}, "lib")
 
 ---@param itemName string
 ---@return number
@@ -48,19 +48,6 @@ function pushToStoragePoolTarget(toName, itemName, desired)
         return 0
     end
     return ktoxInventoryPushNamedFromPool(vaultNames, toName, itemName, desired)
-end
-
----@param toName string
----@param toSlot number
----@param itemName string
----@param desired number
----@return number
-function pushToStoragePoolTargetSlot(toName, toSlot, itemName, desired)
-    local vaultNames = ktoxConfigStorageVaultNames()
-    if vaultNames == "" then
-        return 0
-    end
-    return ktoxInventoryPushNamedToSlotFromPool(vaultNames, toName, toSlot, itemName, desired)
 end
 
 ---@return table

@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/RoleCheck.kt", {["1-22"]=1,["23"]=32,["24-25"]=33,["26"]=35,["27"]=36,["28"]=37,["29-30"]=38,["31"]=40,["32-33"]=41,["34-40"]=43,["41"]=53,["42-43"]=54,["44"]=56,["45"]=57,["46"]=58,["47-48"]=59,["49"]=61,["50-51"]=62,["52-54"]=64}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/RoleCheck.kt", {["1-24"]=1,["25"]=44,["26-27"]=45,["28"]=47,["29"]=48,["30"]=49,["31-32"]=50,["33"]=52,["34-35"]=53,["36-42"]=55,["43"]=65,["44-45"]=66,["46"]=68,["47"]=69,["48"]=70,["49-50"]=71,["51"]=73,["52-53"]=74,["54-56"]=76}, "lib")
 
 VAULT_ROLE_QUERY_PROTOCOL = "vault-role-query"
 
@@ -16,6 +16,8 @@ VAULT_CRAFTER_QUERY_PROTOCOL = "vault-crafter-query"
 VAULT_CRAFTER_REPLY_PROTOCOL = "vault-crafter-reply"
 
 VAULT_CRAFTER_CMD_PROTOCOL = "vault-crafter-cmd"
+
+VAULT_CRAFTER_SUCK_PROTOCOL = "vault-crafter-suck"
 
 ---@param listenSeconds number
 ---@return number
