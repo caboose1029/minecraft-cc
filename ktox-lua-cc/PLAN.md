@@ -387,6 +387,33 @@ a flat recipe list once that limitation became concrete, per the design
 conversation — expect this file's shape to keep evolving as more real
 recipes get defined; the JSON syntax is very much not "done."
 
+**Multiple recipes per output, with automatic preference.** A single
+output can legitimately have more than one real recipe — e.g.
+`create:andesite_alloy` can be made from andesite + iron nugget *or*
+andesite + zinc nugget (both real recipes shipped in Create's own data).
+Rather than "first entry wins" (silently arbitrary, and dependent on
+`pairs()` iteration order, which Lua does not guarantee), every recipe
+lookup (`ktoxConfigProducesLookup`, used by `craft`/the planner; and
+`ktoxListCatalog`'s catalog-building pass, used by `list --craftable`)
+runs all matching entries through a shared `ktoxPreferRecipe(candidate,
+currentBest)` helper in `ktox-cc-shim.lua`, so both call sites can never
+disagree about which recipe "the" output resolves to. Preference order:
+an explicit `"priority"` field on the recipe (lower number wins) beats
+everything else; absent that, the recipe with the lower
+`totalInputCount / outputCount` (i.e. fewer raw materials per unit
+output) wins as a heuristic guess at "more efficient." `"priority"` is
+optional — most recipes still only have one entry and never need it.
+
+**JSON parsing is cached per file path for the process lifetime.**
+`ktoxReadJSONFile` in `ktox-cc-shim.lua` keeps a `ktoxJSONCache` table
+keyed by path; a second read of the same config file (e.g.
+`resource-tree.json`, re-parsed on every single recipe lookup before
+this change) returns the already-parsed table instead of re-reading the
+file and re-running `textutils.unserializeJSON` on it. Safe because none
+of these config files change while a program is running — they're only
+ever refreshed by `ghfetch`, which runs as its own separate program
+invocation, not concurrently with `Terminal`/`Head`/`Secondary`/`Crafter`.
+
 **Fluids are entirely out of scope.** `list()`/`getItemDetail()` only see
 solid inventory slots — a Tank peripheral (or any fluid container) isn't
 modeled anywhere in this system. Several real, verified Create recipes

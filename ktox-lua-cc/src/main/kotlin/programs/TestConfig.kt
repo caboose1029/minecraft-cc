@@ -65,6 +65,20 @@ fun main() {
         }
     }
 
+    // Two real recipes exist for create:andesite_alloy (iron nugget or
+    // zinc nugget) - this confirms multi-recipe-per-output resolves to
+    // the explicit-priority winner (priority 1 = iron nugget) rather
+    // than an arbitrary table-iteration-order pick.
+    val andesite = findRecipe("create:andesite_alloy")
+    if (andesite == null) {
+        println("Recipe for create:andesite_alloy: none configured")
+    } else {
+        println("Recipe for create:andesite_alloy: via ${andesite.jobType}, input 2 = ${recipeInputItem(andesite, 2)}")
+        if (recipeInputItem(andesite, 2) != "minecraft:iron_nugget") {
+            println("MISMATCH: expected the priority-1 (iron nugget) recipe to win, got ${recipeInputItem(andesite, 2)}")
+        }
+    }
+
     println("Storage pool count of minecraft:copper_ingot: ${storagePoolCount("minecraft:copper_ingot")}")
 
     val powered = setJobPower("smelter", true)

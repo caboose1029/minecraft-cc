@@ -142,9 +142,20 @@
       "output": "create:andesite_alloy",
       "outputCount": 1,
       "job": "mixing_unheated",
+      "priority": 1,
       "inputs": [
         { "item": "minecraft:andesite", "count": 1 },
         { "item": "minecraft:iron_nugget", "count": 1 }
+      ]
+    },
+    {
+      "output": "create:andesite_alloy",
+      "outputCount": 1,
+      "job": "mixing_unheated",
+      "priority": 2,
+      "inputs": [
+        { "item": "minecraft:andesite", "count": 1 },
+        { "item": "create:zinc_nugget", "count": 1 }
       ]
     },
     {

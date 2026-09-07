@@ -329,12 +329,26 @@ end
 -- "job" descriptor is recursive: {type = "<kind>",
 -- job = <nested job, optional>} — a feeder vault's job nests the machine
 -- it feeds, e.g. {type="feeder", job={type="mechanical_press_depot"}}.
--- These loaders read + JSON-decode the whole file per call (small files,
--- called a few times per CLI command, not a hot loop) and narrow the
--- result to exactly what the caller needs, since ktox has no Map/JSON
--- parsing on the Kotlin side. Kotlin side: lib/Config.kt.
+-- These loaders narrow the result to exactly what the caller needs,
+-- since ktox has no Map/JSON parsing on the Kotlin side. Kotlin side:
+-- lib/Config.kt.
+--
+-- Cached in memory per boot, not re-read from disk on every call. With
+-- the original always-re-parse version, every single lookup (findRecipe,
+-- ktoxConfigFeederForJob, ...) re-read + re-JSON-decoded the WHOLE file
+-- from scratch — fine at a couple dozen recipes, but a real, growing
+-- cost as resource-tree.json scales into the hundreds, especially since
+-- the planner (ensureStocked) calls these lookups repeatedly while
+-- walking one chain. These files don't change during a running session
+-- (ghfetch/manual edits only happen between boots), so caching the
+-- parsed table is safe with no staleness risk — a reboot always gets a
+-- fresh read.
+local ktoxJSONCache = {}
 
 local function ktoxReadJSONFile(path)
+    if ktoxJSONCache[path] ~= nil then
+        return ktoxJSONCache[path]
+    end
     if not fs.exists(path) then
         return nil
     end
@@ -347,7 +361,9 @@ local function ktoxReadJSONFile(path)
     if data == nil then
         return nil
     end
-    return textutils.unserializeJSON(data)
+    local parsed = textutils.unserializeJSON(data)
+    ktoxJSONCache[path] = parsed
+    return parsed
 end
 
 -- Comma-joined peripheral names whose job.type == "storage". Empty
@@ -401,6 +417,39 @@ function ktoxConfigRelayForJob(jobType)
     return "MISSING"
 end
 
+-- Scores a candidate recipe against the current best (nil if this is the
+-- first candidate seen), returning the winner. Shared by
+-- ktoxConfigProducesLookup and ktoxListCatalog so "which recipe is
+-- preferred for this output" can never disagree between what `craft`
+-- executes and what `list --craftable` reports. See
+-- ktoxConfigProducesLookup's own comment for the actual preference rule
+-- (explicit "priority" field beats everything; otherwise lowest total
+-- input count per unit of output).
+local function ktoxPreferRecipe(candidate, currentBest)
+    if currentBest == nil then
+        return candidate
+    end
+    local function scoreOf(recipe)
+        local totalInputCount = 0
+        for _, input in pairs(recipe.inputs) do
+            totalInputCount = totalInputCount + input.count
+        end
+        if recipe.priority ~= nil then
+            return recipe.priority, true
+        end
+        return totalInputCount / recipe.outputCount, false
+    end
+    local candidateScore, candidateHasPriority = scoreOf(candidate)
+    local bestScore, bestHasPriority = scoreOf(currentBest)
+    if candidateHasPriority and not bestHasPriority then
+        return candidate
+    end
+    if candidateHasPriority == bestHasPriority and candidateScore < bestScore then
+        return candidate
+    end
+    return currentBest
+end
+
 -- The direct conversion that produces `outputName`, from
 -- config/resource-tree.json — searches every item's convertsTo list.
 -- Packed as "inputName,jobType,inputCount,outputCount". "MISSING" if no
@@ -425,24 +474,43 @@ end
 -- name, since splitting "minecraft:copper_ingot:1:" on ":" doesn't give
 -- back 3 fields, it gives back 4. "MISSING" if no recipe produces this
 -- output at all.
+--
+-- More than one recipe can list the same output (e.g. Andesite Alloy:
+-- andesite+iron nugget, OR andesite+zinc nugget — both real, both in
+-- Create's own data) — this picks the best ONE rather than returning
+-- every candidate, since the Kotlin side only ever needs a single
+-- Recipe to execute. "Best" is an explicit optional "priority" field on
+-- a recipe (lower wins) if ANY candidate sets one — human intent beats
+-- guessing; otherwise falls back to total input count per unit of
+-- output (fewer raw items consumed per result = preferred), a
+-- reasonable default efficiency proxy, not a claim of universal
+-- correctness (it can't account for processing time, power cost, or
+-- anything else "efficient" might mean to a given recipe).
 function ktoxConfigProducesLookup(outputName)
     local tree = ktoxReadJSONFile("config/resource-tree.json")
-    if tree ~= nil and tree.recipes ~= nil then
-        for _, recipe in pairs(tree.recipes) do
-            if recipe.output == outputName and recipe.inputs ~= nil then
-                local inputParts = {}
-                for _, input in pairs(recipe.inputs) do
-                    local slot = ""
-                    if input.slot ~= nil then
-                        slot = tostring(input.slot)
-                    end
-                    inputParts[#inputParts + 1] = input.item .. "," .. tostring(input.count) .. "," .. slot
-                end
-                return recipe.job .. "|" .. tostring(recipe.outputCount) .. "|" .. table.concat(inputParts, ";")
-            end
+    if tree == nil or tree.recipes == nil then
+        return "MISSING"
+    end
+
+    local best = nil
+    for _, recipe in pairs(tree.recipes) do
+        if recipe.output == outputName and recipe.inputs ~= nil then
+            best = ktoxPreferRecipe(recipe, best)
         end
     end
-    return "MISSING"
+
+    if best == nil then
+        return "MISSING"
+    end
+    local inputParts = {}
+    for _, input in pairs(best.inputs) do
+        local slot = ""
+        if input.slot ~= nil then
+            slot = tostring(input.slot)
+        end
+        inputParts[#inputParts + 1] = input.item .. "," .. tostring(input.count) .. "," .. slot
+    end
+    return best.job .. "|" .. tostring(best.outputCount) .. "|" .. table.concat(inputParts, ";")
 end
 
 -- The execution kind for a job type ("machine" or "crafter"), from
@@ -571,9 +639,7 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
                 for _, input in pairs(recipe.inputs) do
                     noteItem(input.item)
                 end
-                if recipeFor[recipe.output] == nil then
-                    recipeFor[recipe.output] = recipe
-                end
+                recipeFor[recipe.output] = ktoxPreferRecipe(recipe, recipeFor[recipe.output])
             end
         end
     end

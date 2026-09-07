@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-12"]=1,["13"]=26,["14"]=28,["15"]=29,["16-17"]=30,["18-19"]=32,["20"]=35,["21"]=36,["22-23"]=37,["24-25"]=39,["26"]=42,["27"]=43,["28-29"]=44,["30"]=46,["31"]=47,["32"]=48,["33"]=49,["34"]=50,["35-37"]=51,["38"]=55,["39"]=56,["40-41"]=57,["42"]=59,["43"]=60,["44"]=61,["45"]=62,["46"]=63,["47-49"]=64,["50"]=68,["51"]=70,["52"]=71,["53"]=73,["54"]=74,["55"]=75,["56"]=76,["57"]=77,["58"]=78,["59"]=79,["60"]=80,["61"]=81,["62"]=82,["63"]=83,["64"]=84,["65"]=86,["66"]=87,["67-68"]=88,["69"]=90,["70"]=91,["71"]=92,["72-73"]=93,["74"]=95,["75"]=96,["76"]=97,["77-79"]=98,["80"]=101,["81"]=102,["82"]=103,["83"]=104,["84"]=106,["85"]=107,["86"]=108,["87"]=110,["88"]=111,["89"]=112,["90"]=114,["91"]=115,["92"]=116,["93-98"]=117}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-12"]=1,["13"]=26,["14"]=28,["15"]=29,["16-17"]=30,["18-19"]=32,["20"]=35,["21"]=36,["22-23"]=37,["24-25"]=39,["26"]=42,["27"]=43,["28-29"]=44,["30"]=46,["31"]=47,["32"]=48,["33"]=49,["34"]=50,["35-37"]=51,["38"]=55,["39"]=56,["40-41"]=57,["42"]=59,["43"]=60,["44"]=61,["45"]=62,["46"]=63,["47-49"]=64,["50"]=72,["51"]=73,["52-53"]=74,["54"]=76,["55"]=77,["56-58"]=78,["59"]=82,["60"]=84,["61"]=85,["62"]=87,["63"]=88,["64"]=89,["65"]=90,["66"]=91,["67"]=92,["68"]=93,["69"]=94,["70"]=95,["71"]=96,["72"]=97,["73"]=98,["74"]=100,["75"]=101,["76-77"]=102,["78"]=104,["79"]=105,["80"]=106,["81-82"]=107,["83"]=109,["84"]=110,["85"]=111,["86-88"]=112,["89"]=115,["90"]=116,["91"]=117,["92"]=118,["93"]=120,["94"]=121,["95"]=122,["96"]=124,["97"]=125,["98"]=126,["99"]=128,["100"]=129,["101"]=130,["102-107"]=131}, "programs")
 ktox_require("lib/Config")
 ktox_require("lib/Farm")
 ktox_require("lib/PassiveFeeder")
@@ -45,6 +45,15 @@ local function main()
         while i <= count do
             println("  input " .. tostring(i) .. ": " .. tostring(recipeInputCountAt(brass, i)) .. "x " .. tostring(recipeInputItem(brass, i)))
             i = ktox_plusAssign(i, 1)
+        end
+    end
+    local andesite = findRecipe("create:andesite_alloy")
+    if andesite == nil then
+        println("Recipe for create:andesite_alloy: none configured")
+    else
+        println("Recipe for create:andesite_alloy: via " .. tostring(andesite.jobType) .. ", input 2 = " .. tostring(recipeInputItem(andesite, 2)))
+        if recipeInputItem(andesite, 2) ~= "minecraft:iron_nugget" then
+            println("MISMATCH: expected the priority-1 (iron nugget) recipe to win, got " .. tostring(recipeInputItem(andesite, 2)))
         end
     end
     println("Storage pool count of minecraft:copper_ingot: " .. tostring(storagePoolCount("minecraft:copper_ingot")))
