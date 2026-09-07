@@ -15,6 +15,7 @@ import lib.handleDetailTouch
 import lib.detailFetchCheckboxRect
 import lib.detailLocationRect
 import lib.itemRowRect
+import lib.searchButtonRect
 import lib.tabRect
 
 // Exercises the dashboard UI's pure state-machine logic (lib/Dashboard.kt)
@@ -90,7 +91,7 @@ fun main() {
     // a real row tap here, so construct that detail state directly to
     // confirm its hit-test/command-building path independently (it's
     // otherwise identical to Craft's, just untested in isolation).
-    val stockedDetail = DashboardState("detail", "stocked", 1, "minecraft:iron_ingot", "stocked", "64", "3", true, -1, "")
+    val stockedDetail = DashboardState("detail", "stocked", 1, "minecraft:iron_ingot", "stocked", "64", "3", true, -1, "", "")
     val fetchRect = detailFetchButtonRect(size)
     val afterFetch = handleDetailTouch(stockedDetail, Touch(fetchRect.x, fetchRect.y), size)
     println("after fetch touch: readyCommand=(${afterFetch.readyCommand})")
@@ -128,7 +129,7 @@ fun main() {
     if (afterStackDown.qtyText != "3") {
         println("FAIL: expected qtyText '3' (back down one stack), got '${afterStackDown.qtyText}'")
     }
-    val pearlDetail = DashboardState("detail", "stocked", 1, "minecraft:ender_pearl", "stocked", "5", "1", true, -1, "")
+    val pearlDetail = DashboardState("detail", "stocked", 1, "minecraft:ender_pearl", "stocked", "5", "1", true, -1, "", "")
     val afterPearlUp = handleDetailTouch(pearlDetail, Touch(qtyUpRect.x, qtyUpRect.y), size)
     println("after stack-up touch (ender_pearl, stack 16): qtyText=${afterPearlUp.qtyText}")
     if (afterPearlUp.qtyText != "17") {
@@ -156,6 +157,28 @@ fun main() {
     val locationParts = afterFetchWithLocation.readyCommand.split("--location=")
     if (locationParts.size < 2 || locationParts[2] == "") {
         println("FAIL: expected '--location=<name>' appended, got '${afterFetchWithLocation.readyCommand}'")
+    }
+
+    // Search button tap is a pure transition to "searchentry" - same
+    // reasoning as the qty field's "qtyentry" transition: the actual
+    // blocking read() prompt lives only in runDashboardLoop.
+    val searchRect = searchButtonRect(size)
+    val afterSearchTap = handleBrowseTouch(afterTab, Touch(searchRect.x, searchRect.y), size)
+    println("after search button touch: mode=${afterSearchTap.mode}")
+    if (afterSearchTap.mode != "searchentry") {
+        println("FAIL: search button touch should enter searchentry mode, got '${afterSearchTap.mode}'")
+    }
+
+    // An active search filters the row list ktoxListCatalog returns -
+    // confirmed indirectly: tab3 with no search (afterTab, above) selects
+    // a real item via row1; the same tab with a search string that can't
+    // possibly match anything should leave row1 empty, so tapping it is
+    // a no-op (stays in browse mode) rather than entering detail.
+    val impossibleSearch = DashboardState("browse", "unavailable", 1, "", "", "", "1", true, -1, "", "zzz_no_such_item_zzz")
+    val afterImpossibleRowTap = handleBrowseTouch(impossibleSearch, Touch(row1Rect.x, row1Rect.y), size)
+    println("after row1 touch under an unmatchable search: mode=${afterImpossibleRowTap.mode}")
+    if (afterImpossibleRowTap.mode != "browse") {
+        println("FAIL: row1 touch under a search matching nothing should stay in browse mode, got '${afterImpossibleRowTap.mode}'")
     }
 
     // A touch outside every rect (the whole screen is tappable in browse

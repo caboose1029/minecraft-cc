@@ -974,7 +974,17 @@ own inventory, addressed exactly like any other peripheral).
   used), a paginated item list sized to the *actual* display height
   (`term.getSize()`, never hardcoded — a turtle's screen and a pocket
   computer's screen are not the same size, and neither is guessed at),
-  Prev/Next paging. Tapping a row moves to `"detail"` for that item.
+  Prev/Next paging, and a 4th top-bar button (`topBarRect`, generalizing
+  the tabs' old 3-column split to 4) opening a real keyboard search
+  prompt (`promptForSearch` — same "this screen actually has a keyboard"
+  reasoning as quantity entry below) that filters the list by substring
+  (`DashboardState.searchText`, threaded straight into `ktoxListCatalog`,
+  reusing the exact substring filter `list <item-name-filter>` already
+  had). Blank input clears the filter — unlike quantity entry, where
+  blank preserves the old value, blank here is a deliberate, obvious way
+  to remove a search rather than needing a separate "clear" button.
+  Switching tabs or paging preserves the active search; tapping a row
+  moves to `"detail"` for that item.
 - **`"detail"`** — the selected item's name/status/qty, a Fetch button
   (only shown for a `stocked` item — nothing to pull otherwise), a Craft
   button, a "fetch after craft" checkbox (maps directly onto `craft`'s
@@ -999,27 +1009,30 @@ own inventory, addressed exactly like any other peripheral).
   maintained config (an item's stack size is an objective game fact, not
   per-world data), same treatment as `job-types.lua`/`resource-tree.lua`
   — fetched fresh every `ghfetch` run, not player-owned.
-- **`"qtyentry"`** — not really a screen, a transient mode: tapping the
-  quantity field triggers a **real, physical-keyboard `read()` prompt**
-  (`promptForQuantity` in `lib/Dashboard.kt`), not an on-screen keypad. A
+- **`"qtyentry"`/`"searchentry"`** — not really screens, transient modes:
+  tapping the quantity field or the Search button each trigger a **real,
+  physical-keyboard `read()` prompt** (`promptForQuantity`/
+  `promptForSearch` in `lib/Dashboard.kt`), not an on-screen keypad. A
   Computer/Turtle/Pocket screen genuinely captures keyboard input while
   its GUI is open in-game (unlike a Monitor peripheral, which only ever
   fires `monitor_touch` and never takes keyboard focus at all) — since
   this dashboard no longer targets monitors, there's no reason to build
   and maintain a tap-driven keypad instead of just using the keyboard
-  that's already there. Kept as an explicit `DashboardState.mode` rather
-  than an inline side effect inside the touch handler specifically so
-  the hit-testing stays pure/testable — `handleDetailTouch` only ever
-  transitions *into* `"qtyentry"`, the actual blocking `read()` call
-  lives in `runDashboardLoop`'s dispatch, which is the one place this
-  whole file does real blocking I/O (that, and `displayWaitTouch`).
+  that's already there. Kept as explicit `DashboardState.mode` values
+  rather than inline side effects inside the touch handlers specifically
+  so the hit-testing stays pure/testable — `handleDetailTouch`/
+  `handleBrowseTouch` only ever transition *into* these modes, the
+  actual blocking `read()` calls live in `runDashboardLoop`'s dispatch,
+  which is the one place this whole file does real blocking I/O (that,
+  and `displayWaitTouch`).
 
 **State is an immutable data class, deliberately not mutated in place.**
 `DashboardState` is always constructed fresh at every return site, never
 via `.copy()` (unconfirmed whether that ktox-transpiles correctly — see
 AGENTS.md's documented gaps around Kotlin-generated methods generally).
-Every screen's rows/rects are recomputed from `(tab, page)` through the
-same helper functions used by BOTH rendering and touch hit-testing
+Every screen's rows/rects are recomputed from `(tab, page, searchText)`
+through the same helper functions used by BOTH rendering and touch
+hit-testing
 (`tabRect`, `itemRowRect`, `detailFetchButtonRect`, ...), rather than
 cached anywhere in `DashboardState` — so drawing and hit-testing can
 never disagree about what's currently on screen, and nothing needs

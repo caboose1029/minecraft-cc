@@ -33,16 +33,17 @@ import lib.touchInRect
 // String, never touches vault/job logic directly.
 //
 // Two screens (DashboardState.mode): "browse" (tabs + paginated item
-// list) and "detail" (one selected item's actions). A third, transient
-// mode ("qtyentry") isn't really a screen at all — see
-// runDashboardLoop()'s handling of it and promptForQuantity() below:
-// this computer's own screen DOES capture real keyboard input while its
-// GUI is open (unlike a Monitor peripheral, which never does), so
-// quantity entry is a normal blocking read() prompt, not a tap-driven
-// keypad. Kept as an explicit state (not just an inline side effect
-// inside handleDetailTouch) specifically so the pure hit-testing logic
-// stays testable: handleDetailTouch itself never blocks on real
-// keyboard input, only runDashboardLoop's dispatch does — see
+// list) and "detail" (one selected item's actions). Two further,
+// transient modes ("qtyentry", "searchentry") aren't really screens at
+// all — see runDashboardLoop()'s handling of them and
+// promptForQuantity()/promptForSearch() below: this computer's own
+// screen DOES capture real keyboard input while its GUI is open (unlike
+// a Monitor peripheral, which never does), so both quantity and search
+// text entry are normal blocking read() prompts, not a tap-driven
+// keypad. Kept as explicit states (not just an inline side effect inside
+// the touch handlers) specifically so the pure hit-testing logic stays
+// testable: handleDetailTouch/handleBrowseTouch themselves never block
+// on real keyboard input, only runDashboardLoop's dispatch does — see
 // TestDashboard.kt, which exercises the former but can't touch the
 // latter (there's no way to feed simulated keystrokes to CraftOS-PC's
 // headless --script mode - see common/Term.kt's own note on this).
@@ -50,15 +51,15 @@ import lib.touchInRect
 // Deliberately NOT a mutable state object — DashboardState is an
 // immutable data class, always constructed fresh at every return site
 // (never `.copy()`, unconfirmed whether that ktox-transpiles correctly).
-// Screen contents are recomputed from (tab, page) on every render AND
-// every touch check via the same helper functions, rather than cached
-// anywhere, so drawing and hit-testing can never disagree about what's
-// currently on screen.
+// Screen contents are recomputed from (tab, page, searchText) on every
+// render AND every touch check via the same helper functions, rather
+// than cached anywhere, so drawing and hit-testing can never disagree
+// about what's currently on screen.
 
 data class Rect(val x: Int, val y: Int, val w: Int, val h: Int)
 
 data class DashboardState(
-    val mode: String, // "browse" | "detail" | "qtyentry"
+    val mode: String, // "browse" | "detail" | "qtyentry" | "searchentry"
     val tab: String, // "stocked" | "craftable" | "unavailable"
     val page: Int, // 1-indexed
     val selectedItem: String,
@@ -68,26 +69,31 @@ data class DashboardState(
     val fetchChecked: Boolean,
     val locationIndex: Int, // -1 = auto (self-then-default resolution)
     val readyCommand: String, // "" = keep looping; non-empty = return this
+    val searchText: String, // "" = no filter - substring passed to ktoxListCatalog
 )
 
 fun freshDashboardState(): DashboardState {
-    return DashboardState("browse", "stocked", 1, "", "", "", "1", true, -1, "")
+    return DashboardState("browse", "stocked", 1, "", "", "", "1", true, -1, "", "")
 }
 
 // Blocks until a Fetch/Craft action actually resolves to a command,
 // exactly like read() blocks until Enter — same contract, so callers
 // (HeadTerminal/SecondaryTerminal) don't need to change anything past
-// this call. The "qtyentry" branch is the one place this does real
-// blocking keyboard I/O (promptForQuantity) rather than tap handling —
-// pulled out of handleDetailTouch precisely so that function can stay a
-// pure, testable state transition (see the file header comment).
+// this call. The "qtyentry"/"searchentry" branches are the only places
+// this does real blocking keyboard I/O (promptForQuantity/
+// promptForSearch) rather than tap handling — pulled out of the touch
+// handlers precisely so those can stay pure, testable state transitions
+// (see the file header comment).
 fun runDashboardLoop(): String {
     var state = freshDashboardState()
     displayInit()
     while (state.readyCommand == "") {
         if (state.mode == "qtyentry") {
             val newQty = promptForQuantity(state.qtyText)
-            state = DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "")
+            state = DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "", state.searchText)
+        } else if (state.mode == "searchentry") {
+            val newSearch = promptForSearch(state.searchText)
+            state = DashboardState("browse", state.tab, 1, "", "", "", "1", true, -1, "", newSearch)
         } else {
             val size = displaySize()
             renderDashboard(state, size)
@@ -116,6 +122,18 @@ fun promptForQuantity(current: String): String {
         return current
     }
     return typed
+}
+
+// Real keyboard entry for the item-name filter. Unlike promptForQuantity,
+// blank input is a valid, meaningful answer here — it CLEARS the filter,
+// rather than preserving whatever was there before, since that's the
+// obvious way to remove a search (no separate "clear" button needed).
+fun promptForSearch(current: String): String {
+    termClear()
+    termSetCursorPos(1, 1)
+    termWrite("Search item names (blank clears, currently \"${current}\"):")
+    termSetCursorPos(1, 2)
+    return readInput()
 }
 
 // Shows a Fetch/Craft result on the display and waits for a dismiss tap
@@ -148,8 +166,29 @@ fun threeColumnRect(size: DisplaySize, columnIndex: Int, y: Int, h: Int): Rect {
     return Rect(1 + base + base, y, totalW - base - base, h)
 }
 
+// The top bar is 4 columns: the 3 status tabs plus a Search button.
+fun topBarRect(size: DisplaySize, columnIndex: Int): Rect {
+    val totalW = size.width
+    val remainder = totalW % 4
+    val base = (totalW - remainder) / 4
+    if (columnIndex == 1) {
+        return Rect(1, 1, base, 1)
+    }
+    if (columnIndex == 2) {
+        return Rect(1 + base, 1, base, 1)
+    }
+    if (columnIndex == 3) {
+        return Rect(1 + base + base, 1, base, 1)
+    }
+    return Rect(1 + base + base + base, 1, totalW - base - base - base, 1)
+}
+
 fun tabRect(size: DisplaySize, index: Int): Rect {
-    return threeColumnRect(size, index, 1, 1)
+    return topBarRect(size, index)
+}
+
+fun searchButtonRect(size: DisplaySize): Rect {
+    return topBarRect(size, 4)
 }
 
 fun tabLabel(index: Int): String {
@@ -352,7 +391,14 @@ fun renderBrowse(state: DashboardState, size: DisplaySize) {
         i += 1
     }
 
-    val raw = ktoxListCatalog(ktoxConfigStorageVaultNames(), state.tab, "")
+    val searchRect = searchButtonRect(size)
+    var searchLabel = "Search"
+    if (state.searchText != "") {
+        searchLabel = "\"${state.searchText}\""
+    }
+    displayFillRect(searchRect.x, searchRect.y, searchRect.w, searchRect.h, COLOR_GRAY, COLOR_WHITE, searchLabel)
+
+    val raw = ktoxListCatalog(ktoxConfigStorageVaultNames(), state.tab, state.searchText)
     val rows = if (raw == "") listOf() else raw.split("\n")
     val perPage = rowsPerPage(size)
     val startIndex = 1 + (state.page - 1) * perPage
@@ -431,9 +477,10 @@ fun renderDetail(state: DashboardState, size: DisplaySize) {
 // ---- touch handling ----
 //
 // Pure state transitions - no I/O, no blocking, always safe to call from
-// a test. The one exception is the qty field's tap, which transitions to
-// "qtyentry" rather than doing the actual keyboard read here - see the
-// file header comment and runDashboardLoop.
+// a test. The exceptions are the qty field's and search button's taps,
+// which transition to "qtyentry"/"searchentry" rather than doing the
+// actual keyboard read here - see the file header comment and
+// runDashboardLoop.
 
 fun handleDashboardTouch(state: DashboardState, touch: Touch, size: DisplaySize): DashboardState {
     if (state.mode == "browse") {
@@ -447,22 +494,27 @@ fun handleBrowseTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
     while (i <= 3) {
         val rect = tabRect(size, i)
         if (touchInRect(touch, rect.x, rect.y, rect.w, rect.h)) {
-            return DashboardState("browse", tabStatus(i), 1, "", "", "", "1", true, -1, "")
+            return DashboardState("browse", tabStatus(i), 1, "", "", "", "1", true, -1, "", state.searchText)
         }
         i += 1
     }
 
-    val raw = ktoxListCatalog(ktoxConfigStorageVaultNames(), state.tab, "")
+    val searchRect = searchButtonRect(size)
+    if (touchInRect(touch, searchRect.x, searchRect.y, searchRect.w, searchRect.h)) {
+        return DashboardState("searchentry", state.tab, state.page, "", "", "", "1", true, -1, "", state.searchText)
+    }
+
+    val raw = ktoxListCatalog(ktoxConfigStorageVaultNames(), state.tab, state.searchText)
     val rows = if (raw == "") listOf() else raw.split("\n")
     val perPage = rowsPerPage(size)
     val totalPages = totalPagesFor(rows.size, perPage)
     val footerY = paginationFooterY(size)
 
     if (state.page > 1 && touchInRect(touch, 1, footerY, 6, 1)) {
-        return DashboardState("browse", state.tab, state.page - 1, "", "", "", "1", true, -1, "")
+        return DashboardState("browse", state.tab, state.page - 1, "", "", "", "1", true, -1, "", state.searchText)
     }
     if (state.page < totalPages && touchInRect(touch, size.width - 5, footerY, 6, 1)) {
-        return DashboardState("browse", state.tab, state.page + 1, "", "", "", "1", true, -1, "")
+        return DashboardState("browse", state.tab, state.page + 1, "", "", "", "1", true, -1, "", state.searchText)
     }
 
     val startIndex = 1 + (state.page - 1) * perPage
@@ -482,7 +534,7 @@ fun handleBrowseTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
                 } else if (status == "unavailable") {
                     countText = "-"
                 }
-                return DashboardState("detail", state.tab, state.page, name, status, countText, "1", true, -1, "")
+                return DashboardState("detail", state.tab, state.page, name, status, countText, "1", true, -1, "", state.searchText)
             }
         }
         rowSlot += 1
@@ -494,35 +546,35 @@ fun handleBrowseTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
 fun handleDetailTouch(state: DashboardState, touch: Touch, size: DisplaySize): DashboardState {
     val backRect = detailBackRect()
     if (touchInRect(touch, backRect.x, backRect.y, backRect.w, backRect.h)) {
-        return DashboardState("browse", state.tab, state.page, "", "", "", "1", true, -1, "")
+        return DashboardState("browse", state.tab, state.page, "", "", "", "1", true, -1, "", state.searchText)
     }
 
     val qtyRect = detailQtyRect(size)
     if (touchInRect(touch, qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h)) {
-        return DashboardState("qtyentry", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, "")
+        return DashboardState("qtyentry", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, "", state.searchText)
     }
 
     val qtyDownRect = detailQtyDownRect(size)
     if (touchInRect(touch, qtyDownRect.x, qtyDownRect.y, qtyDownRect.w, qtyDownRect.h)) {
         val newQty = adjustQtyByStack(state.qtyText, state.selectedItem, -1)
-        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "")
+        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "", state.searchText)
     }
 
     val qtyUpRect = detailQtyUpRect(size)
     if (touchInRect(touch, qtyUpRect.x, qtyUpRect.y, qtyUpRect.w, qtyUpRect.h)) {
         val newQty = adjustQtyByStack(state.qtyText, state.selectedItem, 1)
-        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "")
+        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "", state.searchText)
     }
 
     val locationRect = detailLocationRect(size)
     if (touchInRect(touch, locationRect.x, locationRect.y, locationRect.w, locationRect.h)) {
         val newIndex = nextLocationIndex(state.locationIndex)
-        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, newIndex, "")
+        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, newIndex, "", state.searchText)
     }
 
     val checkboxRect = detailFetchCheckboxRect(size)
     if (touchInRect(touch, checkboxRect.x, checkboxRect.y, checkboxRect.w, checkboxRect.h)) {
-        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, !state.fetchChecked, state.locationIndex, "")
+        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, !state.fetchChecked, state.locationIndex, "", state.searchText)
     }
 
     val qty = state.qtyText.toDoubleOrNull()
@@ -531,7 +583,7 @@ fun handleDetailTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
             val fetchRect = detailFetchButtonRect(size)
             if (touchInRect(touch, fetchRect.x, fetchRect.y, fetchRect.w, fetchRect.h)) {
                 val command = "pull ${state.selectedItem} ${state.qtyText}${locationFlag(state.locationIndex)}"
-                return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, command)
+                return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, command, state.searchText)
             }
         }
         val craftRect = detailCraftButtonRect(size)
@@ -541,7 +593,7 @@ fun handleDetailTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
                 fetchFlag = " --fetch=false"
             }
             val command = "craft ${state.selectedItem} ${state.qtyText}${locationFlag(state.locationIndex)}${fetchFlag}"
-            return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, command)
+            return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, command, state.searchText)
         }
     }
 
