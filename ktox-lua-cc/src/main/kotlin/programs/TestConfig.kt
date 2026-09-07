@@ -25,11 +25,11 @@ import lib.storagePoolCount
 fun main() {
     println("Storage vault names: ${ktoxConfigStorageVaultNames()}")
 
-    val feeder = ktoxConfigFeederForJob("mechanical_press_depot")
+    val feeder = ktoxConfigFeederForJob("pressing")
     if (feeder == "MISSING") {
-        println("Feeder for mechanical_press_depot: none configured")
+        println("Feeder for pressing: none configured")
     } else {
-        println("Feeder for mechanical_press_depot: ${feeder}")
+        println("Feeder for pressing: ${feeder}")
     }
 
     val relay = ktoxConfigRelayForJob("smelter")
@@ -89,8 +89,8 @@ fun main() {
     } else {
         val count = recipeInputCount(chestRecipe)
         println("Recipe for minecraft:chest: ${count} input(s) via ${chestRecipe.jobType}")
-        if (chestRecipe.jobType != "chest_crafter") {
-            println("MISMATCH: expected job \"chest_crafter\", got \"${chestRecipe.jobType}\" - this recipe won't find its crafter turtle!")
+        if (chestRecipe.jobType != "crafter") {
+            println("MISMATCH: expected job \"crafter\", got \"${chestRecipe.jobType}\" - this recipe won't find its crafter turtle!")
         }
         var i = 1
         while (i <= count) {
@@ -98,7 +98,7 @@ fun main() {
             i += 1
         }
     }
-    println("Job kind for chest_crafter: ${jobKind("chest_crafter")}")
+    println("Job kind for crafter: ${jobKind("crafter")}")
     println("Job kind for smelter: ${jobKind("smelter")}")
     println("--- craft chest (crafter-kind job, no modem - should not hang) ---")
     println(runCliCommand("craft minecraft:chest 1"))

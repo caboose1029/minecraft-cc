@@ -443,30 +443,101 @@ a real failure. This was a genuine bug until the real-recipe research
 surfaced it — casing production (a Deployer recipe) would have always
 failed under the original "no relay = give up" logic.
 
-**Content build (2026-09-07):** `job-types.json`/`resource-tree.json` now
-carry real content, built from two research passes (see `AGENTS.md`
-"Modpack" section for the full mod list and per-mod confidence notes)
-rather than the earlier one-or-two-entry placeholders. Coverage, by
-confidence:
-- **High confidence** (direct wiki/source-verified): Milling (ore → crushed
-  ore, 4 metals), smelting (crushed ore → ingot, vanilla furnace),
-  Pressing (ingot → sheet), Andesite Alloy, Brass Ingot (2x output per the
-  real recipe — an earlier placeholder had this wrong at 1x), Washing/
-  Splashing's deterministic recipes (Ice, Wheat Flour, Magma Block — see
-  above for why the chance-based majority of this mechanic is excluded).
-- **Medium confidence** (mechanism confirmed, exact item IDs plausible but
-  not individually verified): Andesite/Brass/Copper Casing (Deployer +
-  stripped log + alloy/ingot — modeled as a 2-input machine job with the
-  physical assumption that one feeder vault's output splits, via separate
-  funnels/chutes, to reach both the belt-fed log and the deployer's held
-  item; a real physical build the player has to arrange, not something
-  this system verifies), log stripping via the Slicer (Create: Slice &
-  Dice automating Farmer's Delight's Cutting Board mechanic).
-- **Lower confidence** (plausible item IDs, not individually confirmed —
+**Content build, v1 (2026-09-07):** initial real content, built from two
+web-research passes (see `AGENTS.md` "Modpack" section) rather than the
+original one-or-two-entry placeholders. Superseded by v2 below almost
+immediately — kept here as a record of why v2's methodology change
+mattered, not as still-current guidance.
+
+**Methodology change, v2 (2026-09-07, same day):** research from
+memory/WebSearch turned out to have real, confirmed error rates —
+wrong item IDs (`create:crushed_iron_ore` doesn't exist; the real item
+is `create:crushed_raw_iron`), wrong mechanic assumptions (`create:milling`
+and `create:crushing` were assumed to be the same recipe type at
+different speeds; they're genuinely different machines — Millstone mills
+plants/wheat/dyes, Crushing Wheels crush ores/raw materials — with
+non-overlapping recipe sets), wrong namespaces (`wheat_flour`/`dough`
+are `create:`, not `farmersdelight:`), and at least one fully fabricated
+recipe (a `washing: wheat_flour → dough` entry that doesn't exist in any
+form — the real `create:dough` recipe needs water, a fluid, so no
+solid-only path to it exists in Create's own data at all).
+
+**The actual fix: mod `.jar` files are ZIP archives containing every
+recipe as a real JSON file** (Minecraft's own data-driven recipe system,
+which every mod here uses) — `data/<namespace>/recipe/**/*.json`,
+extractable and inspectable directly, with a `"type"` field naming the
+exact mechanic and structured `ingredients`/`results` (results can carry
+a `"chance"` field for probabilistic-yield entries — see "Probabilistic-
+yield recipes" above; only chance-less entries are guaranteed yield and
+schema-eligible). This is strictly better ground truth than any research
+pass, including JEI's own approach — JEI doesn't hardcode recipe data
+either, it just reads exactly these same files at runtime and renders
+them; going straight to the source skips an unnecessary layer. Create's
+jar alone has 1884 recipe JSON files (only counting `data/create/recipe`)
+across ~24 distinct recipe types — genuinely too many to include
+individually (many are decorative-block/stonecutting variants, or
+"compat" entries for mods not in this list), so **scope is still
+curated, not literally exhaustive** — the difference is every entry that
+*is* included is now verified against the actual file, not recalled or
+guessed. Re-derive this way (not via web research) whenever expanding
+coverage further; `unzip -l <jar> | grep recipe` plus reading the JSONs
+directly is fast and authoritative.
+
+**Job types consolidated to be machine-based, not per-item** (raised
+directly: a `chest_crafter` job type for one specific crafted item
+doesn't scale to the hundreds of things a crafter turtle could plausibly
+make). Renamed/merged: `mechanical_press_depot`→`pressing`,
+`andesite_mixer`→`mixing_unheated`, `mixer_basin`→`mixing_heated`,
+`washing`→`splashing`, `lava_spout`→`filling`, and — the one that was
+wrong on the merits, not just the name — the old ore-crushing `"milling"`
+job type is now `"crushing"` (Crushing Wheels), freeing up `"milling"`
+for the real Millstone mechanic (plant/wheat grinding). Three separate
+per-casing job types (`andesite_casing_deployer`/`brass_casing_deployer`/
+`copper_casing_deployer`) collapsed into one `"deploying"` job type,
+same shared-feeder-vault reasoning as multi-ingredient machine jobs.
+`chest_crafter` is now plain `"crafter"` — one generic job type for
+*every* turtle-craftable recipe (`minecraft:chest`,
+`minecraft:dried_kelp_block`, and anything added later), each recipe
+still carrying its own full slot layout in `resource-tree.json`, so
+adding a new turtle-craftable item is a content change, never a new job
+type or a new peripheral registration.
+
+**One recipe moved to `crafter` for a mechanism reason, not just
+naming:** `minecraft:dried_kelp_block` was originally assumed to be a
+Create `"compacting"` recipe (Mechanical Press over a Basin, matching the
+9-in-a-square shape) — the real jar data shows no such recipe exists;
+Dried Kelp Block is plain vanilla 3×3 crafting, which only the `crafter`
+job (a real turtle running `turtle.craft()`) can actually perform in this
+system. `"compacting"` survived as a job type on its own real recipe
+instead (9× Snow Block → Ice — verified, solid-only).
+
+Coverage, by confidence, current as of the jar-extraction pass:
+- **High confidence** (verified directly against the mod jar's own recipe
+  JSON): `crushing` (4 metals, corrected item IDs), `smelter` (crushed
+  ore → ingot per the jar's bundled vanilla-smelting recipes, plus
+  well-established vanilla smelting — cobblestone→stone, sand→glass,
+  clay ball→brick — and `create:dough`→`minecraft:bread`, confirmed in
+  the jar), `pressing` (all 4 sheets, including `create:brass_sheet`,
+  found via the jar and previously missing entirely), `mixing_unheated`
+  (Andesite Alloy), `mixing_heated` (Brass Ingot, 2x output confirmed —
+  an earlier version had this wrong at 1x), `deploying` (all 3 casings,
+  exact ingredient tags confirmed), `compacting` (Snow Block → Ice),
+  `milling` (Wheat → Wheat Flour).
+- **Medium confidence**: `splashing`'s deterministic entries (Ice→Packed
+  Ice, Magma Block→Obsidian — the wrong Wheat Flour→Dough entry was
+  removed, not fixed, since no valid solid-only recipe for Dough exists
+  at all), `smoker` (vanilla food-cooking pairs — high-confidence general
+  knowledge, not individually jar-verified since vanilla recipes aren't
+  in any mod's jar), log stripping via the Slicer.
+- **Lower confidence** (plausible item IDs, not individually verified —
   spot-check against JEI before relying on these): Farmer's Delight items
   via Slice & Dice (`farmersdelight:chicken_cuts`,
-  `farmersdelight:pumpkin_slice`, `farmersdelight:beef_stew` via the
-  Cooking Pot → Heated Mixing bridge).
+  `farmersdelight:pumpkin_slice`, `farmersdelight:beef_stew`), `filling`
+  (`minecraft:bucket`→`minecraft:lava_bucket` — no explicit
+  `create:filling` JSON exists for this; a Spout filling a plain bucket
+  is inferred to be generic vanilla bucket-fill behavior the Spout also
+  performs, not a data-driven recipe, so this one genuinely can't be
+  jar-verified either way).
 - **Deliberately excluded, not overlooked:** Precision Mechanism (Create's
   Sequenced Assembly is a genuinely different recipe shape — an ordered
   multi-step sequence with a final success-*chance*, not expressible in
@@ -475,12 +546,12 @@ confidence:
   Create Aeronautics, Create Dragons Plus, and Create Food were
   researched and found to add nothing both concrete and fluid-free enough
   to include confidently — excluded rather than guessed at. Byproduct/
-  bonus-chance outputs (e.g., milling's secondary cobblestone, chicken
-  cutting's bonus bone meal) are ignored throughout — only the primary,
-  effectively-guaranteed yield is modeled, to keep the schema's single-
-  deterministic-output assumption intact rather than adding chance
-  handling for comparatively low value. Sandpaper Polishing (Rose Quartz
-  → Polished Rose Quartz) is real but a single niche recipe with
+  bonus-chance outputs (e.g., ore crushing's bonus Experience Nugget,
+  chicken cutting's bonus bone meal) are ignored throughout — only
+  results with no `"chance"` field are modeled, to keep the schema's
+  single-deterministic-output assumption intact rather than adding
+  chance handling for comparatively low value. Sandpaper Polishing (Rose
+  Quartz → Polished Rose Quartz) is real but a single niche recipe with
   unconfirmed Deployer-automation status — excluded as not worth the
   uncertainty. The full "endless cobblestone → iron/andesite" chain is
   excluded for a different reason: see "Probabilistic-yield recipes"

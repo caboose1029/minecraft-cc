@@ -1,11 +1,15 @@
 {
-  "milling": {
+  "crushing": {
     "produces": [
-      "create:crushed_iron_ore",
-      "create:crushed_gold_ore",
-      "create:crushed_copper_ore",
-      "create:crushed_zinc_ore"
+      "create:crushed_raw_iron",
+      "create:crushed_raw_gold",
+      "create:crushed_raw_copper",
+      "create:crushed_raw_zinc"
     ],
+    "kind": "machine"
+  },
+  "milling": {
+    "produces": ["create:wheat_flour"],
     "kind": "machine"
   },
   "smelter": {
@@ -14,33 +18,51 @@
       "minecraft:gold_ingot",
       "minecraft:copper_ingot",
       "create:zinc_ingot",
-      "minecraft:charcoal"
+      "minecraft:charcoal",
+      "minecraft:stone",
+      "minecraft:glass",
+      "minecraft:brick",
+      "minecraft:bread"
     ],
     "kind": "machine"
   },
-  "mechanical_press_depot": {
-    "produces": ["create:iron_sheet", "create:copper_sheet", "create:golden_sheet"],
+  "smoker": {
+    "produces": [
+      "minecraft:dried_kelp",
+      "minecraft:cooked_beef",
+      "minecraft:cooked_chicken",
+      "minecraft:cooked_porkchop",
+      "minecraft:baked_potato"
+    ],
     "kind": "machine"
   },
-  "andesite_mixer": {
+  "pressing": {
+    "produces": ["create:iron_sheet", "create:copper_sheet", "create:golden_sheet", "create:brass_sheet"],
+    "kind": "machine"
+  },
+  "mixing_unheated": {
     "produces": ["create:andesite_alloy"],
     "kind": "machine"
   },
-  "mixer_basin": {
+  "mixing_heated": {
     "produces": ["create:brass_ingot"],
     "kind": "machine",
     "timeoutSeconds": 45
   },
-  "andesite_casing_deployer": {
-    "produces": ["create:andesite_casing"],
+  "compacting": {
+    "produces": ["minecraft:ice"],
     "kind": "machine"
   },
-  "brass_casing_deployer": {
-    "produces": ["create:brass_casing"],
+  "deploying": {
+    "produces": ["create:andesite_casing", "create:brass_casing", "create:copper_casing"],
     "kind": "machine"
   },
-  "copper_casing_deployer": {
-    "produces": ["create:copper_casing"],
+  "splashing": {
+    "produces": ["minecraft:packed_ice", "minecraft:obsidian"],
+    "kind": "machine"
+  },
+  "filling": {
+    "produces": ["minecraft:lava_bucket"],
     "kind": "machine"
   },
   "slicer": {
@@ -51,24 +73,8 @@
     "produces": ["farmersdelight:beef_stew"],
     "kind": "machine"
   },
-  "washing": {
-    "produces": ["minecraft:packed_ice", "farmersdelight:dough", "minecraft:obsidian"],
-    "kind": "machine"
-  },
-  "smoker": {
-    "produces": ["minecraft:dried_kelp"],
-    "kind": "machine"
-  },
-  "mechanical_press_basin": {
-    "produces": ["minecraft:dried_kelp_block"],
-    "kind": "machine"
-  },
-  "lava_spout": {
-    "produces": ["minecraft:lava_bucket"],
-    "kind": "machine"
-  },
-  "chest_crafter": {
-    "produces": ["minecraft:chest"],
+  "crafter": {
+    "produces": ["minecraft:chest", "minecraft:dried_kelp_block"],
     "kind": "crafter"
   },
   "wood_farm": {

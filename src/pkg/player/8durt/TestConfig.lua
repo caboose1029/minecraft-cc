@@ -11,11 +11,11 @@ ktox_require("lib/Inventory")
 
 local function main()
     println("Storage vault names: " .. tostring(ktoxConfigStorageVaultNames()))
-    local feeder = ktoxConfigFeederForJob("mechanical_press_depot")
+    local feeder = ktoxConfigFeederForJob("pressing")
     if feeder == "MISSING" then
-        println("Feeder for mechanical_press_depot: none configured")
+        println("Feeder for pressing: none configured")
     else
-        println("Feeder for mechanical_press_depot: " .. tostring(feeder))
+        println("Feeder for pressing: " .. tostring(feeder))
     end
     local relay = ktoxConfigRelayForJob("smelter")
     if relay == "MISSING" then
@@ -68,8 +68,8 @@ local function main()
     else
         local count = recipeInputCount(chestRecipe)
         println("Recipe for minecraft:chest: " .. tostring(count) .. " input(s) via " .. tostring(chestRecipe.jobType))
-        if chestRecipe.jobType ~= "chest_crafter" then
-            println("MISMATCH: expected job " .. "\"" .. "chest_crafter" .. "\"" .. ", got " .. "\"" .. tostring(chestRecipe.jobType) .. "\"" .. " - this recipe won\'t find its crafter turtle!")
+        if chestRecipe.jobType ~= "crafter" then
+            println("MISMATCH: expected job " .. "\"" .. "crafter" .. "\"" .. ", got " .. "\"" .. tostring(chestRecipe.jobType) .. "\"" .. " - this recipe won\'t find its crafter turtle!")
         end
         local i = 1
         while i <= count do
@@ -77,7 +77,7 @@ local function main()
             i = ktox_plusAssign(i, 1)
         end
     end
-    println("Job kind for chest_crafter: " .. tostring(jobKind("chest_crafter")))
+    println("Job kind for crafter: " .. tostring(jobKind("crafter")))
     println("Job kind for smelter: " .. tostring(jobKind("smelter")))
     println("--- craft chest (crafter-kind job, no modem - should not hang) ---")
     println(runCliCommand("craft minecraft:chest 1"))

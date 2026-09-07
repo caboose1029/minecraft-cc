@@ -5,7 +5,7 @@
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "mechanical_press_depot" }
+      "job": { "type": "pressing" }
     }
   },
   "create:item_vault_3": { "type": "vault", "job": { "type": "pickup" } },
@@ -21,25 +21,25 @@
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "mixer_basin" }
+      "job": { "type": "mixing_heated" }
     }
   },
   "computercraft:redstone_relay_0": {
     "type": "relay",
     "connections": {
       "right": { "job": { "type": "smelter" } },
-      "left": { "job": { "type": "mechanical_press_depot" } }
+      "left": { "job": { "type": "pressing" } }
     }
   },
   "computercraft:redstone_relay_1": {
     "type": "relay",
     "connections": {
-      "right": { "job": { "type": "mixer_basin" } }
+      "right": { "job": { "type": "mixing_heated" } }
     }
   },
   "computercraft:turtle_advanced_0": {
     "type": "crafter",
-    "job": { "type": "chest_crafter" }
+    "job": { "type": "crafter" }
   },
   "create:item_vault_7": {
     "type": "vault",
@@ -54,35 +54,21 @@
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "milling" }
+      "job": { "type": "crushing" }
     }
   },
   "create:item_vault_9": {
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "andesite_mixer" }
+      "job": { "type": "mixing_unheated" }
     }
   },
   "create:item_vault_10": {
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "andesite_casing_deployer" }
-    }
-  },
-  "create:item_vault_11": {
-    "type": "vault",
-    "job": {
-      "type": "feeder",
-      "job": { "type": "brass_casing_deployer" }
-    }
-  },
-  "create:item_vault_12": {
-    "type": "vault",
-    "job": {
-      "type": "feeder",
-      "job": { "type": "copper_casing_deployer" }
+      "job": { "type": "deploying" }
     }
   },
   "create:item_vault_13": {
@@ -103,7 +89,7 @@
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "washing" }
+      "job": { "type": "splashing" }
     }
   },
   "create:item_vault_16": {
@@ -131,18 +117,11 @@
       "job": { "type": "smoker" }
     }
   },
-  "create:item_vault_18": {
-    "type": "vault",
-    "job": {
-      "type": "feeder",
-      "job": { "type": "mechanical_press_basin" }
-    }
-  },
   "create:item_vault_19": {
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "lava_spout" }
+      "job": { "type": "filling" }
     }
   },
   "create:item_vault_20": {
@@ -170,6 +149,20 @@
       "item": "minecraft:coal",
       "lowWatermark": 16,
       "highWatermark": 64
+    }
+  },
+  "create:item_vault_23": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "milling" }
+    }
+  },
+  "create:item_vault_24": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "compacting" }
     }
   }
 }
