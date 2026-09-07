@@ -55,6 +55,18 @@
     "produces": ["minecraft:packed_ice", "farmersdelight:dough", "minecraft:obsidian"],
     "kind": "machine"
   },
+  "smoker": {
+    "produces": ["minecraft:dried_kelp"],
+    "kind": "machine"
+  },
+  "mechanical_press_basin": {
+    "produces": ["minecraft:dried_kelp_block"],
+    "kind": "machine"
+  },
+  "lava_spout": {
+    "produces": ["minecraft:lava_bucket"],
+    "kind": "machine"
+  },
   "chest_crafter": {
     "produces": ["minecraft:chest"],
     "kind": "crafter"

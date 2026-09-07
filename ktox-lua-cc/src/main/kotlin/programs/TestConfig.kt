@@ -107,4 +107,9 @@ fun main() {
     println("--- manageFarms (no real peripherals - should not crash) ---")
     manageFarms()
     println("done")
+
+    println("--- craft dried kelp block (9:1 compacting chain, no stock - should not hang) ---")
+    println(runCliCommand("craft minecraft:dried_kelp_block 1"))
+    println("--- craft lava bucket (fluid-adjacent, no stock - should not hang) ---")
+    println(runCliCommand("craft minecraft:lava_bucket 1"))
 }

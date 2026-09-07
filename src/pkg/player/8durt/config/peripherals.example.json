@@ -123,5 +123,53 @@
       "top": { "job": { "type": "iron_andesite_farm" } },
       "bottom": { "job": { "type": "copper_farm" } }
     }
+  },
+  "create:item_vault_17": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "smoker" }
+    }
+  },
+  "create:item_vault_18": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "mechanical_press_basin" }
+    }
+  },
+  "create:item_vault_19": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "lava_spout" }
+    }
+  },
+  "create:item_vault_20": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:bucket",
+      "lowWatermark": 4,
+      "highWatermark": 16
+    }
+  },
+  "create:item_vault_21": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:dried_kelp_block",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_22": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:coal",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
   }
 }

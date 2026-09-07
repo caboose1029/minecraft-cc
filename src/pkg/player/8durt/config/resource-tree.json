@@ -164,6 +164,24 @@
       "inputs": [{ "item": "minecraft:magma_block", "count": 1 }]
     },
     {
+      "output": "minecraft:dried_kelp",
+      "outputCount": 1,
+      "job": "smoker",
+      "inputs": [{ "item": "minecraft:kelp", "count": 1 }]
+    },
+    {
+      "output": "minecraft:dried_kelp_block",
+      "outputCount": 1,
+      "job": "mechanical_press_basin",
+      "inputs": [{ "item": "minecraft:dried_kelp", "count": 9 }]
+    },
+    {
+      "output": "minecraft:lava_bucket",
+      "outputCount": 1,
+      "job": "lava_spout",
+      "inputs": [{ "item": "minecraft:bucket", "count": 1 }]
+    },
+    {
       "output": "minecraft:chest",
       "outputCount": 1,
       "job": "chest_crafter",

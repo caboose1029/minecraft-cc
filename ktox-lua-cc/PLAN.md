@@ -172,6 +172,35 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
   triggers the `smelter` job smelting logs, not just redistributing
   whatever charcoal already happens to exist).
 
+  **"Fuel" is a conceptual category, not a vault/job type of its own** —
+  a Blaze Burner accepts charcoal, coal, Dried Kelp Block, *and* Lava
+  Bucket interchangeably. Rather than generalize `"passive"` to accept a
+  list of interchangeable items (real complexity: summing across several
+  items for one watermark, deciding which to pull first), each fuel type
+  the player actually wants automated just gets its **own** independent
+  passive feeder — four small feeders is simpler than one feeder with
+  list-valued config, and physically matches how a player would wire
+  several funnels (each with its own item filter) into one Blaze Burner
+  anyway. No schema change needed for this; `job-types.json`/
+  `resource-tree.json` just needed the actual chains that *produce* the
+  less-obvious fuels: Dried Kelp Block needs `smoker` (kelp → dried kelp
+  — a Smoker, not a Furnace/`smelter`, matters here: smoking and smelting
+  are genuinely different vanilla mechanics that happen to both be
+  redstone-optional "machine" jobs in this schema) then
+  `mechanical_press_basin` (9 dried kelp → 1 block, a *compacting*
+  recipe — the same Mechanical Press block as `mechanical_press_depot`,
+  but positioned over a Basin instead of a Depot/belt, a genuinely
+  different physical setup and so a genuinely different job type despite
+  sharing a machine name). Lava Bucket needs `lava_spout`: a Spout fills
+  a Bucket with Lava from a Tank — since the Lava itself is a fluid
+  (out of scope, see above), this is modeled as a single solid-only
+  input/output pair (`minecraft:bucket` → `minecraft:lava_bucket`),
+  treating the lava supply as ambient/always-available rather than
+  tracked — a deliberate simplification, not an oversight. The empty
+  buckets a Spout needs are themselves just another passive feeder
+  (`minecraft:bucket`, low 4 / high 16 in the example config) sitting at
+  the Spout's depot.
+
 Stockpile Switch is a good fit for storage-vault fullness (aggregate fill
 %, doesn't care about item identity) but **not** for per-item shortage
 detection on a mixed vault — that still requires software-side counting
