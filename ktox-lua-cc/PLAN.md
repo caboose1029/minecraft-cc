@@ -313,12 +313,33 @@ player-owned) — recipes are objective facts about the modpack, not
 per-world configuration, so keeping them in sync centrally is strictly
 better than asking every player to hand-maintain their own copy.
 
-**TEMPORARY exception, testing only:** `GhFetch.kt`'s `files` array
-currently also fetches the real `config/peripherals.json` (not just the
-`.example.json` template), so it doesn't otherwise contradict this rule
-silently. Revert once active testing across machines settles down —
-`peripherals.json` reverts to player-owned/never-overwritten like every
-other world before this.
+**TEMPORARY exception, testing only:** `files.manifest` (see "GhFetch's
+file manifest" below) currently also lists the real
+`config/peripherals.json` (not just the `.example.json` template), so it
+doesn't otherwise contradict this rule silently. Revert (delete that
+line from the manifest) once active testing across machines settles
+down — `peripherals.json` reverts to player-owned/never-overwritten like
+every other world before this.
+
+**GhFetch's file manifest:** `GhFetch.kt` used to hardcode its own list
+of every file to sync — real friction, since adding one new `lib/`/
+`programs/` file meant editing `GhFetch.kt`, re-transpiling, and
+committing generated Lua just to update a list of strings. It now
+fetches `files.manifest` (source: `ktox-lua-cc/src/main/lua/
+files.manifest`, hand-written like `startup.lua`, copied into the output
+tree by the same Gradle `copyLuaRuntime` task — see AGENTS.md) and
+downloads whatever that lists, one path per line, via a new
+`ktoxDownloadFileText` (fetches a URL's body as a string, rather than
+`ktoxDownloadFile`'s write-straight-to-disk). This doesn't remove the
+"every new file needs a manual list update" requirement entirely —
+nothing here derives the manifest from the actual file tree — it just
+turns that update into a one-line plain-text edit instead of a Kotlin
+change requiring a full rebuild. `GhFetch.kt` itself now hardcodes
+exactly one thing: `files.manifest`'s own path, the unavoidable
+bootstrap problem (something has to be the fixed starting point). The
+manifest format is deliberately minimal — bare paths, one per line, no
+comments — so a stray `#`-prefixed "comment" line would just be treated
+as a literal (failing) file path, not parsed specially.
 
 **1. `peripherals.json`** — maps peripheral name → type/job. Example
 shape:

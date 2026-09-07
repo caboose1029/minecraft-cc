@@ -12,3 +12,9 @@ import com.isycat.ktox.annotations.externalSource
 
 @NativeName("ktoxDownloadFile")
 fun ktoxDownloadFile(url: String, path: String): Boolean = externalSource()
+
+// Same GET, but returns the response body directly instead of writing
+// it to disk — for a small text file whose content is needed
+// immediately (GhFetch's own file manifest). "MISSING" on any failure.
+@NativeName("ktoxDownloadFileText")
+fun ktoxDownloadFileText(url: String): String = externalSource()

@@ -2,6 +2,7 @@ package programs
 
 import common.fsMakeDir
 import common.ktoxDownloadFile
+import common.ktoxDownloadFileText
 
 // Pulls Digsite and its dependencies onto a fresh turtle/computer, straight
 // from GitHub. Each entry is a path relative to the repo base and also the
@@ -9,6 +10,11 @@ import common.ktoxDownloadFile
 // moonman's `sync`, which flattens every file to the CC root via
 // fs.getName() and would break require("lib/Movement") the moment this
 // package's files land there. See AGENTS.md.
+//
+// The actual file list lives in FILES_MANIFEST (fetched, not hardcoded
+// here) — see that constant's own comment for why, and MANIFEST.md at
+// the repo root for how to maintain it. This file only knows the ONE
+// thing that can't itself come from the manifest: where to find it.
 //
 // DEFAULT_BRANCH tracks whichever branch is under active iteration —
 // currently feat/ktox-lua-storage. main doesn't have
@@ -20,85 +26,53 @@ import common.ktoxDownloadFile
 //     you're iterating on. Defaults to DEFAULT_BRANCH when omitted.
 
 const val DEFAULT_BRANCH = "feat/ktox-lua-storage"
+const val FILES_MANIFEST = "files.manifest"
 
 fun main(args: Array<String>) {
     val branch = if (args.size >= 1) args[1] else DEFAULT_BRANCH
     val repoBase = "https://raw.githubusercontent.com/caboose1029/minecraft-cc/${branch}/src/pkg/player/8durt"
     println("Fetching from branch: ${branch}")
 
-    val dirs = arrayOf("lib", "common", "config")
-    var d = 1
-    while (d <= dirs.size) {
-        fsMakeDir(dirs[d])
-        d += 1
+    val manifestUrl = "${repoBase}/${FILES_MANIFEST}"
+    val manifestText = ktoxDownloadFileText(manifestUrl)
+    if (manifestText == "MISSING") {
+        println("Could not fetch the file manifest (${FILES_MANIFEST}) - aborting.")
+        return
     }
+    // Also save it to disk, same as every other synced file - not
+    // strictly needed for this run (already have the text above), but
+    // keeps it inspectable and consistent with everything else ghfetch
+    // deploys.
+    ktoxDownloadFile(manifestUrl, FILES_MANIFEST)
 
-    // NOTE: this list isn't derived from anything — every new program/lib
-    // file has to be added here by hand or it silently won't reach fresh
-    // turtles via ghfetch. Do this proactively for every new feature file
-    // until moonman's sync (see AGENTS.md) is fixed by caboose1029 and we
-    // can drop this manifest in favor of his.
-    val files = arrayOf(
-        "ktox-lib.lua",
-        "ktox-cc-shim.lua",
-        "startup.lua",
-        "lib/Movement.lua",
-        "lib/Position.lua",
-        "lib/Span.lua",
-        "lib/Chest.lua",
-        "lib/Shape.lua",
-        "lib/Redstone.lua",
-        "lib/Inventory.lua",
-        "lib/Config.lua",
-        "lib/Executor.lua",
-        "lib/RoleCheck.lua",
-        "lib/Planner.lua",
-        "lib/PassiveFeeder.lua",
-        "lib/Farm.lua",
-        "lib/Cli.lua",
-        "lib/Colors.lua",
-        "lib/Display.lua",
-        "lib/Dashboard.lua",
-        "common/Monitor.lua",
-        "common/Display.lua",
-        "common/Peripheral.lua",
-        "common/Rednet.lua",
-        "common/Parallel.lua",
-        "common/Role.lua",
-        "config/peripherals.example.json",
-        // TEMPORARY, testing only - peripherals.json is normally
-        // player-owned and ghfetch must never overwrite it (see
-        // PLAN.md's "Configs" section); syncing the real file here for
-        // now while actively iterating on it across machines. Revert
-        // (delete this line) once testing settles down.
-        "config/peripherals.json",
-        "config/job-types.lua",
-        "config/resource-tree.lua",
-        "Digsite.lua",
-        "ExcavatePro.lua",
-        "DiamondFinder.lua",
-        "TestMonitor.lua",
-        "TestConfig.lua",
-        "TestDashboard.lua",
-        "HeadTerminal.lua",
-        "SecondaryTerminal.lua",
-        "Crafter.lua",
-        "TerminalSetup.lua",
-        "GhFetch.lua",
-    )
+    // One path per line. A trailing blank line (a file conventionally
+    // ends with one) is skipped below, not an error.
+    val files = manifestText.split("\n")
 
     var i = 1
     var failures = 0
+    var fetched = 0
     while (i <= files.size) {
         val path = files[i]
-        val url = "${repoBase}/${path}"
-        println("Fetching ${path}...")
-        val ok = ktoxDownloadFile(url, path)
-        if (ok) {
-            println("  ok")
-        } else {
-            println("  FAILED: ${path}")
-            failures += 1
+        if (path != "") {
+            // Every real path in this tree is either bare ("Foo.lua") or
+            // exactly one directory deep ("lib/Foo.lua") - never nested
+            // further, so the directory is just the first "/"-separated
+            // part when there is one.
+            val pathParts = path.split("/")
+            if (pathParts.size >= 2) {
+                fsMakeDir(pathParts[1])
+            }
+            val url = "${repoBase}/${path}"
+            println("Fetching ${path}...")
+            val ok = ktoxDownloadFile(url, path)
+            if (ok) {
+                println("  ok")
+                fetched += 1
+            } else {
+                println("  FAILED: ${path}")
+                failures += 1
+            }
         }
         i += 1
     }
@@ -106,6 +80,6 @@ fun main(args: Array<String>) {
     if (failures > 0) {
         println("${failures} file(s) failed.")
     } else {
-        println("Fetched ${files.size} file(s).")
+        println("Fetched ${fetched} file(s).")
     }
 }

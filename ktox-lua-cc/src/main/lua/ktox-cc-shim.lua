@@ -71,6 +71,24 @@ function ktoxDownloadFile(url, path)
     return true
 end
 
+-- Same GET as ktoxDownloadFile, but returns the response body directly
+-- instead of writing it to disk — for a small text file whose CONTENT
+-- is needed immediately (e.g. GhFetch's own file manifest), not just its
+-- bytes saved somewhere. "MISSING" on any failure (matches this
+-- codebase's existing missing-value sentinel convention).
+function ktoxDownloadFileText(url)
+    local response = http.get(url, nil, true)
+    if response == nil then
+        return "MISSING"
+    end
+    local data = response.readAll()
+    response.close()
+    if data == nil then
+        return "MISSING"
+    end
+    return data
+end
+
 -- Monitor test-GUI helpers. Assumes exactly one monitor peripheral on the
 -- network (peripheral.find("monitor") returns the first match) — fine for
 -- a single-monitor test rig, not meant to generalize to multiple monitors.

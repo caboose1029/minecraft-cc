@@ -19,7 +19,7 @@ Kotlin sources are transpiled to Lua via the `ktox-lua` Gradle plugin (`com.isyc
 
 Known gap, deliberately not addressed by this PR: moonman's `sync` command flattens every downloaded file to the CC computer's root (`fs.getName(sourcePath)`, basename only), discarding directory structure. That would break `require("lib/Movement")`-style calls the moment someone actually runs `sync` against a multi-file package here (ours or his `test_package`). Raised with the moonman author separately; out of scope for this PR.
 
-Until that's fixed, `GhFetch.kt`'s `files` array (`src/main/kotlin/programs/GhFetch.kt`) is the only way scripts actually reach a fresh turtle/computer, and it's a hand-maintained list — nothing derives it automatically. **Every new program or `lib/` file must be proactively added to that array** (and regenerated via `./gradlew transpileKotlinToLua wireProgramEntryPoints`) as part of the same change, or it will silently be missing from `ghfetch` runs. Drop this requirement once moonman's `sync` is fixed and this project can rely on his manifest/sync instead.
+Until that's fixed, `GhFetch.kt` is the only way scripts actually reach a fresh turtle/computer. It no longer hardcodes the file list itself — it fetches `files.manifest` (source: `src/main/lua/files.manifest`, hand-written like `startup.lua`/`ktox-cc-shim.lua`, copied into the output tree by the same `copyLuaRuntime` Gradle task) and downloads whatever that lists, one path per line. It's still a hand-maintained list — nothing derives it from the actual file tree — but editing it no longer needs a Kotlin rebuild/transpile, just a plain-text edit and a commit. **Every new program or `lib/` file must be proactively added to `files.manifest`** as part of the same change, or it will silently be missing from `ghfetch` runs. Drop this requirement once moonman's `sync` is fixed and this project can rely on his manifest/sync instead.
 
 - `src/main/kotlin/common/` — header declarations binding to CC/turtle Lua globals that already exist at runtime (`turtle`, `os`, `term`, `fs`, `gps`, ...) via the `@NativeName` + `externalSource()` idiom. ktox has no built-in knowledge of these APIs, so these headers are hand-maintained. Functions that return multiple Lua values (`gps.locate()`, `turtle.inspect()`) bind through a hand-written shim instead — see below.
 - `src/main/kotlin/lib/` — shared hand-written Kotlin logic (real generated code, not native bindings): position/movement tracking, parsing helpers, etc. Reusable across programs.
@@ -127,8 +127,8 @@ guarantee its load always actually happens, regardless of what ran
 before it.
 
 **New `lib/*.lua` file added?** Add its `dofile(...)` call to
-`startup.lua` too — same proactive-update requirement as `GhFetch.kt`'s
-`files` array.
+`startup.lua` too — same proactive-update requirement as
+`files.manifest`.
 
 **Verification status:** confirmed root cause by reading the actual
 CC:Tweaked source (not guessed). Couldn't exercise the exact real-world
