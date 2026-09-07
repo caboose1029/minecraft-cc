@@ -191,6 +191,21 @@ JOB_OVERRIDES_BY_OUTPUT = {
     "create:railway_casing": "deploying_railway",
 }
 
+# A Deployer holds one item persistently and reapplies it to whatever
+# passes beneath it - a standing supply topped up independently by a
+# "passive" vault (job.type "passive"), not something pushed per craft
+# request. Same category as furnace fuel (also never a tracked recipe
+# input, even though every smelter recipe needs it) - only the ingredient
+# actually pushed through a per-request feeder belongs in `inputs`.
+# Maps output -> the one ingredient item name that stays a tracked input;
+# every other real ingredient of that recipe is dropped.
+STANDING_SUPPLY_INPUT_OVERRIDES = {
+    "create:andesite_casing": "minecraft:stripped_oak_log",
+    "create:brass_casing": "minecraft:stripped_oak_log",
+    "create:copper_casing": "minecraft:stripped_oak_log",
+    "create:railway_casing": "create:brass_casing",
+}
+
 # CreateFood's raw contribution is a huge per-fruit/topping combinatorial
 # system (~3,280 entries) - scoped down to just these meal categories,
 # plus each kept dish's full ingredient closure. See PLAN.md v3 writeup.
@@ -515,6 +530,12 @@ def main():
                         continue
 
                     job = JOB_OVERRIDES_BY_OUTPUT.get(out_id, job)
+                    keep_only = STANDING_SUPPLY_INPUT_OVERRIDES.get(out_id)
+                    if keep_only is not None:
+                        inputs = [i for i in inputs if i["item"] == keep_only]
+                        if not inputs:
+                            skipped_other += 1
+                            continue
                     entry = {"output": out_id, "outputCount": result.get("count", 1),
                              "job": job, "inputs": inputs}
                     sig = (out_id, job, tuple((i["item"], i["count"], i.get("slot")) for i in inputs))

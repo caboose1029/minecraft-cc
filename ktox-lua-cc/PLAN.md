@@ -748,6 +748,32 @@ lump together — will recur for other job types as more machines are
 added; watch for it rather than assuming one feeder/relay per job type
 name is always enough.
 
+**A Deployer's held item is a standing supply, not a per-request
+ingredient — same category as furnace fuel, found in the same casing
+build-out (2026-09-07).** A Deployer holds one item persistently and
+reapplies it to whatever passes beneath it; the physical build has a
+dedicated `"passive"` vault sitting on top of each Deployer keeping that
+held item topped up independently (exactly the existing charcoal/coal
+pattern), while a *separate* `"feeder"` vault in front of each Deployer's
+belt is what `craft` actually pushes the per-request ingredient
+(`minecraft:stripped_oak_log`, or `create:brass_casing` for the railway
+casing) into. Every smelter recipe already omits fuel from its `inputs`
+for exactly this reason — a smelter recipe only lists its ore, never the
+charcoal that has to be burning alongside it — so the four casing
+recipes in `resource-tree.lua` were brought in line with that same
+precedent: `create:andesite_alloy`/`create:brass_ingot`/
+`minecraft:copper_ingot`/`create:sturdy_sheet` were dropped from their
+respective casing recipes' `inputs` entirely (`scripts/
+extract_recipes.py`'s `STANDING_SUPPLY_INPUT_OVERRIDES`), leaving only
+the belt-fed ingredient the executor actually pushes. The standing item
+is never explicitly requested — it's kept available the same
+opportunistic way fuel always has been, via `topUpPassiveFeeders`
+running after every command, which itself can trigger real production
+(`ensureStocked`) if the pool runs short, not just redistribute what
+already exists. Watch for this same split — one ingredient pushed
+per-request, one ingredient held as a standing supply — wherever a
+future machine works the same way a Deployer or furnace does.
+
 **4. Job-types registry** — explicitly skipped as a separate file (per
 discussion: optional, derivable from the union of job types appearing in
 configs 1/2/3 — no need for a fourth source of truth).

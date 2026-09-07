@@ -92,6 +92,42 @@
       "job": { "type": "deploying_railway" }
     }
   },
+  "create:item_vault_28": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:andesite_alloy",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_29": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:brass_ingot",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_30": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:copper_ingot",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_31": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:sturdy_sheet",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
   "create:item_vault_13": {
     "type": "vault",
     "job": {
