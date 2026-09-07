@@ -78,6 +78,23 @@ fun runDashboardLoop(): String {
     return state.readyCommand
 }
 
+// Shows a Fetch/Craft result on the display and waits for a dismiss tap
+// before the caller loops back to a fresh runDashboardLoop() - without
+// this, a monitor-backed dashboard would show no feedback at all after
+// an action (the result only ever gets println'd to this computer's own
+// term, which the player isn't necessarily looking at). Assumes a
+// single-line message, which every pull/craft result actually is (the
+// only two commands the dashboard ever produces) - a longer message is
+// just truncated by displayFillRect's own width clamp, same as an
+// overlong item name in the browse list.
+fun showDashboardResult(message: String) {
+    displayClear()
+    val size = displaySize()
+    displayFillRect(1, 1, size.width, 1, COLOR_BLACK, COLOR_WHITE, message)
+    displayFillRect(1, size.height, size.width, 1, COLOR_GRAY, COLOR_WHITE, "(tap to continue)")
+    displayWaitTouch()
+}
+
 // ---- shared layout helpers (used by BOTH rendering and hit-testing,
 // so the two can never disagree about where something is) ----
 

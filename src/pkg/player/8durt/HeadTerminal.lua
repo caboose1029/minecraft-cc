@@ -1,10 +1,11 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "HeadTerminal.kt", {["1-10"]=1,["11"]=32,["12"]=33,["13"]=34,["14"]=35,["15-16"]=36,["17"]=39,["18"]=40,["19"]=41,["20-21"]=42,["22"]=45,["23"]=46,["24-28"]=47,["29"]=53,["30-34"]=54,["35"]=59,["36"]=60,["37-40"]=61,["41"]=69,["42"]=70,["43-44"]=71,["45"]=73,["46"]=74,["47"]=75,["48-49"]=76,["50"]=78,["51"]=79,["52-58"]=80}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "HeadTerminal.kt", {["1-11"]=1,["12"]=34,["13"]=35,["14"]=36,["15"]=37,["16-17"]=38,["18"]=41,["19"]=42,["20"]=43,["21-22"]=44,["23"]=47,["24"]=48,["25-29"]=49,["30"]=55,["31-35"]=56,["36"]=61,["37"]=62,["38"]=63,["39-42"]=64,["43"]=72,["44"]=73,["45-46"]=74,["47"]=76,["48"]=77,["49"]=78,["50-51"]=79,["52"]=81,["53"]=82,["54-60"]=83}, "programs")
 ktox_require("lib/RoleCheck")
 ktox_require("lib/Farm")
 ktox_require("lib/Cli")
+ktox_require("lib/Dashboard")
 ktox_require("lib/PassiveFeeder")
 
 local function main()
@@ -19,7 +20,7 @@ local function main()
         println("Another head is already running (id " .. tostring(existingHead) .. ") - refusing to start. Only one head terminal is allowed on the network.")
         return
     end
-    println("Head terminal ready. Commands: list, pull, craft, trash.")
+    println("Head terminal ready. Use the touch dashboard (monitor if attached, otherwise this screen).")
     while true do
         parallel.waitForAny(function()
             return handleLocalInput()
@@ -32,9 +33,10 @@ local function main()
 end
 
 function handleLocalInput()
-    term.write("> ")
-    local commandLine = read()
-    println(runCliCommand(commandLine))
+    local commandLine = runDashboardLoop()
+    local result = runCliCommand(commandLine)
+    println(result)
+    showDashboardResult(result)
 end
 
 function handleRemoteMessage()

@@ -5,10 +5,8 @@ import common.ktoxRednetLastProtocol
 import common.ktoxRednetLastSenderId
 import common.ktoxRednetReceiveAny
 import common.parallelWaitForAny
-import common.readInput
 import common.rednetOpenAny
 import common.rednetSend
-import common.termWrite
 import lib.VAULT_CMD_PROTOCOL
 import lib.VAULT_ROLE_QUERY_PROTOCOL
 import lib.VAULT_ROLE_REPLY_PROTOCOL
@@ -16,15 +14,19 @@ import lib.VAULT_RESULT_PROTOCOL
 import lib.manageFarms
 import lib.queryForHead
 import lib.runCliCommand
+import lib.runDashboardLoop
+import lib.showDashboardResult
 import lib.topUpPassiveFeeders
 
 // The head vault terminal (see PLAN.md "Terminal roles") — the sole
 // decision-maker. Runs the shared CLI dispatcher (lib/Cli.kt) against
-// both its own local read() prompt and commands forwarded over rednet
-// from secondary terminals, multiplexed via parallel.waitForAny (see
-// common/Parallel.kt — UNVERIFIED, this whole rednet+parallel path has
-// not been exercised in a real game; validate with two real computers
-// before relying on it).
+// both its own local dashboard UI (lib/Dashboard.kt — replaced the
+// plain read() prompt this used to have) and commands forwarded over
+// rednet from secondary terminals, multiplexed via parallel.waitForAny
+// (see common/Parallel.kt — UNVERIFIED, this whole rednet+parallel path
+// (now including the dashboard's touch-event wait too) has not been
+// exercised in a real game; validate with two real computers before
+// relying on it).
 //
 // Usage: HeadTerminal (no args)
 
@@ -42,7 +44,7 @@ fun main() {
         return
     }
 
-    println("Head terminal ready. Commands: list, pull, craft, trash.")
+    println("Head terminal ready. Use the touch dashboard (monitor if attached, otherwise this screen).")
     while (true) {
         parallelWaitForAny(
             { handleLocalInput() },
@@ -56,9 +58,10 @@ fun main() {
 }
 
 fun handleLocalInput() {
-    termWrite("> ")
-    val commandLine = readInput()
-    println(runCliCommand(commandLine))
+    val commandLine = runDashboardLoop()
+    val result = runCliCommand(commandLine)
+    println(result)
+    showDashboardResult(result)
 }
 
 fun handleRemoteMessage() {

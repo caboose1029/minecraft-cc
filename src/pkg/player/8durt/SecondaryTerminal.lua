@@ -1,8 +1,9 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "SecondaryTerminal.kt", {["1-7"]=1,["8"]=22,["9"]=23,["10"]=24,["11"]=25,["12-13"]=26,["14"]=29,["15"]=30,["16"]=31,["17"]=32,["18"]=33,["19"]=34,["20-21"]=35,["22"]=37,["23"]=38,["24-25"]=39,["26-34"]=41}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "SecondaryTerminal.kt", {["1-8"]=1,["9"]=25,["10"]=26,["11"]=27,["12"]=28,["13-14"]=29,["15"]=32,["16"]=33,["17"]=34,["18"]=35,["19"]=36,["20"]=37,["21"]=38,["22-23"]=39,["24"]=41,["25"]=42,["26"]=43,["27"]=44,["28-29"]=45,["30"]=47,["31"]=48,["32-40"]=49}, "programs")
 ktox_require("lib/RoleCheck")
+ktox_require("lib/Dashboard")
 
 local function main()
     println("Secondary terminal starting...")
@@ -11,19 +12,24 @@ local function main()
         println("No head terminal found on the network. Make sure exactly one head is running, then reboot this secondary.")
         return
     end
-    println("Secondary terminal ready (head id " .. tostring(headId) .. "). Commands: list, pull, craft, trash.")
+    println("Secondary terminal ready (head id " .. tostring(headId) .. "). Use the touch dashboard.")
     while true do
-        term.write("> ")
-        local commandLine = read()
+        local commandLine = runDashboardLoop()
         local sent = rednet.send(headId, commandLine, VAULT_CMD_PROTOCOL)
         if not sent then
-            println("Failed to reach the head terminal.")
+            local message = "Failed to reach the head terminal."
+            println(message)
+            showDashboardResult(message)
         else
             local got = ktoxRednetReceiveProtocol(VAULT_RESULT_PROTOCOL, 30.0)
             if got then
-                println(ktoxRednetLastMessage())
+                local message = ktoxRednetLastMessage()
+                println(message)
+                showDashboardResult(message)
             else
-                println("No response from the head terminal (timed out).")
+                local message = "No response from the head terminal (timed out)."
+                println(message)
+                showDashboardResult(message)
             end
         end
     end
