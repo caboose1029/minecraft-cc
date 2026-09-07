@@ -128,6 +128,96 @@ function ktoxWaitMonitorTouch()
     return tostring(x) .. "," .. tostring(y)
 end
 
+-- Display backend abstraction for the dashboard UI (see PLAN.md's
+-- "Dashboard UI" section) — a Monitor peripheral if one's attached
+-- (the turtle-mounted case), otherwise this computer's own term (the
+-- only option for a pocket computer, which can't carry a Monitor
+-- peripheral at all). CC:Tweaked deliberately keeps a wrapped monitor
+-- API-compatible with `term` (the same idea as `term.redirect()`
+-- targeting a monitor) — confirmed via this project's own earlier
+-- ktoxMonitor* functions above, which already call m.setCursorPos/
+-- write/setBackgroundColor/setTextColor/getSize, the exact same method
+-- names `term` exposes. So the backend is picked ONCE here and every
+-- primitive below just calls through whichever handle was picked - no
+-- per-backend branching needed past this point, except which touch
+-- event to listen for (see ktoxDisplayWaitTouch). UNVERIFIED IN-GAME:
+-- never confirmed this actually works identically on a real turtle vs a
+-- real pocket computer vs a monitor peripheral - see PLAN.md.
+local ktoxDisplayHandle = nil
+local ktoxDisplayIsMonitor = false
+
+function ktoxDisplayInit()
+    local m = peripheral.find("monitor")
+    if m ~= nil then
+        ktoxDisplayHandle = m
+        ktoxDisplayIsMonitor = true
+        m.setTextScale(1)
+    else
+        ktoxDisplayHandle = term
+        ktoxDisplayIsMonitor = false
+    end
+    ktoxDisplayClear()
+    return true
+end
+
+-- getSize() returns 2 values in Lua; packed as a comma-joined string,
+-- same idiom as ktoxMonitorGetSize/ktoxGpsLocate.
+function ktoxDisplayGetSize()
+    local w, h = ktoxDisplayHandle.getSize()
+    return tostring(w) .. "," .. tostring(h)
+end
+
+function ktoxDisplayClear()
+    ktoxDisplayHandle.setBackgroundColor(colors.black)
+    ktoxDisplayHandle.setTextColor(colors.white)
+    ktoxDisplayHandle.clear()
+    return true
+end
+
+-- Fills a (w, h) rectangle at (x, y) with bgColor, then writes `text` in
+-- textColor on its vertically-centered row, left-aligned, truncated to
+-- fit `w`. Pass "" for text to draw a plain filled rectangle (row/tab
+-- backgrounds, highlight bars) with no label. This is the ONE drawing
+-- primitive the dashboard uses for every visual element (tabs, rows,
+-- buttons, the checkbox, keypad keys) — deliberately not specialized
+-- per element kind, so there's exactly one code path to get right.
+function ktoxDisplayFillRect(x, y, w, h, bgColor, textColor, text)
+    ktoxDisplayHandle.setBackgroundColor(bgColor)
+    ktoxDisplayHandle.setTextColor(textColor)
+    local row = 0
+    while row < h do
+        ktoxDisplayHandle.setCursorPos(x, y + row)
+        ktoxDisplayHandle.write(string.rep(" ", w))
+        row = row + 1
+    end
+    if text ~= "" then
+        local label = text
+        if #label > w then
+            label = string.sub(label, 1, w)
+        end
+        local labelY = y + math.floor(h / 2)
+        ktoxDisplayHandle.setCursorPos(x, labelY)
+        ktoxDisplayHandle.setBackgroundColor(bgColor)
+        ktoxDisplayHandle.setTextColor(textColor)
+        ktoxDisplayHandle.write(label)
+    end
+    return true
+end
+
+-- Blocks until the display is touched — `monitor_touch` on the monitor
+-- backend, `mouse_click` (this computer's own screen, while its GUI is
+-- open) on the term backend, picked once by ktoxDisplayInit. Returns the
+-- touch coords packed as "x,y" (monitor side / mouse button discarded —
+-- single-monitor rig, and every mouse button is treated the same here).
+function ktoxDisplayWaitTouch()
+    if ktoxDisplayIsMonitor then
+        local _, _, x, y = os.pullEvent("monitor_touch")
+        return tostring(x) .. "," .. tostring(y)
+    end
+    local _, _, x, y = os.pullEvent("mouse_click")
+    return tostring(x) .. "," .. tostring(y)
+end
+
 -- Generic peripheral dispatch: calls a named method on a named peripheral
 -- with a custom packed argument string, returning its single return
 -- value JSON-encoded. See PLAN.md ("Generic peripheral-call shim") for
