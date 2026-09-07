@@ -710,6 +710,17 @@ function ktoxConfigJobKind(jobType)
     return "machine"
 end
 
+-- `itemName`'s max stack size, from config/stack-sizes.lua's overrides -
+-- 64 (the default for most items) if it's not listed there at all. Used
+-- by the dashboard's per-stack up/down buttons (lib/Dashboard.kt).
+function ktoxItemStackSize(itemName)
+    local overrides = ktoxReadLuaDataFile("config/stack-sizes.lua")
+    if overrides ~= nil and overrides[itemName] ~= nil then
+        return overrides[itemName]
+    end
+    return 64
+end
+
 -- Every configured farm (job-types.json entries with kind == "farm" — an
 -- always-running external process, gated on/off by a relay based on
 -- watermarks on its own output(s) in the storage pool, see PLAN.md).

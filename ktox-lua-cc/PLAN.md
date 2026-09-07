@@ -978,12 +978,27 @@ own inventory, addressed exactly like any other peripheral).
 - **`"detail"`** — the selected item's name/status/qty, a Fetch button
   (only shown for a `stocked` item — nothing to pull otherwise), a Craft
   button, a "fetch after craft" checkbox (maps directly onto `craft`'s
-  existing `--fetch=false`), a quantity field (tap to edit), and a
-  location selector cycling through `peripherals.json`'s named pickup
-  locations plus `"(auto)"` (the existing self-then-default resolution —
-  see "Vaults"/"CLI" above). Fetch/Craft only fire while the typed
-  quantity is a valid positive number; otherwise the tap is a no-op
-  rather than sending a malformed command.
+  existing `--fetch=false`), a quantity field (tap to edit) with `v`/`^`
+  buttons that step it down/up by one full stack (`adjustQtyByStack`,
+  clamped at 0 — Fetch/Craft's own "quantity must be positive" guard
+  handles the rest, not duplicated here), and a location selector
+  cycling through `peripherals.json`'s named pickup locations plus
+  `"(auto)"` (the existing self-then-default resolution — see
+  "Vaults"/"CLI" above). Fetch/Craft only fire while the typed quantity
+  is a valid positive number; otherwise the tap is a no-op rather than
+  sending a malformed command. **Stack size** comes from
+  `config/stack-sizes.lua` (new — item ID → max stack size,
+  `ktoxItemStackSize` in `ktox-cc-shim.lua`), defaulting to 64 when an
+  item isn't listed; seeded with a small, high-confidence starting set
+  (ender pearls/eggs/snowballs = 16, buckets empty = 16, buckets filled
+  = 1) rather than an exhaustive vanilla item list — deliberately, per
+  the same reasoning `resource-tree.lua`'s own confidence-level notes
+  already established (AGENTS.md: guessing at game facts from memory has
+  a real, confirmed error rate; add more overrides as they're actually
+  hit in-game, not by guessing ahead of time). This is centrally-
+  maintained config (an item's stack size is an objective game fact, not
+  per-world data), same treatment as `job-types.lua`/`resource-tree.lua`
+  — fetched fresh every `ghfetch` run, not player-owned.
 - **`"qtyentry"`** — not really a screen, a transient mode: tapping the
   quantity field triggers a **real, physical-keyboard `read()` prompt**
   (`promptForQuantity` in `lib/Dashboard.kt`), not an on-screen keypad. A

@@ -79,6 +79,9 @@ fun ktoxConfigJobTimeoutSecondsRaw(jobType: String): Int = externalSource()
 @NativeName("ktoxConfigJobKind")
 fun ktoxConfigJobKind(jobType: String): String = externalSource()
 
+@NativeName("ktoxItemStackSize")
+fun ktoxItemStackSize(itemName: String): Int = externalSource()
+
 @NativeName("ktoxInventoryIsEmpty")
 fun ktoxInventoryIsEmpty(vaultName: String): Boolean = externalSource()
 

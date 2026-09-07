@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestDashboard.kt", {["1-8"]=1,["9"]=33,["10"]=34,["11"]=36,["12"]=37,["13"]=43,["14"]=44,["15"]=45,["16"]=46,["17-18"]=47,["19"]=50,["20"]=51,["21"]=52,["22"]=53,["23-24"]=54,["25"]=56,["26-27"]=57,["28"]=60,["29"]=61,["30"]=62,["31"]=63,["32"]=64,["33-34"]=65,["35"]=68,["36"]=69,["37"]=70,["38"]=71,["39-40"]=72,["41"]=79,["42"]=80,["43"]=81,["44"]=82,["45-46"]=83,["47"]=91,["48"]=92,["49"]=93,["50"]=94,["51"]=95,["52-53"]=96,["54"]=101,["55"]=102,["56"]=103,["57"]=104,["58-59"]=105,["60"]=107,["61"]=108,["62"]=109,["63"]=110,["64-65"]=111,["66"]=119,["67"]=120,["68"]=121,["69"]=122,["70-71"]=123,["72"]=125,["73"]=126,["74"]=127,["75"]=128,["76-77"]=129,["78"]=134,["79"]=135,["80-81"]=136,["82-87"]=139}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestDashboard.kt", {["1-8"]=1,["9"]=35,["10"]=36,["11"]=38,["12"]=39,["13"]=45,["14"]=46,["15"]=47,["16"]=48,["17-18"]=49,["19"]=52,["20"]=53,["21"]=54,["22"]=55,["23-24"]=56,["25"]=58,["26-27"]=59,["28"]=62,["29"]=63,["30"]=64,["31"]=65,["32"]=66,["33-34"]=67,["35"]=70,["36"]=71,["37"]=72,["38"]=73,["39-40"]=74,["41"]=81,["42"]=82,["43"]=83,["44"]=84,["45-46"]=85,["47"]=93,["48"]=94,["49"]=95,["50"]=96,["51"]=97,["52-53"]=98,["54"]=103,["55"]=104,["56"]=105,["57"]=106,["58-59"]=107,["60"]=109,["61"]=110,["62"]=111,["63"]=112,["64-65"]=113,["66"]=119,["67"]=120,["68"]=121,["69"]=122,["70-71"]=123,["72"]=125,["73"]=126,["74"]=127,["75"]=128,["76-77"]=129,["78"]=131,["79"]=132,["80"]=133,["81"]=134,["82-83"]=135,["84"]=137,["85"]=138,["86"]=139,["87-88"]=140,["89"]=148,["90"]=149,["91"]=150,["92"]=151,["93-94"]=152,["95"]=154,["96"]=155,["97"]=156,["98"]=157,["99-100"]=158,["101"]=163,["102"]=164,["103-104"]=165,["105-110"]=168}, "programs")
 ktox_require("lib/Dashboard")
 ktox_require("lib/Display")
 
@@ -62,6 +62,29 @@ local function main()
     println("after craft touch (fetch unchecked): readyCommand=(" .. tostring(afterCraftUnchecked.readyCommand) .. ")")
     if afterCraftUnchecked.readyCommand ~= "craft minecraft:iron_ingot 3 --fetch=false" then
         println("FAIL: expected \'--fetch=false\' appended, got \'" .. tostring(afterCraftUnchecked.readyCommand) .. "\'")
+    end
+    local qtyUpRect = detailQtyUpRect(size)
+    local afterStackUp = handleDetailTouch(stockedDetail, Touch:new(qtyUpRect.x, qtyUpRect.y), size)
+    println("after stack-up touch (default 64): qtyText=" .. tostring(afterStackUp.qtyText))
+    if afterStackUp.qtyText ~= "67" then
+        println("FAIL: expected qtyText \'67\' (starting qty 3 + 64), got \'" .. tostring(afterStackUp.qtyText) .. "\'")
+    end
+    local qtyDownRect = detailQtyDownRect(size)
+    local afterStackDown = handleDetailTouch(afterStackUp, Touch:new(qtyDownRect.x, qtyDownRect.y), size)
+    println("after stack-down touch: qtyText=" .. tostring(afterStackDown.qtyText))
+    if afterStackDown.qtyText ~= "3" then
+        println("FAIL: expected qtyText \'3\' (back down one stack), got \'" .. tostring(afterStackDown.qtyText) .. "\'")
+    end
+    local pearlDetail = DashboardState:new("detail", "stocked", 1, "minecraft:ender_pearl", "stocked", "5", "1", true, -1, "")
+    local afterPearlUp = handleDetailTouch(pearlDetail, Touch:new(qtyUpRect.x, qtyUpRect.y), size)
+    println("after stack-up touch (ender_pearl, stack 16): qtyText=" .. tostring(afterPearlUp.qtyText))
+    if afterPearlUp.qtyText ~= "17" then
+        println("FAIL: expected qtyText \'17\' (starting qty 1 + 16), got \'" .. tostring(afterPearlUp.qtyText) .. "\'")
+    end
+    local afterPearlDownBelowZero = handleDetailTouch(pearlDetail, Touch:new(qtyDownRect.x, qtyDownRect.y), size)
+    println("after stack-down touch clamping at 0: qtyText=" .. tostring(afterPearlDownBelowZero.qtyText))
+    if afterPearlDownBelowZero.qtyText ~= "0" then
+        println("FAIL: expected qtyText \'0\' (clamped, not negative), got \'" .. tostring(afterPearlDownBelowZero.qtyText) .. "\'")
     end
     local locationRect = detailLocationRect(size)
     local afterLocation1 = handleDetailTouch(stockedDetail, Touch:new(locationRect.x, locationRect.y), size)

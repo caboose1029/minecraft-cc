@@ -6,7 +6,9 @@ import lib.Touch
 import lib.detailBackRect
 import lib.detailCraftButtonRect
 import lib.detailFetchButtonRect
+import lib.detailQtyDownRect
 import lib.detailQtyRect
+import lib.detailQtyUpRect
 import lib.freshDashboardState
 import lib.handleBrowseTouch
 import lib.handleDetailTouch
@@ -109,6 +111,33 @@ fun main() {
     println("after craft touch (fetch unchecked): readyCommand=(${afterCraftUnchecked.readyCommand})")
     if (afterCraftUnchecked.readyCommand != "craft minecraft:iron_ingot 3 --fetch=false") {
         println("FAIL: expected '--fetch=false' appended, got '${afterCraftUnchecked.readyCommand}'")
+    }
+
+    // Stack up/down buttons add/subtract one full stack - a plain item
+    // (default 64) and one of config/stack-sizes.lua's overrides
+    // (ender pearls, 16) should step by different amounts.
+    val qtyUpRect = detailQtyUpRect(size)
+    val afterStackUp = handleDetailTouch(stockedDetail, Touch(qtyUpRect.x, qtyUpRect.y), size)
+    println("after stack-up touch (default 64): qtyText=${afterStackUp.qtyText}")
+    if (afterStackUp.qtyText != "67") {
+        println("FAIL: expected qtyText '67' (starting qty 3 + 64), got '${afterStackUp.qtyText}'")
+    }
+    val qtyDownRect = detailQtyDownRect(size)
+    val afterStackDown = handleDetailTouch(afterStackUp, Touch(qtyDownRect.x, qtyDownRect.y), size)
+    println("after stack-down touch: qtyText=${afterStackDown.qtyText}")
+    if (afterStackDown.qtyText != "3") {
+        println("FAIL: expected qtyText '3' (back down one stack), got '${afterStackDown.qtyText}'")
+    }
+    val pearlDetail = DashboardState("detail", "stocked", 1, "minecraft:ender_pearl", "stocked", "5", "1", true, -1, "")
+    val afterPearlUp = handleDetailTouch(pearlDetail, Touch(qtyUpRect.x, qtyUpRect.y), size)
+    println("after stack-up touch (ender_pearl, stack 16): qtyText=${afterPearlUp.qtyText}")
+    if (afterPearlUp.qtyText != "17") {
+        println("FAIL: expected qtyText '17' (starting qty 1 + 16), got '${afterPearlUp.qtyText}'")
+    }
+    val afterPearlDownBelowZero = handleDetailTouch(pearlDetail, Touch(qtyDownRect.x, qtyDownRect.y), size)
+    println("after stack-down touch clamping at 0: qtyText=${afterPearlDownBelowZero.qtyText}")
+    if (afterPearlDownBelowZero.qtyText != "0") {
+        println("FAIL: expected qtyText '0' (clamped, not negative), got '${afterPearlDownBelowZero.qtyText}'")
     }
 
     // Location selector cycles through named locations and back to

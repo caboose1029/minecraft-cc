@@ -2,6 +2,7 @@ package lib
 
 import common.ktoxConfigPickupVaultNames
 import common.ktoxConfigStorageVaultNames
+import common.ktoxItemStackSize
 import common.ktoxListCatalog
 import common.readInput
 import common.termClear
@@ -221,6 +222,28 @@ fun displayItemName(fullName: String): String {
     return parts[2]
 }
 
+// Adds (direction 1) or subtracts (direction -1) one full stack of
+// `itemName` (config/stack-sizes.lua's override, or 64 by default) to
+// the current typed quantity. A non-numeric current value is treated as
+// 0 rather than left unparseable - so tapping "^" always produces a
+// usable starting quantity. Never goes below 0 (Fetch/Craft already
+// refuse to fire on a non-positive quantity - see handleDetailTouch -
+// this just keeps the displayed number sane rather than duplicating
+// that check here too).
+fun adjustQtyByStack(qtyText: String, itemName: String, direction: Int): String {
+    val stackSize = ktoxItemStackSize(itemName)
+    val parsed = qtyText.toDoubleOrNull()
+    var current = 0
+    if (parsed != null) {
+        current = parsed.toInt()
+    }
+    var newQty = current + (stackSize * direction)
+    if (newQty < 0) {
+        newQty = 0
+    }
+    return "${newQty}"
+}
+
 fun pickupLocationNames(): List<String> {
     val raw = ktoxConfigPickupVaultNames()
     if (raw == "") {
@@ -272,8 +295,20 @@ fun detailBackRect(): Rect {
     return Rect(1, 1, 8, 1)
 }
 
+// Width reserved on the right of the quantity row for the per-stack
+// down/up buttons - two 3-wide buttons.
+const val STACK_BUTTON_W = 3
+
 fun detailQtyRect(size: DisplaySize): Rect {
-    return Rect(1, 2, size.width, 1)
+    return Rect(1, 2, size.width - (STACK_BUTTON_W * 2), 1)
+}
+
+fun detailQtyDownRect(size: DisplaySize): Rect {
+    return Rect(size.width - (STACK_BUTTON_W * 2) + 1, 2, STACK_BUTTON_W, 1)
+}
+
+fun detailQtyUpRect(size: DisplaySize): Rect {
+    return Rect(size.width - STACK_BUTTON_W + 1, 2, STACK_BUTTON_W, 1)
 }
 
 fun detailLocationRect(size: DisplaySize): Rect {
@@ -367,6 +402,10 @@ fun renderDetail(state: DashboardState, size: DisplaySize) {
 
     val qtyRect = detailQtyRect(size)
     displayFillRect(qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h, COLOR_BLACK, COLOR_WHITE, "Qty: ${state.qtyText} (tap to type)")
+    val qtyDownRect = detailQtyDownRect(size)
+    displayFillRect(qtyDownRect.x, qtyDownRect.y, qtyDownRect.w, qtyDownRect.h, COLOR_GRAY, COLOR_WHITE, "v")
+    val qtyUpRect = detailQtyUpRect(size)
+    displayFillRect(qtyUpRect.x, qtyUpRect.y, qtyUpRect.w, qtyUpRect.h, COLOR_GRAY, COLOR_WHITE, "^")
 
     val locationRect = detailLocationRect(size)
     displayFillRect(locationRect.x, locationRect.y, locationRect.w, locationRect.h, COLOR_BLACK, COLOR_WHITE, "Location: ${locationLabel(state.locationIndex)} (tap to cycle)")
@@ -461,6 +500,18 @@ fun handleDetailTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
     val qtyRect = detailQtyRect(size)
     if (touchInRect(touch, qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h)) {
         return DashboardState("qtyentry", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, "")
+    }
+
+    val qtyDownRect = detailQtyDownRect(size)
+    if (touchInRect(touch, qtyDownRect.x, qtyDownRect.y, qtyDownRect.w, qtyDownRect.h)) {
+        val newQty = adjustQtyByStack(state.qtyText, state.selectedItem, -1)
+        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "")
+    }
+
+    val qtyUpRect = detailQtyUpRect(size)
+    if (touchInRect(touch, qtyUpRect.x, qtyUpRect.y, qtyUpRect.w, qtyUpRect.h)) {
+        val newQty = adjustQtyByStack(state.qtyText, state.selectedItem, 1)
+        return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "")
     }
 
     val locationRect = detailLocationRect(size)

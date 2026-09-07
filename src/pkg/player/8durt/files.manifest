@@ -28,6 +28,7 @@ config/peripherals.example.json
 config/peripherals.json
 config/job-types.lua
 config/resource-tree.lua
+config/stack-sizes.lua
 Digsite.lua
 ExcavatePro.lua
 DiamondFinder.lua
