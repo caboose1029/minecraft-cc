@@ -117,6 +117,7 @@ tryDofile("lib/Farm.lua")
 tryDofile("lib/Cli.lua")
 tryDofile("lib/Colors.lua")
 tryDofile("lib/Display.lua")
+tryDofile("lib/Dashboard.lua")
 
 -- Auto-launch the configured terminal role (see TerminalSetup.kt /
 -- PLAN.md), if any. role.txt is written once by TerminalSetup and never

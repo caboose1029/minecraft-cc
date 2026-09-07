@@ -218,6 +218,20 @@ function ktoxDisplayWaitTouch()
     return tostring(x) .. "," .. tostring(y)
 end
 
+-- Returns `s` with its last character removed ("" if `s` is already
+-- empty or one character) — a hand-written shim rather than assuming
+-- Kotlin's `.dropLast(1)` has ktox runtime support, since there's no
+-- existing precedent for it in this codebase the way `.split()`/
+-- `.toDoubleOrNull()` already have (see AGENTS.md). Used by the
+-- dashboard UI's keypad backspace key (lib/Dashboard.kt).
+function ktoxDropLastChar(s)
+    local len = #s
+    if len <= 1 then
+        return ""
+    end
+    return string.sub(s, 1, len - 1)
+end
+
 -- Generic peripheral dispatch: calls a named method on a named peripheral
 -- with a custom packed argument string, returning its single return
 -- value JSON-encoded. See PLAN.md ("Generic peripheral-call shim") for
