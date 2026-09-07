@@ -22,7 +22,7 @@ import lib.VAULT_CRAFTER_REPLY_PROTOCOL
 // toward whatever it's physically facing — expected to be an ordinary
 // storage vault (see PLAN.md for why this is a physical drop, not a
 // network push). Never decides anything itself, same principle as
-// Secondary.kt, just a different kind of thin client — the head is
+// SecondaryTerminal.kt, just a different kind of thin client — the head is
 // still the only thing that knows what to craft, how much, or why.
 //
 // Usage: crafter <jobType> (normally auto-launched by startup.lua via
@@ -49,7 +49,7 @@ fun main(args: Array<String>) {
 }
 
 fun handleOneMessage(jobType: String) {
-    // Long finite timeout rather than "forever" - see Head.kt's identical
+    // Long finite timeout rather than "forever" - see HeadTerminal.kt's identical
     // choice and reasoning (no evidence either way on a native timeout
     // sentinel transpiling correctly through this binding).
     val got = ktoxRednetReceiveAny(3600.0)

@@ -91,9 +91,11 @@ on its own dedicated protocols:
   drop everything the turtle is holding toward whatever it's physically
   facing. This turtle is expected to be positioned facing an ordinary
   storage vault, so the drop lands the result straight back in the pool —
-  a **physical `turtle.drop()`**, not a network push, since turtle-as-
-  peripheral-target is the same unresolved capability flagged for the
-  pickup vault (see "Vaults" below). The head never needs an explicit
+  a **physical `turtle.drop()`**, not a network push. (Not a workaround
+  for anything unsupported — see "Vaults" below, a network push/pull
+  targeting the turtle's own inventory is now assumed to work fine, same
+  as a pickup vault — this is just the simpler, already-working mechanism
+  and hasn't been changed.) The head never needs an explicit
   "done" signal back — it just polls the storage pool for the output
   count exactly like a machine job (see "CLI" below), so a crafter job
   and a machine job look identical from the executor's point of view
@@ -137,13 +139,24 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
   toggling the relevant Clutch/Funnel via a Redstone Relay (see below),
   then pushing the required input material into the feeder vault.
 - **Pickup vault** (`job.type: "pickup"`) — where `pull`/`craft` results
-  land for a player to grab, exactly one per terminal. This exists
-  because a turtle targeting **its own inventory** as a named
-  `pushItems`/`pullItems` peripheral isn't reliably supported by
-  CC:Tweaked (an open upstream request, not a shipped feature) — so
-  rather than assume it works, results are pushed to an ordinary vault
-  peripheral next to the terminal instead. Revisit if/when turtle-as-
-  inventory-peripheral is confirmed to work.
+  land for a player (or turtle) to grab. Any addressable inventory
+  peripheral can be a pickup vault, **including a turtle's own
+  inventory** — earlier revisions of this doc treated "a turtle
+  targeting its own inventory as a named `pushItems`/`pullItems`
+  peripheral" as unreliable and routed around it (an ordinary vault
+  block next to the terminal, always). That caveat was never actually
+  verified against real hardware — it was an untested assumption, not a
+  confirmed CC:Tweaked limitation — and is now treated as working; see
+  "Known open items" below. `peripherals.json` can configure any number
+  of pickup vaults, each optionally labeled with a `"name"` (its
+  routable location name — see "CLI" below for `craft --location=`) and
+  at most one marked `"default": true` (a missing `"default"` field
+  behaves as `false`, no separate handling needed — Lua's own falsy
+  `nil`). A head/secondary terminal that's itself wired in as a pickup
+  vault (i.e. its own peripheral name has a `job.type: "pickup"` entry)
+  is preferred over the configured default for that terminal's own
+  `pull`/`craft` calls — see `ktoxSelfPeripheralName()` in
+  `ktox-cc-shim.lua`.
 - **Trash vault** (`job.type: "trash"`) — dumps whatever's pushed into it
   into lava, permanently. Functionally identical wiring to a feeder
   vault (a vault + funnel), but semantically very different: it's never
@@ -158,7 +171,7 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
   *triggers* this — the head opportunistically tops it up (pulling from
   the storage pool up to `highWatermark`) whenever its current count
   drops below `lowWatermark`, checked after handling each local or
-  remote command (see "Terminal roles" → Head.kt, and
+  remote command (see "Terminal roles" → HeadTerminal.kt, and
   `lib/PassiveFeeder.kt`) rather than on an independent timer. A head
   sitting fully idle won't top these up until its next command — an
   accepted, disclosed limitation (a real timer risks starving itself:
@@ -411,7 +424,7 @@ lookup before this change) returns the already-loaded table instead of
 re-reading the file from disk. Safe because none of these config files
 change while a program is running — they're only ever refreshed by
 `ghfetch`, which runs as its own separate program invocation, not
-concurrently with `Terminal`/`Head`/`Secondary`/`Crafter`.
+concurrently with `Head`/`Secondary`/`Crafter`.
 
 **`job-types.lua`/`resource-tree.lua` were later converted to
 hand-authored Lua data files** (`config/job-types.lua`,
@@ -783,31 +796,59 @@ configs 1/2/3 — no need for a fourth source of truth).
 Verbs, run either locally at a terminal's own `read()` or forwarded from a
 secondary over rednet — same dispatcher either way:
 
-- `list [--stocked|--craftable|--unavailable] [substring]` — aggregate
-  counts across the storage pool; classify each item as stocked (count >
-  0), craftable (not stocked, but a direct `resource-tree.lua` conversion
-  exists whose inputs *are* stocked), or unavailable (neither).
-- `pull <name> <qty>` — straight withdrawal from the pool into the
-  pickup vault via `pullItems`, no job logic involved.
-- `craft <name> <qty>` — **combined craft+pull, chained** (phase 2's
-  planner is live — see "Scope" above): pulls whatever's already stocked
-  toward the requested quantity, and for the remaining shortfall,
-  recursively ensures each level of the resource-tree chain exists —
-  producing a missing input before the level that needs it, however many
-  levels deep — then triggers the actual job: pushes input materials
-  into the feeder vault, toggles the machine on via its Relay, polls the
-  storage pool for the expected output count to appear, with a
-  **configurable per-job timeout** (different machines have different
-  throughput/delay). Timeout resets to zero whenever the output count
-  increases (progress, not stalled). One retry after a timeout; if the
-  retry also times out, that level's job gives up and everything above
-  it in the chain gives up too (no input to work with) — double-feeding
-  a machine on retry is acceptable (confirmed), no dedup/interlock needed
-  there. A chain that bottoms out at an unstocked, non-convertible item
-  (or hits `MAX_PLANNER_DEPTH`) just produces as much as it can, which
-  may be nothing.
+Every verb accepts a trailing `-h`/`--help` and prints its own usage
+string instead of running (`lib/Cli.kt`'s `isHelpFlag`/`*_USAGE`
+constants) — checked first, before any other argument parsing, so it
+short-circuits cleanly even with a malformed rest of the command line.
+
+- `list (--stocked|--craftable|--unavailable) (item-name-filter)` —
+  aggregate counts across the storage pool; classify each item as
+  stocked (count > 0), craftable (not stocked, but a direct
+  `resource-tree.lua` conversion exists whose inputs *are* stocked), or
+  unavailable (neither). The optional trailing filter narrows to item
+  names containing that substring (e.g. `list --stocked iron`).
+- `pull <name> <qty>` — straight withdrawal from the pool into a pickup
+  location via `pullItems`, no job logic involved. See "Vaults" above
+  for how the target pickup vault is resolved (self, then default).
+- `craft <name> <qty> (--location=<name>) (--fetch=false)` — **combined
+  craft+pull, chained** (phase 2's planner is live — see "Scope" above):
+  pulls whatever's already stocked toward the requested quantity, and for
+  the remaining shortfall, recursively ensures each level of the
+  resource-tree chain exists — producing a missing input before the
+  level that needs it, however many levels deep — then triggers the
+  actual job: pushes input materials into the feeder vault, toggles the
+  machine on via its Relay, polls the storage pool for the expected
+  output count to appear, with a **configurable per-job timeout**
+  (different machines have different throughput/delay). Timeout resets
+  to zero whenever the output count increases (progress, not stalled).
+  One retry after a timeout; if the retry also times out, that level's
+  job gives up and everything above it in the chain gives up too (no
+  input to work with) — double-feeding a machine on retry is acceptable
+  (confirmed), no dedup/interlock needed there. A chain that bottoms out
+  at an unstocked, non-convertible item (or hits `MAX_PLANNER_DEPTH`)
+  just produces as much as it can, which may be nothing. Fetches (pulls
+  the result into a pickup location) by default; pass `--fetch=false` to
+  craft without pulling — the result is left in the storage pool
+  instead, e.g. for building up stock ahead of time rather than an
+  immediate hand-off. **Which pickup vault "fetch" delivers into**
+  (`lib/Cli.kt`'s `resolvePickupLocation`): `--location=<name>` targets
+  whichever pickup vault has that exact `"name"` label in
+  `peripherals.json`; without it, this terminal's own inventory if
+  it's itself configured as a pickup location (see `ktoxSelfPeripheralName`
+  in "Vaults" above), otherwise whichever pickup vault is marked
+  `"default": true`. `pull` uses the same self-then-default resolution
+  but has no `--location=` override yet — only `craft` was asked for
+  one; extend `pull` the same way if that gap turns out to matter in
+  practice.
 - `trash <name> <qty>` — permanently destroys items via the trash vault.
   Its own explicit command on purpose; nothing else ever routes here.
+
+**Literal `[`/`]` in a Kotlin string transpiles to invalid Lua** (ktox
+emits `\[`/`\]`, not a real Lua escape — confirmed via CraftOS-PC:
+`invalid escape sequence near '\['`, the whole file fails to load). Hit
+writing the `*_USAGE` strings above; already flagged in AGENTS.md's ktox
+quirks list, worth restating here since it bit this exact file. Fixed by
+using parens for optional-arg notation instead of brackets.
 
 **Real bug, found during physical build-out testing (2026-09-07): a
 non-numeric `<qty>` crashed the whole head loop, not just that one
@@ -817,7 +858,7 @@ command.** `pull`/`craft`/`trash` all parsed their quantity argument with
 Lua errors (this codebase doesn't use try/catch anywhere — untested
 territory for ktox, and not needed once the actual fix is this simple),
 so a mistyped quantity propagated all the way up through
-`parallel.waitForAny` in `Head.kt`'s main loop and killed the whole
+`parallel.waitForAny` in `HeadTerminal.kt`'s main loop and killed the whole
 program — which is what actually explains "the terminal doesn't give me
 the cursor back after a bad command": the program wasn't hung, it had
 crashed, dropping to whatever's underneath (the raw CraftOS shell, or a
@@ -893,7 +934,7 @@ does.
 ## Known open items (not blocking phase 1, listed so they aren't lost)
 
 - **Head/secondary rednet + `parallel.waitForAny` is unverified in-game.**
-  Implemented (`programs/Head.kt`/`Secondary.kt`, `common/Rednet.kt`,
+  Implemented (`programs/HeadTerminal.kt`/`SecondaryTerminal.kt`, `common/Rednet.kt`,
   `common/Parallel.kt`) and confirmed to load/compile/run its no-modem
   and no-head-found fallback paths cleanly via CraftOS-PC, but the actual
   multi-computer behavior — role collision detection finding a real
@@ -911,6 +952,24 @@ does.
   sweep-every-slot approach catches it regardless). Test with a real
   crafter turtle and a simple known recipe before trusting this for
   anything real.
+- **Turtle-as-pickup-vault is unverified in-game, on two independent
+  points:** (1) a network `pushItems`/`pullItems` call actually landing
+  items in a turtle's own inventory when addressed by peripheral name —
+  previously assumed broken and routed around (see "Vaults" above), now
+  assumed to work instead, but neither direction has been confirmed
+  against real hardware; and (2) `ktoxSelfPeripheralName()`
+  (`ktox-cc-shim.lua`) — a head/secondary terminal finding its own
+  network peripheral name by asking every `"computer"`/`"turtle"`-type
+  peripheral for `getID()` and matching against `os.getComputerID()`,
+  relying on CC:Tweaked's documented `"computer"` peripheral
+  (https://tweaked.cc/peripheral/computer.html) actually exposing itself
+  this way for a machine's OWN wired modem, which has never been
+  confirmed either. If either assumption is wrong, the practical effect
+  is just that self-preference silently falls through to the configured
+  `"default": true` pickup vault instead (`resolvePickupLocation` in
+  `lib/Cli.kt` treats `"MISSING"` as "no self location", not an error) —
+  not a crash, but worth confirming before relying on "the terminal
+  defaults to its own inventory" in practice.
 - Storage-vault load balancing (push-to-emptiest, farm→vault preference
   routing) — problem #3b territory, deferred.
 - Stockpile Switch integration for fast vault-fullness queries — deferred.

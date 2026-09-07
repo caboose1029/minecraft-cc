@@ -9,7 +9,7 @@ import lib.pullFromStoragePool
 // deployer, trying to always hold a full stack of one item, see
 // PLAN.md). Unlike a job-input feeder, nothing triggers this — it's
 // topped up opportunistically by the head after handling each local or
-// remote command (see Head.kt), not on an independent timer: a genuine
+// remote command (see HeadTerminal.kt), not on an independent timer: a genuine
 // background timer would need a third parallel.waitForAny branch whose
 // sleep gets cancelled and restarted every time a command arrives before
 // it elapses, which could starve it indefinitely under steady CLI

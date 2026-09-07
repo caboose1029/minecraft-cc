@@ -8,7 +8,11 @@
       "job": { "type": "pressing" }
     }
   },
-  "create:item_vault_3": { "type": "vault", "job": { "type": "pickup" } },
+  "create:item_vault_3": { "type": "vault", "job": { "type": "pickup", "name": "main", "default": true } },
+  "computercraft:turtle_advanced_1": {
+    "type": "vault",
+    "job": { "type": "pickup", "name": "workshop" }
+  },
   "create:item_vault_6": { "type": "vault", "job": { "type": "trash" } },
   "create:item_vault_4": {
     "type": "vault",

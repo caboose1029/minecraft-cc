@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TerminalSetup.kt", {["1-8"]=1,["9"]=18,["10"]=19,["11-12"]=20,["13"]=22,["14"]=23,["15"]=24,["16-17"]=25,["18"]=28,["19"]=29,["20"]=30,["21"]=31,["22"]=32,["23-25"]=33,["26"]=37,["27"]=38,["28"]=39,["29-30"]=40,["31"]=42,["32"]=43,["33"]=44,["34"]=45,["35-36"]=46,["37"]=48,["38-39"]=49,["40"]=52,["41"]=53,["42"]=54,["43-44"]=55,["45-47"]=58}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TerminalSetup.kt", {["1-8"]=1,["9"]=18,["10"]=19,["11-12"]=20,["13"]=22,["14"]=23,["15"]=24,["16-17"]=25,["18"]=28,["19"]=29,["20"]=30,["21"]=31,["22"]=32,["23-25"]=33,["26"]=37,["27"]=38,["28"]=39,["29-30"]=40,["31"]=42,["32"]=43,["33"]=44,["34"]=45,["35-36"]=46,["37"]=48,["38-39"]=49,["40"]=52,["41"]=53,["42"]=54,["43-44"]=55,["45"]=58,["46-48"]=59}, "programs")
 ktox_require("lib/RoleCheck")
 
 ---@param args table
@@ -42,7 +42,8 @@ function main(args)
         println("Failed to write role.txt.")
         return
     end
-    println("Configured as " .. tostring(role) .. ". Reboot to start automatically, or run the " .. tostring(role) .. " program directly now.")
+    local programName = (role == "head" and "HeadTerminal" or "SecondaryTerminal")
+    println("Configured as " .. tostring(role) .. ". Reboot to start automatically, or run " .. tostring(programName) .. " directly now.")
 end
 
 

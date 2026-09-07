@@ -55,5 +55,6 @@ fun main(args: Array<String>) {
         return
     }
 
-    println("Configured as ${role}. Reboot to start automatically, or run the ${role} program directly now.")
+    val programName = if (role == "head") "HeadTerminal" else "SecondaryTerminal"
+    println("Configured as ${role}. Reboot to start automatically, or run ${programName} directly now.")
 }

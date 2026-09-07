@@ -26,16 +26,22 @@ set -euo pipefail
 #   emulator) — confirming graceful nil-handling is as far as this script
 #   can verify; real position data needs a real world + GPS host network.
 #
-# Usage: scripts/validate.sh [entry-point.lua] ["shell args string"]
+# Usage: scripts/validate.sh <entry-point.lua> ["shell args string"]
 #   e.g. scripts/validate.sh Digsite.lua "100:110 200:215"
 
 CRAFTOS_BIN="/Applications/CraftOS-PC.app/Contents/MacOS/craftos"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Output lands in the monorepo's shared src/ tree, not under this subproject.
 LUA_OUTPUT_DIR="$PROJECT_ROOT/../src/pkg/player/8durt"
-ENTRY_POINT="${1:-Hello.lua}"
+ENTRY_POINT="${1:-}"
 PROGRAM_ARGS="${2:-}"
 RUN_SECONDS="${VALIDATE_TIMEOUT:-8}"
+
+if [ -z "$ENTRY_POINT" ]; then
+  echo "Usage: scripts/validate.sh <entry-point.lua> [\"shell args string\"]" >&2
+  echo "  e.g. scripts/validate.sh Digsite.lua \"100:110 200:215\"" >&2
+  exit 1
+fi
 
 if [ ! -x "$CRAFTOS_BIN" ]; then
   echo "CraftOS-PC not found at $CRAFTOS_BIN" >&2

@@ -128,9 +128,9 @@ if fs.exists("role.txt") then
         local role = roleFile.readAll()
         roleFile.close()
         if role == "head" then
-            shell.run("Head")
+            shell.run("HeadTerminal")
         elseif role == "secondary" then
-            shell.run("Secondary")
+            shell.run("SecondaryTerminal")
         elseif string.sub(role, 1, 8) == "crafter:" then
             shell.run("Crafter", string.sub(role, 9))
         end

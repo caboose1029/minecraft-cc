@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Secondary.kt", {["1-7"]=1,["8"]=22,["9"]=23,["10"]=24,["11"]=25,["12-13"]=26,["14"]=29,["15"]=30,["16"]=31,["17"]=32,["18"]=33,["19"]=34,["20-21"]=35,["22"]=37,["23"]=38,["24-25"]=39,["26-34"]=41}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "SecondaryTerminal.kt", {["1-7"]=1,["8"]=22,["9"]=23,["10"]=24,["11"]=25,["12-13"]=26,["14"]=29,["15"]=30,["16"]=31,["17"]=32,["18"]=33,["19"]=34,["20-21"]=35,["22"]=37,["23"]=38,["24-25"]=39,["26-34"]=41}, "programs")
 ktox_require("lib/RoleCheck")
 
 local function main()

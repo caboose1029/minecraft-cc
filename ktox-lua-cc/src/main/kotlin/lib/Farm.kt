@@ -45,7 +45,7 @@ fun farmWatermarkHigh(farm: Farm, index: Int): Int {
 // oversupplied, since turning it off while either is still short would
 // starve whichever one isn't yet saturated.
 //
-// Called opportunistically after each head interaction (see Head.kt),
+// Called opportunistically after each head interaction (see HeadTerminal.kt),
 // not on an independent timer — same reasoning as topUpPassiveFeeders:
 // a real timer risks being cancelled and restarted before its sleep
 // elapses under steady CLI traffic.

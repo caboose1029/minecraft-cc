@@ -12,11 +12,11 @@ import lib.queryForHead
 // A secondary vault terminal (see PLAN.md "Terminal roles") — a thin
 // client. Forwards every local command to the head over rednet and
 // prints back whatever it replies; never decides anything itself. Purely
-// sequential (read -> send -> receive -> print), unlike Head.kt, since a
-// secondary only ever has one blocking operation in flight at a time —
-// no parallel.waitForAny needed here.
+// sequential (read -> send -> receive -> print), unlike HeadTerminal.kt,
+// since a secondary only ever has one blocking operation in flight at a
+// time — no parallel.waitForAny needed here.
 //
-// Usage: secondary (no args)
+// Usage: SecondaryTerminal (no args)
 
 fun main() {
     println("Secondary terminal starting...")

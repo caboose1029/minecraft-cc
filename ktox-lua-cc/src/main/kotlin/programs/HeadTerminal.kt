@@ -26,7 +26,7 @@ import lib.topUpPassiveFeeders
 // not been exercised in a real game; validate with two real computers
 // before relying on it).
 //
-// Usage: head (no args)
+// Usage: HeadTerminal (no args)
 
 fun main() {
     println("Head terminal starting...")

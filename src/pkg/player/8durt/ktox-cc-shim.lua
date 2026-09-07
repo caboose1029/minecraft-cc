@@ -579,16 +579,102 @@ function ktoxConfigAllFarms()
     return table.concat(lines, "\n")
 end
 
--- The pickup vault's peripheral name (job.type == "pickup") — where
--- `pull`/`craft` results are pushed for a player to grab, since a turtle
--- targeting its OWN inventory as a named peripheral is not reliably
--- supported by CC:Tweaked (see PLAN.md's open items). "MISSING" if none
--- configured.
-function ktoxConfigPickupVault()
+-- Pickup vaults (job.type == "pickup") — where `pull`/`craft` results
+-- land for a player (or turtle) to grab. Any addressable inventory
+-- peripheral works here, including a turtle's own inventory — see
+-- PLAN.md's "Vaults" section for why the old "turtle-as-peripheral-
+-- target is unreliable" caveat was dropped (it was never actually
+-- verified, just assumed). A peripherals.json world can configure
+-- several named pickup locations plus at most one "default": true one —
+-- see PLAN.md's "CLI" section for how `pull`/`craft` pick between them.
+
+-- The pickup vault labeled with this exact "name" (job.name), job.type
+-- == "pickup". "MISSING" if none matches.
+function ktoxConfigPickupVaultByName(locationName)
     local config = ktoxReadJSONFile("config/peripherals.json")
     if config ~= nil then
         for name, entry in pairs(config) do
-            if entry.type == "vault" and entry.job ~= nil and entry.job.type == "pickup" then
+            if entry.type == "vault" and entry.job ~= nil and entry.job.type == "pickup"
+                and entry.job.name == locationName then
+                return name
+            end
+        end
+    end
+    return "MISSING"
+end
+
+-- The pickup vault marked "default": true (job.type == "pickup").
+-- Missing/absent "default" is falsy in Lua, so an entry with no
+-- "default" field at all is correctly never picked here — matches
+-- "defined as false if it's missing" from PLAN.md with no extra
+-- handling needed. "MISSING" if none is marked default.
+function ktoxConfigPickupVaultDefault()
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        for name, entry in pairs(config) do
+            if entry.type == "vault" and entry.job ~= nil and entry.job.type == "pickup"
+                and entry.job.default == true then
+                return name
+            end
+        end
+    end
+    return "MISSING"
+end
+
+-- Whether `peripheralName` itself is configured as a pickup vault
+-- (job.type == "pickup") in peripherals.json — used so a head/secondary
+-- terminal that IS itself a pickup location (see ktoxSelfPeripheralName)
+-- can prefer its own inventory over the configured default.
+function ktoxIsConfiguredPickupLocation(peripheralName)
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        local entry = config[peripheralName]
+        if entry ~= nil and entry.type == "vault" and entry.job ~= nil and entry.job.type == "pickup" then
+            return true
+        end
+    end
+    return false
+end
+
+-- The trash vault's peripheral name (job.type == "trash") — a vault that
+-- dumps whatever's pushed into it into lava, permanently destroying it.
+-- Functionally identical wiring to a feeder vault; semantically very
+-- different (irreversible), so it's never targeted by anything except an
+-- explicit `trash` CLI command — it has no entry in resource-tree.json
+-- and nothing routes to it automatically. "MISSING" if none configured.
+function ktoxConfigTrashVault()
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        for name, entry in pairs(config) do
+            if entry.type == "vault" and entry.job ~= nil and entry.job.type == "trash" then
+                return name
+            end
+        end
+    end
+    return "MISSING"
+end
+
+-- This computer/turtle's OWN peripheral name, as seen by the rest of the
+-- wired network — so a head/secondary terminal that's also wired in as a
+-- pickup vault (a turtle with its own inventory) can find its own
+-- peripherals.json entry without it being hand-configured per machine.
+-- Works by asking every "computer"/"turtle"-type peripheral on the
+-- network for its ID (CC:Tweaked's documented "computer" peripheral —
+-- https://tweaked.cc/peripheral/computer.html — exposes getID()) and
+-- comparing against os.getComputerID(). UNVERIFIED IN-GAME: never
+-- confirmed with two real networked machines that a machine's own wired
+-- modem actually exposes itself this way, or that getID() answers with
+-- this machine's own ID rather than erroring/being absent — see PLAN.md
+-- "Known open items". "MISSING" if no match is found (no modem, not
+-- networked, or the assumption above turns out wrong) — every call site
+-- must treat that as "no self pickup location", not an error.
+function ktoxSelfPeripheralName()
+    local myId = os.getComputerID()
+    for _, name in ipairs(peripheral.getNames()) do
+        local ptype = peripheral.getType(name)
+        if ptype == "computer" or ptype == "turtle" then
+            local p = peripheral.wrap(name)
+            if p ~= nil and p.getID ~= nil and p.getID() == myId then
                 return name
             end
         end

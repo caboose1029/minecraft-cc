@@ -43,8 +43,17 @@ fun ktoxConfigRelayForJob(jobType: String): String = externalSource()
 @NativeName("ktoxConfigProducesLookup")
 fun ktoxConfigProducesLookup(outputName: String): String = externalSource()
 
-@NativeName("ktoxConfigPickupVault")
-fun ktoxConfigPickupVault(): String = externalSource()
+@NativeName("ktoxConfigPickupVaultByName")
+fun ktoxConfigPickupVaultByName(locationName: String): String = externalSource()
+
+@NativeName("ktoxConfigPickupVaultDefault")
+fun ktoxConfigPickupVaultDefault(): String = externalSource()
+
+@NativeName("ktoxIsConfiguredPickupLocation")
+fun ktoxIsConfiguredPickupLocation(peripheralName: String): Boolean = externalSource()
+
+@NativeName("ktoxSelfPeripheralName")
+fun ktoxSelfPeripheralName(): String = externalSource()
 
 @NativeName("ktoxConfigTrashVault")
 fun ktoxConfigTrashVault(): String = externalSource()
