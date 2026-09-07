@@ -711,6 +711,25 @@ function ktoxConfigPickupVaultDefault()
     return "MISSING"
 end
 
+-- Every distinct "name" label among job.type == "pickup" entries,
+-- comma-joined — for the dashboard UI's location selector (see PLAN.md's
+-- "Dashboard UI" section). A pickup vault with no "name" field is
+-- skipped (it can never be targeted by name anyway - only reachable as
+-- the self location or the "default" one). "" if none are named.
+function ktoxConfigPickupVaultNames()
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    local names = {}
+    if config ~= nil then
+        for _, entry in pairs(config) do
+            if entry.type == "vault" and entry.job ~= nil and entry.job.type == "pickup"
+                and entry.job.name ~= nil then
+                names[#names + 1] = entry.job.name
+            end
+        end
+    end
+    return table.concat(names, ",")
+end
+
 -- Whether `peripheralName` itself is configured as a pickup vault
 -- (job.type == "pickup") in peripherals.json — used so a head/secondary
 -- terminal that IS itself a pickup location (see ktoxSelfPeripheralName)

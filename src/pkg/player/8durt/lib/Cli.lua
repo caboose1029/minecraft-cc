@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=19,["12-13"]=20,["14"]=22,["15"]=23,["16"]=24,["17-18"]=25,["19"]=27,["20-21"]=28,["22"]=30,["23-24"]=31,["25"]=33,["26-27"]=34,["28-43"]=36,["44-49"]=53,["50"]=65,["51-52"]=66,["53"]=68,["54"]=69,["55-56"]=70,["57-62"]=72,["63"]=76,["64-65"]=77,["66"]=79,["67"]=80,["68"]=81,["69"]=82,["70"]=83,["71"]=84,["72"]=85,["73-74"]=86,["75"]=88,["76-77"]=89,["78"]=90,["79"]=91,["80-83"]=92,["84"]=95,["85-86"]=96,["87"]=99,["88"]=100,["89-90"]=101,["91"]=109,["92"]=110,["93"]=111,["94-95"]=112,["96"]=114,["97"]=115,["98-99"]=116,["100"]=118,["101"]=119,["102"]=120,["103"]=121,["104"]=122,["105"]=123,["106"]=124,["107-108"]=125,["109-110"]=127,["111-112"]=129,["113-114"]=131,["115-120"]=133,["121"]=137,["122-123"]=138,["124"]=140,["125-126"]=141,["127"]=143,["128"]=144,["129"]=145,["130-131"]=146,["132"]=148,["133"]=150,["134"]=151,["135-136"]=152,["137"]=155,["138-143"]=156,["144"]=165,["145-146"]=166,["147"]=168,["148-149"]=169,["150"]=171,["151"]=172,["152"]=173,["153-154"]=174,["155"]=176,["156"]=183,["157"]=184,["158"]=185,["159"]=186,["160"]=187,["161"]=188,["162"]=189,["163"]=190,["164-166"]=191,["167"]=194,["168-170"]=195,["171-172"]=198,["173"]=201,["174"]=202,["175"]=203,["176"]=204,["177"]=205,["178-179"]=206,["180-182"]=208,["183"]=212,["184"]=214,["185-186"]=215,["187"]=218,["188-193"]=219,["194"]=227,["195-196"]=228,["197"]=230,["198-199"]=231,["200"]=233,["201"]=234,["202"]=235,["203-204"]=236,["205"]=238,["206"]=240,["207"]=241,["208-209"]=242,["210"]=245,["211-213"]=246}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=19,["12-13"]=20,["14"]=22,["15"]=23,["16"]=24,["17-18"]=25,["19"]=27,["20-21"]=28,["22"]=30,["23-24"]=31,["25"]=33,["26-27"]=34,["28-43"]=36,["44-49"]=53,["50"]=65,["51-52"]=66,["53"]=68,["54"]=69,["55-56"]=70,["57-63"]=72,["64"]=81,["65"]=82,["66"]=83,["67"]=84,["68-69"]=85,["70-71"]=87,["72-78"]=89,["79"]=93,["80"]=94,["81"]=95,["82"]=96,["83-84"]=97,["85-86"]=99,["87-92"]=101,["93"]=107,["94-95"]=108,["96-101"]=110,["102"]=114,["103-104"]=115,["105"]=117,["106"]=118,["107"]=119,["108"]=120,["109"]=121,["110"]=122,["111"]=123,["112-113"]=124,["114"]=126,["115-116"]=127,["117"]=128,["118"]=129,["119-122"]=130,["123"]=133,["124-125"]=134,["126"]=137,["127"]=138,["128-129"]=139,["130"]=147,["131"]=148,["132"]=149,["133-134"]=150,["135"]=152,["136"]=153,["137-138"]=154,["139"]=156,["140"]=157,["141"]=158,["142"]=159,["143"]=160,["144"]=161,["145"]=162,["146-147"]=163,["148-149"]=165,["150-151"]=167,["152-153"]=169,["154-159"]=171,["160"]=175,["161-162"]=176,["163"]=178,["164-165"]=179,["166"]=181,["167"]=182,["168"]=183,["169-170"]=184,["171"]=186,["172"]=188,["173"]=189,["174"]=190,["175-176"]=191,["177"]=194,["178-183"]=195,["184"]=204,["185-186"]=205,["187"]=207,["188-189"]=208,["190"]=210,["191"]=211,["192"]=212,["193-194"]=213,["195"]=215,["196"]=217,["197"]=218,["198"]=220,["199"]=221,["200"]=222,["201"]=223,["202-204"]=224,["205"]=228,["206"]=230,["207-208"]=231,["209"]=234,["210-215"]=235,["216"]=243,["217-218"]=244,["219"]=246,["220-221"]=247,["222"]=249,["223"]=250,["224"]=251,["225-226"]=252,["227"]=254,["228"]=256,["229"]=257,["230-231"]=258,["232"]=261,["233-235"]=262}, "lib")
 ktox_require("lib/Planner")
 ktox_require("lib/Inventory")
 
@@ -30,7 +30,7 @@ end
 
 LIST_USAGE = "Usage: list (--stocked|--craftable|--unavailable) (item-name-filter) (-h)" .. "\n" .. "  Lists items in the storage pool. Optional status flag narrows to one status; optional trailing text filters to item names containing that substring (e.g. " .. "\"" .. "list --stocked iron" .. "\"" .. ")."
 
-PULL_USAGE = "Usage: pull <name> <qty> (-h)" .. "\n" .. "  Pulls <qty> of <name> from the storage pool into a pickup location - this terminal\'s own inventory if it\'s itself configured as a pickup location, otherwise whichever pickup location is marked " .. "\"" .. "default" .. "\"" .. " in config/peripherals.json."
+PULL_USAGE = "Usage: pull <name> <qty> (--location=<name>) (-h)" .. "\n" .. "  Pulls <qty> of <name> from the storage pool into a pickup location. --location=<name> targets a specific named one; without it, this terminal\'s own inventory if it\'s itself configured as a pickup location, otherwise whichever pickup location is marked " .. "\"" .. "default" .. "\"" .. " in config/peripherals.json."
 
 CRAFT_USAGE = "Usage: craft <name> <qty> (--location=<name>) (--fetch=false) (-h)" .. "\n" .. "  Crafts <qty> of <name>, chaining through intermediate jobs as needed, then pulls the result into a pickup location. Defaults to this terminal\'s own inventory if it\'s itself configured as a pickup location, otherwise the config/peripherals.json default; pass --location=<name> to target a specific named pickup location instead. Pass --fetch=false to craft without pulling the result out at all (leaves it in the storage pool)."
 
@@ -55,6 +55,45 @@ function resolvePickupLocation(explicitLocation)
         return selfName
     end
     return ktoxConfigPickupVaultDefault()
+end
+
+---@param parts table
+---@param startIndex number
+---@return string
+function parseLocationFlag(parts, startIndex)
+    local idx = startIndex
+    while idx <= #(parts) do
+        local flagParts = ktox_split(parts[idx], "=")
+        if flagParts[1] == "--location" and #(flagParts) >= 2 then
+            return flagParts[2]
+        end
+        idx = ktox_plusAssign(idx, 1)
+    end
+    return ""
+end
+
+---@param parts table
+---@param startIndex number
+---@return boolean
+function parseFetchFlag(parts, startIndex)
+    local idx = startIndex
+    while idx <= #(parts) do
+        local flagParts = ktox_split(parts[idx], "=")
+        if flagParts[1] == "--fetch" and #(flagParts) >= 2 and flagParts[2] == "false" then
+            return false
+        end
+        idx = ktox_plusAssign(idx, 1)
+    end
+    return true
+end
+
+---@param explicitLocation string
+---@return string
+function noPickupLocationMessage(explicitLocation)
+    if explicitLocation ~= "" then
+        return "No pickup location named " .. "\"" .. tostring(explicitLocation) .. "\"" .. " is configured (" .. "\"" .. "name" .. "\"" .. " under a job.type " .. "\"" .. "pickup" .. "\"" .. " entry in config/peripherals.json)."
+    end
+    return "No pickup vault configured (job.type " .. "\"" .. "pickup" .. "\"" .. " in config/peripherals.json)."
 end
 
 ---@param parts table
@@ -130,9 +169,10 @@ function runPullCommand(parts)
         return tostring(PULL_USAGE) .. "\n" .. "\"" .. tostring(parts[3]) .. "\"" .. " isn\'t a number."
     end
     local qty = ktox_toInt(qtyRaw)
-    local pickupVault = resolvePickupLocation("")
+    local location = parseLocationFlag(parts, 4)
+    local pickupVault = resolvePickupLocation(location)
     if pickupVault == "MISSING" then
-        return "No pickup vault configured (job.type " .. "\"" .. "pickup" .. "\"" .. " in config/peripherals.json)."
+        return noPickupLocationMessage(location)
     end
     local pulled = pullFromStoragePool(pickupVault, itemName, qty)
     return "Pulled " .. tostring(pulled) .. " of " .. tostring(itemName) .. " into the pickup vault (requested " .. tostring(qty) .. ")."
@@ -153,31 +193,13 @@ function runCraftCommand(parts)
         return tostring(CRAFT_USAGE) .. "\n" .. "\"" .. tostring(parts[3]) .. "\"" .. " isn\'t a number."
     end
     local qty = ktox_toInt(qtyRaw)
-    local fetch = true
-    local location = ""
-    local flagIndex = 4
-    while flagIndex <= #(parts) do
-        local flagParts = ktox_split(parts[flagIndex], "=")
-        local flagName = flagParts[1]
-        if flagName == "--fetch" then
-            if #(flagParts) >= 2 and flagParts[2] == "false" then
-                fetch = false
-            end
-        elseif flagName == "--location" then
-            if #(flagParts) >= 2 then
-                location = flagParts[2]
-            end
-        end
-        flagIndex = ktox_plusAssign(flagIndex, 1)
-    end
+    local fetch = parseFetchFlag(parts, 4)
+    local location = parseLocationFlag(parts, 4)
     local pickupVault = ""
     if fetch then
         pickupVault = resolvePickupLocation(location)
         if pickupVault == "MISSING" then
-            if location ~= "" then
-                return "No pickup location named " .. "\"" .. tostring(location) .. "\"" .. " is configured (" .. "\"" .. "name" .. "\"" .. " under a job.type " .. "\"" .. "pickup" .. "\"" .. " entry in config/peripherals.json)."
-            end
-            return "No pickup vault configured (job.type " .. "\"" .. "pickup" .. "\"" .. " in config/peripherals.json)."
+            return noPickupLocationMessage(location)
         end
     end
     ensureStocked(itemName, qty, 0)

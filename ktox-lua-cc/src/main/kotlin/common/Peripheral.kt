@@ -49,6 +49,9 @@ fun ktoxConfigPickupVaultByName(locationName: String): String = externalSource()
 @NativeName("ktoxConfigPickupVaultDefault")
 fun ktoxConfigPickupVaultDefault(): String = externalSource()
 
+@NativeName("ktoxConfigPickupVaultNames")
+fun ktoxConfigPickupVaultNames(): String = externalSource()
+
 @NativeName("ktoxIsConfiguredPickupLocation")
 fun ktoxIsConfiguredPickupLocation(peripheralName: String): Boolean = externalSource()
 

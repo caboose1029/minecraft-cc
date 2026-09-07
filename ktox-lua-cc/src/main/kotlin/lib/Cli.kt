@@ -41,7 +41,7 @@ fun runCliCommand(commandLine: String): String {
 // CraftOS-PC: "invalid escape sequence near '\['"). Use parens for
 // optional-arg notation instead, never brackets, anywhere in this file.
 const val LIST_USAGE = "Usage: list (--stocked|--craftable|--unavailable) (item-name-filter) (-h)\n  Lists items in the storage pool. Optional status flag narrows to one status; optional trailing text filters to item names containing that substring (e.g. \"list --stocked iron\")."
-const val PULL_USAGE = "Usage: pull <name> <qty> (-h)\n  Pulls <qty> of <name> from the storage pool into a pickup location - this terminal's own inventory if it's itself configured as a pickup location, otherwise whichever pickup location is marked \"default\" in config/peripherals.json."
+const val PULL_USAGE = "Usage: pull <name> <qty> (--location=<name>) (-h)\n  Pulls <qty> of <name> from the storage pool into a pickup location. --location=<name> targets a specific named one; without it, this terminal's own inventory if it's itself configured as a pickup location, otherwise whichever pickup location is marked \"default\" in config/peripherals.json."
 const val CRAFT_USAGE = "Usage: craft <name> <qty> (--location=<name>) (--fetch=false) (-h)\n  Crafts <qty> of <name>, chaining through intermediate jobs as needed, then pulls the result into a pickup location. Defaults to this terminal's own inventory if it's itself configured as a pickup location, otherwise the config/peripherals.json default; pass --location=<name> to target a specific named pickup location instead. Pass --fetch=false to craft without pulling the result out at all (leaves it in the storage pool)."
 const val TRASH_USAGE = "Usage: trash <name> <qty> (-h)\n  Permanently destroys <qty> of <name> from the storage pool via the trash vault (dumped into lava)."
 
@@ -70,6 +70,44 @@ fun resolvePickupLocation(explicitLocation: String): String {
         return selfName
     }
     return ktoxConfigPickupVaultDefault()
+}
+
+// Shared trailing-flag parsing for pull/craft, scanning parts[startIndex..]
+// for "--location=<name>"/"--fetch=false". Split on "=" rather than a
+// substring/startsWith check - ktox has no established-safe prefix-check
+// idiom in this codebase, but .split() is already proven throughout this
+// file. Flags can appear in either order, or not at all.
+fun parseLocationFlag(parts: List<String>, startIndex: Int): String {
+    var idx = startIndex
+    while (idx <= parts.size) {
+        val flagParts = parts[idx].split("=")
+        if (flagParts[1] == "--location" && flagParts.size >= 2) {
+            return flagParts[2]
+        }
+        idx += 1
+    }
+    return ""
+}
+
+fun parseFetchFlag(parts: List<String>, startIndex: Int): Boolean {
+    var idx = startIndex
+    while (idx <= parts.size) {
+        val flagParts = parts[idx].split("=")
+        if (flagParts[1] == "--fetch" && flagParts.size >= 2 && flagParts[2] == "false") {
+            return false
+        }
+        idx += 1
+    }
+    return true
+}
+
+// "No pickup vault"/"no location named X" - the shared failure message
+// for pull/craft when resolvePickupLocation comes back "MISSING".
+fun noPickupLocationMessage(explicitLocation: String): String {
+    if (explicitLocation != "") {
+        return "No pickup location named \"${explicitLocation}\" is configured (\"name\" under a job.type \"pickup\" entry in config/peripherals.json)."
+    }
+    return "No pickup vault configured (job.type \"pickup\" in config/peripherals.json)."
 }
 
 fun runListCommand(parts: List<String>): String {
@@ -147,9 +185,10 @@ fun runPullCommand(parts: List<String>): String {
     }
     val qty = qtyRaw.toInt()
 
-    val pickupVault = resolvePickupLocation("")
+    val location = parseLocationFlag(parts, 4)
+    val pickupVault = resolvePickupLocation(location)
     if (pickupVault == "MISSING") {
-        return "No pickup vault configured (job.type \"pickup\" in config/peripherals.json)."
+        return noPickupLocationMessage(location)
     }
 
     val pulled = pullFromStoragePool(pickupVault, itemName, qty)
@@ -175,37 +214,14 @@ fun runCraftCommand(parts: List<String>): String {
     }
     val qty = qtyRaw.toInt()
 
-    // Flags can appear in either order at positions 4+ (e.g. both
-    // "--location=x --fetch=false" and "--fetch=false --location=x").
-    // Split on "=" rather than a substring/startsWith check - ktox has
-    // no established-safe prefix-check idiom in this codebase, but
-    // .split() is already proven throughout this file.
-    var fetch = true
-    var location = ""
-    var flagIndex = 4
-    while (flagIndex <= parts.size) {
-        val flagParts = parts[flagIndex].split("=")
-        val flagName = flagParts[1]
-        if (flagName == "--fetch") {
-            if (flagParts.size >= 2 && flagParts[2] == "false") {
-                fetch = false
-            }
-        } else if (flagName == "--location") {
-            if (flagParts.size >= 2) {
-                location = flagParts[2]
-            }
-        }
-        flagIndex += 1
-    }
+    val fetch = parseFetchFlag(parts, 4)
+    val location = parseLocationFlag(parts, 4)
 
     var pickupVault = ""
     if (fetch) {
         pickupVault = resolvePickupLocation(location)
         if (pickupVault == "MISSING") {
-            if (location != "") {
-                return "No pickup location named \"${location}\" is configured (\"name\" under a job.type \"pickup\" entry in config/peripherals.json)."
-            }
-            return "No pickup vault configured (job.type \"pickup\" in config/peripherals.json)."
+            return noPickupLocationMessage(location)
         }
     }
 
