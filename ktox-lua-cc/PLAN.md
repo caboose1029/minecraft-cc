@@ -147,7 +147,7 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
 - **Trash vault** (`job.type: "trash"`) — dumps whatever's pushed into it
   into lava, permanently. Functionally identical wiring to a feeder
   vault (a vault + funnel), but semantically very different: it's never
-  a target for anything automatic (no resource-tree.json entry, nothing
+  a target for anything automatic (no resource-tree.lua entry, nothing
   routes to it implicitly) — only the explicit `trash <name> <qty>`
   command touches it, since destroying items is irreversible.
 - **Passive feeder** (`job.type: "passive"`, with `item`, `lowWatermark`,
@@ -181,8 +181,8 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
   passive feeder — four small feeders is simpler than one feeder with
   list-valued config, and physically matches how a player would wire
   several funnels (each with its own item filter) into one Blaze Burner
-  anyway. No schema change needed for this; `job-types.json`/
-  `resource-tree.json` just needed the actual chains that *produce* the
+  anyway. No schema change needed for this; `job-types.lua`/
+  `resource-tree.lua` just needed the actual chains that *produce* the
   less-obvious fuels: Dried Kelp Block needs `smoker` (kelp → dried kelp
   — a Smoker, not a Furnace/`smelter`, matters here: smoking and smelting
   are genuinely different vanilla mechanics that happen to both be
@@ -208,7 +208,7 @@ via `list()`/`getItemDetail`. Not wired up in phase 1; noted for later.
 
 ## Farms
 
-A **farm** (`job-types.json` entries with `kind: "farm"`) is an external,
+A **farm** (`job-types.lua` entries with `kind: "farm"`) is an external,
 always-running process this system can gate on/off — a cobblestone
 generator feeding a crushing/washing chain, a kelp farm, a wood farm.
 This system doesn't know or care how a farm works internally (chance-
@@ -251,7 +251,7 @@ actual motivating problem manageFarms() solves.
 
 **A farm's own inputs are the same "raw material" question as an**
 **ungated one** — `wood_farm` produces `minecraft:oak_log` with no
-resource-tree.json entry needed at all (nothing converts *into* a log in
+resource-tree.lua entry needed at all (nothing converts *into* a log in
 this system; it just appears via the farm). Downstream consumers (the
 `smelter` job's `oak_log → charcoal` recipe, say) treat farm output
 exactly like any other stocked item — the farm boundary is invisible to
@@ -276,15 +276,16 @@ everything past the storage pool.
   Link carries it wirelessly, the far end drives the Clutch/Funnel
   directly or through another local Relay.
 
-## Configs (JSON — confirmed native via `textutils.serializeJSON`/
-`unserializeJSON`; no XML support exists in CC:Tweaked at all)
+## Configs (`peripherals.json` — JSON, confirmed native via
+`textutils.serializeJSON`/`unserializeJSON`; `job-types.lua`/
+`resource-tree.lua` — plain Lua data files, see below for why)
 
 **Ownership split, revised:** only `peripherals.json` is 100% player-owned
 — it encodes physical facts about one specific world (which peripheral
 sits where), which the code must never hardcode and `ghfetch` must never
 overwrite; the player maintains it starting from the shipped
-`peripherals.example.json` template. `job-types.json` and
-`resource-tree.json` describe the *game's* recipe graph — the same
+`peripherals.example.json` template. `job-types.lua` and
+`resource-tree.lua` describe the *game's* recipe graph — the same
 across every world running this mod list — so they're centrally
 maintained in this repo and **fetched fresh every `ghfetch` run**,
 overwriting whatever's on the turtle, same as any other program file.
@@ -320,52 +321,50 @@ feeder vault's job nests the machine it feeds:
 }
 ```
 
-**2. `job-types.json`** — what each job type can produce, its execution
-`kind` (`"machine"` — redstone relay + feeder vault; `"crafter"` — a
-crafty turtle running `turtle.craft()`; defaults to `"machine"` when
-omitted, so every job type from before crafty turtles existed still
-works unchanged), and an optional per-job `timeoutSeconds` override.
-Semi-hardcoded but editable (new modpacks/items mean this needs updating
-over time). Seeded with a couple of illustrative entries only — NOT an
-attempt at a complete Create recipe database, to avoid fabricating game
-data that turns out wrong:
+**2. `job-types.lua`** — what each job type's execution `kind` is
+(`"machine"` — redstone relay + feeder vault; `"crafter"` — a crafty
+turtle running `turtle.craft()`; `"farm"` — an always-running external
+process gated by watermarks; defaults to `"machine"` when omitted, so
+every job type from before crafty turtles existed still works
+unchanged), and an optional per-job `timeoutSeconds` override. No
+`"produces"` list (an earlier version had one) — nothing ever read it,
+and keeping it in sync with thousands of `resource-tree.lua` entries
+would be pure maintenance burden for no runtime benefit:
 
-```json
-{
-  "smelter": { "produces": ["minecraft:iron_ingot", "minecraft:copper_ingot"], "kind": "machine" },
-  "mechanical_press_depot": { "produces": ["create:iron_sheet", "create:copper_sheet"], "kind": "machine" },
-  "mixer_basin": { "produces": ["create:brass_ingot"], "kind": "machine", "timeoutSeconds": 45 }
+```lua
+return {
+  smelter = { kind = "machine" },
+  pressing = { kind = "machine" },
+  mixing_heated = { kind = "machine", timeoutSeconds = 45 },
 }
 ```
 
-**3. `resource-tree.json`** — a **flat list of recipes**, not keyed by a
+**3. `resource-tree.lua`** — a **flat list of recipes**, not keyed by a
 single input (see below for why), each with ratios (input:output counts)
 so the executor knows how much raw material to push for a requested
 output quantity, and a list of inputs so multi-ingredient recipes (brass:
 copper + zinc) and shaped crafter recipes (an ingredient pinned to a
 specific turtle crafting-grid slot) both fit the same shape:
 
-```json
-{
-  "recipes": [
+```lua
+return {
+  recipes = {
     {
-      "output": "create:copper_sheet",
-      "outputCount": 1,
-      "job": "mechanical_press_depot",
-      "inputs": [
-        { "item": "minecraft:copper_ingot", "count": 1 }
-      ]
+      output = "create:copper_sheet",
+      outputCount = 1,
+      job = "pressing",
+      inputs = { { item = "minecraft:copper_ingot", count = 1 } },
     },
     {
-      "output": "create:brass_ingot",
-      "outputCount": 1,
-      "job": "mixer_basin",
-      "inputs": [
-        { "item": "minecraft:copper_ingot", "count": 1 },
-        { "item": "minecraft:zinc_ingot", "count": 1 }
-      ]
-    }
-  ]
+      output = "create:brass_ingot",
+      outputCount = 2,
+      job = "mixing_heated",
+      inputs = {
+        { item = "minecraft:copper_ingot", count = 1 },
+        { item = "create:zinc_ingot", count = 1 },
+      },
+    },
+  },
 }
 ```
 
@@ -404,15 +403,29 @@ everything else; absent that, the recipe with the lower
 output) wins as a heuristic guess at "more efficient." `"priority"` is
 optional — most recipes still only have one entry and never need it.
 
-**JSON parsing is cached per file path for the process lifetime.**
-`ktoxReadJSONFile` in `ktox-cc-shim.lua` keeps a `ktoxJSONCache` table
-keyed by path; a second read of the same config file (e.g.
-`resource-tree.json`, re-parsed on every single recipe lookup before
-this change) returns the already-parsed table instead of re-reading the
-file and re-running `textutils.unserializeJSON` on it. Safe because none
-of these config files change while a program is running — they're only
-ever refreshed by `ghfetch`, which runs as its own separate program
-invocation, not concurrently with `Terminal`/`Head`/`Secondary`/`Crafter`.
+**Config reads are cached per file path for the process lifetime,
+regardless of format.** `ktoxReadJSONFile`/`ktoxReadLuaDataFile` in
+`ktox-cc-shim.lua` each keep their own cache table keyed by path; a
+second read of the same config file (re-parsed on every single recipe
+lookup before this change) returns the already-loaded table instead of
+re-reading the file from disk. Safe because none of these config files
+change while a program is running — they're only ever refreshed by
+`ghfetch`, which runs as its own separate program invocation, not
+concurrently with `Terminal`/`Head`/`Secondary`/`Crafter`.
+
+**`job-types.lua`/`resource-tree.lua` were later converted to
+hand-authored Lua data files** (`config/job-types.lua`,
+`config/resource-tree.lua`, each just a `return { ... }` table literal)
+once the caching fix above stopped being enough — the resource tree grew
+into the thousands of entries during the comprehensive-recipe pass (see
+below), and `textutils.unserializeJSON` is a hand-written Lua parser
+walking the text byte by byte, while a `.lua` file loads through Lua's
+native chunk compiler. `peripherals.json` stays JSON — it's the one file
+a player actually hand-edits; a format switch only makes sense for files
+this repo generates and `ghfetch` overwrites wholesale. Consuming code
+(`ktoxPreferRecipe`, `ktoxConfigProducesLookup`, `ktoxListCatalog`, ...)
+didn't change at all, since a `.lua`-returned table and a JSON-parsed
+table are the same Lua table shape either way — only the loader changed.
 
 **Fluids are entirely out of scope.** `list()`/`getItemDetail()` only see
 solid inventory slots — a Tank peripheral (or any fluid container) isn't
@@ -433,7 +446,7 @@ is mostly chance-based with no deterministic yield at all — e.g. Gravel
 → Flint (25%) *or* Iron Nugget (12.5%), nothing guaranteed either way.
 That can't fit a schema built entirely around "push N in, get exactly
 M out." Only Splashing's few genuinely deterministic 1:1 recipes made it
-into `resource-tree.json` (a `"washing"` job type: Ice → Packed Ice,
+into `resource-tree.lua` (a `"washing"` job type: Ice → Packed Ice,
 Wheat Flour → Dough, Magma Block → Obsidian) — everything chance-based
 was excluded, not approximated.
 
@@ -446,8 +459,8 @@ schema even before considering yield), and it's explicitly "endless" —
 always running, nothing ever needs to start or stop it. That's exactly
 the mining/farming-turtle pattern from early design: an external process
 that just continuously dumps output into a storage vault. Nothing in
-`resource-tree.json` represents this chain's internal steps at all —
-`job-types.json`'s `iron_andesite_farm` entry (see "Farms" above) treats
+`resource-tree.lua` represents this chain's internal steps at all —
+`job-types.lua`'s `iron_andesite_farm` entry (see "Farms" above) treats
 it as a black box, watching only the final iron ingot/andesite counts
 and toggling a relay to gate the whole apparatus on or off, exactly like
 `wood_farm`, `kelp_farm`, and `copper_farm`. The system only ever reasons
@@ -525,7 +538,7 @@ same shared-feeder-vault reasoning as multi-ingredient machine jobs.
 `chest_crafter` is now plain `"crafter"` — one generic job type for
 *every* turtle-craftable recipe (`minecraft:chest`,
 `minecraft:dried_kelp_block`, and anything added later), each recipe
-still carrying its own full slot layout in `resource-tree.json`, so
+still carrying its own full slot layout in `resource-tree.lua`, so
 adding a new turtle-craftable item is a content change, never a new job
 type or a new peripheral registration.
 
@@ -555,7 +568,9 @@ Coverage, by confidence, current as of the jar-extraction pass:
   removed, not fixed, since no valid solid-only recipe for Dough exists
   at all), `smoker` (vanilla food-cooking pairs — high-confidence general
   knowledge, not individually jar-verified since vanilla recipes aren't
-  in any mod's jar), log stripping via the Slicer.
+  in any mod's jar). Log stripping via the Slicer, listed here in v2, was
+  **wrong** — corrected in the v3 pass below (no such recipe exists at
+  all; stripping a log is a vanilla axe interaction, not automatable).
 - **Lower confidence** (plausible item IDs, not individually verified —
   spot-check against JEI before relying on these): Farmer's Delight items
   via Slice & Dice (`farmersdelight:chicken_cuts`,
@@ -584,6 +599,129 @@ Coverage, by confidence, current as of the jar-extraction pass:
   excluded for a different reason: see "Probabilistic-yield recipes"
   above — it's a farm, not a job, by design, not by omission.
 
+**Comprehensive extraction pass, v3 (2026-09-06):** v2 above was still
+"curated, not literally exhaustive" by design — individual items were
+added as they came up in conversation. Superseded by a scripted pipeline
+that walks *every* recipe JSON in every installed mod's jar (create,
+computercraft, farmersdelight, createfood, bits_n_bobs, sliceanddice,
+create_enchantment_industry, displaydelight, create_dragons_plus),
+converts each to a `resource-tree.lua` entry, and applies filters rather
+than one-at-a-time human judgment:
+- Skip anything under a jar's own `.../compat/<mod>/` subfolder for a mod
+  that isn't installed, and skip any recipe whose ingredients OR whose
+  recipe `"type"` itself belongs to a namespace not in the installed set
+  — a recipe can reference only installed-mod items yet still need a
+  mechanic/machine from an uninstalled mod (several createfood-bundled
+  compat recipes for `ratatouille_fried_delights`/`hearthandharvest`/
+  `expandeddelight`/`immersiveengineering` fell into this trap and are
+  excluded).
+- Skip decorative/cosmetic families entirely: the 16-dye-color axis
+  (seats, postboxes, table cloths, toolboxes, chairs, wool/carpet/bed/
+  banner/candle/concrete/terracotta/shulker-box/stained-glass variants),
+  copper's weathering-stage and wax-toggle axis (`_from_deoxidising`/
+  `_from_removing_wax` axe-scraping conversions — the base unweathered,
+  unwaxed item still gets its own ordinary recipe elsewhere), and a
+  handful of novelty/joke items (CC:Tweaked's easter-egg player heads).
+- Skip fluid-bearing recipes wholesale (`create:filling`/`create:emptying`
+  in full — every entry of these types involves a fluid on one side by
+  definition), **except** two hand-kept exceptions:
+  `minecraft:bucket`→`minecraft:water_bucket`/`minecraft:lava_bucket`,
+  treating water/lava as the same kind of "ambient, always-available"
+  input a farm's watermark gate already assumes, consistent with how
+  `filling` was handled before this pass.
+- Skip recipe types needing a mechanic this system doesn't model at all:
+  `create:mechanical_crafting` (its own 3x3-of-9-simultaneous-items
+  machine, not a turtle), `create:sequenced_assembly` (multi-step with a
+  final success chance), `create:haunting`, `create:item_copying`,
+  `create:toolbox_dyeing`, `create:sandpaper_polishing`,
+  `computercraft:impostor_*`/`transform_*` (NBT-preserving "upgrade"
+  recipes — attaching a peripheral to a turtle/pocket computer, not a
+  plain item-in-item-out conversion), `minecraft:smithing_transform`.
+- Skip `minecraft:blasting`/`create:blasting`/`minecraft:campfire_cooking`
+  as redundant — they duplicate `smelting`/`smoking` outputs at a
+  different speed this system doesn't model, adding volume with no new
+  content.
+- Ingredient tags (NeoForge `c:` common tags and similar) are resolved
+  against tag data **merged across every installed mod's own jar**
+  (unioned per tag id, not overwritten by whichever jar happened to
+  extract last — an early version of this script got this wrong and
+  silently dropped real tag members as a result), falling back to a
+  small hand-written override table for well-known conventions
+  (redstone dust, glass panes, dyes, crops, nuggets, ...) that aren't
+  populated by any installed mod's own tag contribution — those are
+  normally supplied by the vanilla game jar or NeoForge itself, neither
+  of which this project has a copy of, so they're a documented judgment
+  call, not jar-verified.
+- **CreateFood scoped down deliberately, not by the same rules as
+  everything else above.** The raw extraction pulled 3,280 CreateFood
+  entries — a huge per-fruit/topping combinatorial system (cream cakes,
+  ice creams, milkshakes, jams, pastries; e.g. `apple_cream_chocolate_
+  donut`), not decorative in the dye-color sense but the same kind of
+  low-value bulk. Trimmed to just outputs matching soup/pie/pizza/
+  skewer/burger, **plus the full ingredient-dependency closure of each**
+  (a kept burger still needs its own bun/patty/cheese, even though
+  those don't contain "burger" in their own name — an early version of
+  this filter missed that and silently produced burgers with no
+  reachable ingredients). 165 seed dishes pull in 272 total outputs.
+  Explicit scoping decision, not a size accident — the alternative was
+  a ~1MB file at or over typical CC:Tweaked computer storage limits;
+  this brought the whole corpus (2,246 entries across every mod) to
+  about 512KB.
+
+**Real corrections this pass found** (the reason a full re-extraction
+was worth doing over patching individual reports of missing items):
+- **`minecraft:stripped_oak_log` was wrong to model as a job at all.**
+  An earlier version had it as a `"slicer"` (Mechanical Saw) recipe from
+  `oak_log` — no such recipe exists anywhere in Create's own data.
+  Stripping a log is a vanilla axe *interaction* (right-click), not a
+  data-driven recipe of any kind, so nothing in this system can produce
+  it automatically. Removed entirely rather than fixed — `create:
+  andesite_casing`/`brass_casing`/`copper_casing` all need a stripped
+  log as an input, so a player must keep a feeder manually stocked with
+  them for those casings to be produceable at all; this is a real,
+  permanent gap in what can be fully automated, not a bug.
+- **The old `"slicer"` job type conflated two different real machines.**
+  It held both `farmersdelight:chicken_cuts`/`pumpkin_slice` (Farmer's
+  Delight's Cutting Board) and the (incorrect) stripped-log entry above,
+  under one name, as if they were the same machine. Split into
+  `"cutting"` (Create's Mechanical Saw — genuinely real, see next point)
+  and `"cutting_board"` (Farmer's Delight's Cutting Board) once jar
+  extraction made clear these are unrelated pieces of equipment.
+- **Shaft is a second real multi-recipe-per-output case, beyond
+  Andesite Alloy.** `create:shaft` can be made via ordinary crafting (2x
+  `create:andesite_alloy` → 8x shaft) *or* via the Mechanical Saw
+  (`create:cutting`, 1x andesite_alloy → 6x shaft) — the saw recipe is
+  more input-efficient (1/6 ≈ 0.167 alloy per shaft vs. 2/8 = 0.25), so
+  `ktoxPreferRecipe`'s heuristic correctly prefers it with no explicit
+  `priority` needed, a good real-world validation of that preference
+  logic beyond the Andesite Alloy case it was originally built for.
+
+**Known rough edges flagged for review, not silently resolved:**
+- Vanilla-only recipes (ore smelting, food smoking, vanilla crafting-
+  table tools/blocks) are still not jar-verifiable — no installed mod
+  ships the vanilla game's own recipe data, only mods' own additions.
+  The small hand-curated vanilla block in `resource-tree.lua` remains
+  general-knowledge-sourced, same confidence level as `v2` above.
+- `create:item_vault`'s "wooden barrel" ingredient and a couple of
+  CC:Tweaked recipes' "glass pane" ingredient resolved to
+  `minecraft:barrel`/`create:tiled_glass_pane` respectively via the
+  manual-override/tag-fallback path above, since vanilla's own
+  contribution to those shared tags isn't visible without the vanilla
+  jar — plausible, not verified.
+- `computercraft:wired_modem` has two real recipes: craft from scratch,
+  or break a `wired_modem_full` back down into one. The efficiency
+  heuristic currently prefers the down-conversion (1 input → 1 output)
+  as "the" way to make a modem, which is legitimate but may not be the
+  intended default — add an explicit `priority` in `resource-tree.lua`
+  if the from-scratch recipe should win instead.
+- A handful of CreateFood ingredients (peanut butter, cooked eggplant,
+  popcorn, tortilla chips, coffee beans, a few spice items) only
+  resolve, in CreateFood's own tag data, to items from OTHER uninstalled
+  food mods (croptopia, hearthandharvest, expandeddelight) — CreateFood
+  apparently expects one of those to also be installed to supply its own
+  concrete item. Excluded rather than guessed at; the handful of recipes
+  needing them are missing from the tree as a result.
+
 **4. Job-types registry** — explicitly skipped as a separate file (per
 discussion: optional, derivable from the union of job types appearing in
 configs 1/2/3 — no need for a fourth source of truth).
@@ -595,7 +733,7 @@ secondary over rednet — same dispatcher either way:
 
 - `list [--stocked|--craftable|--unavailable] [substring]` — aggregate
   counts across the storage pool; classify each item as stocked (count >
-  0), craftable (not stocked, but a direct `resource-tree.json` conversion
+  0), craftable (not stocked, but a direct `resource-tree.lua` conversion
   exists whose inputs *are* stocked), or unavailable (neither).
 - `pull <name> <qty>` — straight withdrawal from the pool into the
   pickup vault via `pullItems`, no job logic involved.

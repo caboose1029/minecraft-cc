@@ -75,7 +75,14 @@
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "slicer" }
+      "job": { "type": "cutting" }
+    }
+  },
+  "create:item_vault_18": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "cutting_board" }
     }
   },
   "create:item_vault_14": {

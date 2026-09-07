@@ -16,7 +16,7 @@ function main(args)
         fs.makeDir(dirs[d])
         d = ktox_plusAssign(d, 1)
     end
-    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "lib/Span.lua", "lib/Chest.lua", "lib/Shape.lua", "lib/Redstone.lua", "lib/Inventory.lua", "lib/Config.lua", "lib/Executor.lua", "lib/RoleCheck.lua", "lib/Planner.lua", "lib/PassiveFeeder.lua", "lib/Farm.lua", "lib/Cli.lua", "common/Monitor.lua", "common/Peripheral.lua", "common/Rednet.lua", "common/Parallel.lua", "common/Role.lua", "config/peripherals.example.json", "config/job-types.json", "config/resource-tree.json", "Digsite.lua", "ExcavatePro.lua", "DiamondFinder.lua", "TestMonitor.lua", "TestConfig.lua", "Terminal.lua", "Head.lua", "Secondary.lua", "Crafter.lua", "TerminalSetup.lua", "GhFetch.lua"}
+    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "lib/Span.lua", "lib/Chest.lua", "lib/Shape.lua", "lib/Redstone.lua", "lib/Inventory.lua", "lib/Config.lua", "lib/Executor.lua", "lib/RoleCheck.lua", "lib/Planner.lua", "lib/PassiveFeeder.lua", "lib/Farm.lua", "lib/Cli.lua", "common/Monitor.lua", "common/Peripheral.lua", "common/Rednet.lua", "common/Parallel.lua", "common/Role.lua", "config/peripherals.example.json", "config/job-types.lua", "config/resource-tree.lua", "Digsite.lua", "ExcavatePro.lua", "DiamondFinder.lua", "TestMonitor.lua", "TestConfig.lua", "Terminal.lua", "Head.lua", "Secondary.lua", "Crafter.lua", "TerminalSetup.lua", "GhFetch.lua"}
     local i = 1
     local failures = 0
     while i <= #(files) do

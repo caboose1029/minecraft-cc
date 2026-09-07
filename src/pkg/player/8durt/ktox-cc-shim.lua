@@ -366,6 +366,34 @@ local function ktoxReadJSONFile(path)
     return parsed
 end
 
+-- job-types.json/resource-tree.json moved from JSON to hand-authored Lua
+-- data files (config/job-types.lua, config/resource-tree.lua) once their
+-- content grew into the hundreds of entries: textutils.unserializeJSON is
+-- a hand-written Lua parser walking the text byte by byte, while a plain
+-- `return { ... }` Lua file is loaded by Lua's native chunk compiler —
+-- much cheaper at this size, and there's no "too long without yielding"
+-- risk from parsing one huge JSON blob synchronously. peripherals.json
+-- stays JSON since it's the one file players actually hand-edit — a
+-- format a player edits by hand should stay JSON; a data file this repo
+-- generates and ghfetch overwrites wholesale has no such reason to.
+-- Cached the same way and for the same reason as ktoxReadJSONFile above.
+local ktoxLuaDataCache = {}
+
+local function ktoxReadLuaDataFile(path)
+    if ktoxLuaDataCache[path] ~= nil then
+        return ktoxLuaDataCache[path]
+    end
+    if not fs.exists(path) then
+        return nil
+    end
+    local loaded = dofile(path)
+    if loaded == nil then
+        return nil
+    end
+    ktoxLuaDataCache[path] = loaded
+    return loaded
+end
+
 -- Comma-joined peripheral names whose job.type == "storage". Empty
 -- string if the config file is missing or none are configured.
 function ktoxConfigStorageVaultNames()
@@ -487,7 +515,7 @@ end
 -- correctness (it can't account for processing time, power cost, or
 -- anything else "efficient" might mean to a given recipe).
 function ktoxConfigProducesLookup(outputName)
-    local tree = ktoxReadJSONFile("config/resource-tree.json")
+    local tree = ktoxReadLuaDataFile("config/resource-tree.lua")
     if tree == nil or tree.recipes == nil then
         return "MISSING"
     end
@@ -517,7 +545,7 @@ end
 -- config/job-types.json's optional "kind" field. Defaults to "machine"
 -- when absent (every job type before crafty turtles existed).
 function ktoxConfigJobKind(jobType)
-    local config = ktoxReadJSONFile("config/job-types.json")
+    local config = ktoxReadLuaDataFile("config/job-types.lua")
     if config ~= nil and config[jobType] ~= nil and config[jobType].kind ~= nil then
         return config[jobType].kind
     end
@@ -533,7 +561,7 @@ end
 -- above): "jobType|item1,low1,high1;item2,low2,high2". Newline-joined,
 -- one row per farm. Empty string if none configured.
 function ktoxConfigAllFarms()
-    local config = ktoxReadJSONFile("config/job-types.json")
+    local config = ktoxReadLuaDataFile("config/job-types.lua")
     if config == nil then
         return ""
     end
@@ -630,7 +658,7 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
         end
     end
 
-    local tree = ktoxReadJSONFile("config/resource-tree.json")
+    local tree = ktoxReadLuaDataFile("config/resource-tree.lua")
     local recipeFor = {}
     if tree ~= nil and tree.recipes ~= nil then
         for _, recipe in pairs(tree.recipes) do
@@ -684,7 +712,7 @@ end
 -- Kotlin falls back to a sensible default in that case (see
 -- lib/Executor.kt's DEFAULT_JOB_TIMEOUT_SECONDS).
 function ktoxConfigJobTimeoutSeconds(jobType)
-    local config = ktoxReadJSONFile("config/job-types.json")
+    local config = ktoxReadLuaDataFile("config/job-types.lua")
     if config ~= nil and config[jobType] ~= nil and config[jobType].timeoutSeconds ~= nil then
         return config[jobType].timeoutSeconds
     end
