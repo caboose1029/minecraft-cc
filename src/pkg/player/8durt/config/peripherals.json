@@ -29,6 +29,7 @@
       "job": { "type": "cutting" }
     }
   },
+  "create:item_vault_8": { "type": "vault", "job": { "type": "storage" } },
   "create:item_vault_9": { "type": "vault", "job": { "type": "storage" } },
   "create:item_vault_10": {
     "type": "vault",
