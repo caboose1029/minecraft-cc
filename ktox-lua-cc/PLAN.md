@@ -27,11 +27,17 @@ even though `craft` could actually produce it. Left as-is for now
 status glance, not a plan preview — worth revisiting if that mismatch
 turns out to confuse people in practice.
 
+**Built (phase 3):** a touch dashboard UI (see "Dashboard UI" below) —
+superseded the plan that a monitor would only ever be a read-only
+dashboard (that assumption is gone; see that section for why). Reason it
+got prioritized: the CLI's `list` output has no scrollback on a real CC
+terminal, so browsing more than a screenful of items was genuinely
+unusable, not just unpolished — reported directly from in-game use.
+
 **Explicitly out of scope for this pass:** factory-floor load balancing
 (problem #3b, config-driven stock-percentage preferences — deferred entire
-problem), monitor touch UI (CLI supersedes it for now; monitors would be
-read-only dashboards if built later, never interactive), concurrent push/
-pull handling, the GraphQL/web dashboard idea (someday-later).
+problem), concurrent push/pull handling, the GraphQL/web dashboard idea
+(someday-later).
 
 ## Terminal roles
 
@@ -874,6 +880,121 @@ string that ultimately originates from a human typing at a live prompt
 (as opposed to internally-generated, machine-formatted strings) if a
 similar hang gets reported elsewhere.
 
+## Dashboard UI
+
+Phase 3 (see "Scope" above). A touch-driven UI (`lib/Dashboard.kt`) that
+replaces the plain `read()` prompt as both `HeadTerminal`'s and
+`SecondaryTerminal`'s local-input step — everything past that step
+(`runCliCommand`, or rednet-forward-and-wait for a secondary) is
+unchanged, because the dashboard's only job is to resolve taps into the
+exact same command strings a typed command would have produced
+(`"pull minecraft:iron_ingot 5 --location=workshop"`,
+`"craft minecraft:copper_sheet 3 --fetch=false"`, ...). The CLI itself
+isn't gone — `runCliCommand` still exists, still works if typed by hand
+(e.g. for scripting or debugging), the dashboard is just a second way to
+produce the same input.
+
+**Why this got built:** the CLI's `list` has no scrollback on a real CC
+terminal — a long unfiltered list just ran off the top of the screen
+with no way back, reported directly from in-game use as a real usability
+problem, not a cosmetic one. `list`'s own tail-of-6 cap (see "CLI" above)
+is a stopgap, not the fix; a real paginated, tappable UI is.
+
+**Display backend — Monitor peripheral or this computer's own term,
+auto-detected (`common/Display.kt` / `ktox-cc-shim.lua`'s `ktoxDisplay*`
+functions):** a Monitor peripheral if one's attached (the turtle-mounted
+case), otherwise this computer's own term — the only option for a pocket
+computer, which can't carry a Monitor peripheral at all, so this is the
+only way "looks good on a monitor" and "looks good on a pocket computer"
+can both hold at once. CC:Tweaked keeps a wrapped monitor
+API-compatible with `term` (confirmed by this project's own earlier
+`ktoxMonitorDrawButton`, which already called `m.setCursorPos`/`write`/
+`setBackgroundColor`/`setTextColor`/`getSize` — the exact method names
+`term` exposes), so the backend is picked ONCE at init and every drawing
+primitive after that just calls through whichever handle was chosen — no
+per-backend branching past init, except which touch event to wait for
+(`monitor_touch` vs `mouse_click`).
+
+**This reverses an earlier assumption, not just adds a feature:**
+"Vaults" above used to say a turtle targeting its own inventory as a
+named `pushItems`/`pullItems` peripheral wasn't reliably supported by
+CC:Tweaked, and routed around it (the pickup vault existing as an
+ordinary vault block instead). That was never actually verified against
+real hardware — an untested assumption presented with more confidence
+than it deserved. Per direction, it's now treated as working; nothing in
+this feature would make sense otherwise (a turtle-mounted monitor and a
+pocket computer both imply the terminal itself may be a turtle with its
+own inventory, addressed exactly like any other peripheral).
+
+**Screens (`DashboardState.mode`):**
+- **`"browse"`** — three tabs (Stocked / Craftable / Uncraftable, mapped
+  onto the same `stocked`/`craftable`/`unavailable` status `list` already
+  used), a paginated item list sized to the *actual* display height
+  (`getSize()`, never hardcoded — a Monitor and a pocket computer's own
+  screen are not the same size, and neither is guessed at), Prev/Next
+  paging. Tapping a row moves to `"detail"` for that item.
+- **`"detail"`** — the selected item's name/status/qty, a Fetch button
+  (only shown for a `stocked` item — nothing to pull otherwise), a Craft
+  button, a "fetch after craft" checkbox (maps directly onto `craft`'s
+  existing `--fetch=false`), a quantity field (tap to edit), and a
+  location selector cycling through `peripherals.json`'s named pickup
+  locations plus `"(auto)"` (the existing self-then-default resolution —
+  see "Vaults"/"CLI" above). Fetch/Craft only fire while the typed
+  quantity is a valid positive number; otherwise the tap is a no-op
+  rather than sending a malformed command.
+- **`"keypad"`** — on-screen digit entry (0-9, backspace, OK) for the
+  quantity field. **Not physical-keyboard-driven, on purpose:** a Monitor
+  block doesn't open a GUI the way a Computer/Turtle/Pocket screen does
+  when you look at it — right-clicking a monitor only ever fires
+  `monitor_touch`, it never captures keyboard focus — so keyboard text
+  entry simply isn't available on that backend at all. Tap-driven entry
+  is the one mechanism that works identically on both display backends,
+  so that's what both use, not just the monitor one.
+
+**State is an immutable data class, deliberately not mutated in place.**
+`DashboardState` is always constructed fresh at every return site, never
+via `.copy()` (unconfirmed whether that ktox-transpiles correctly — see
+AGENTS.md's documented gaps around Kotlin-generated methods generally).
+Every screen's rows/rects are recomputed from `(tab, page)` through the
+same helper functions used by BOTH rendering and touch hit-testing
+(`tabRect`, `itemRowRect`, `detailFetchButtonRect`, `keypadKeyRect`,
+...), rather than cached anywhere in `DashboardState` — so drawing and
+hit-testing can never disagree about what's currently on screen, and
+nothing needs invalidating when the pool changes between renders.
+
+**`showDashboardResult()`** — after `runDashboardLoop()` returns a
+command and the caller runs it, the result needs to actually be shown
+somewhere a monitor-driven player would see it (a plain `println` only
+reaches this computer's own term, not the monitor they were just tapping
+on). Shows the one-line result (every `pull`/`craft` response actually
+is one line) and waits for a dismiss tap before the caller loops back to
+a fresh dashboard.
+
+**Verification status:** `lib/Dashboard.kt`'s state-machine/hit-testing
+logic has real CraftOS-PC coverage — `TestDashboard.kt`
+(`scripts/validate.sh TestDashboard.lua`) drives it with synthetic
+`Touch` values against real `peripherals.json`/`resource-tree.lua` data
+and asserts on the resulting state/command strings (prints `"FAIL: ..."`
+on a mismatch). This caught two real bugs before they'd have surfaced
+in-game: two more hits of the already-documented ktox bracket-escaping
+quirk (checkbox labels, a debug `println`), and an off-by-one in the
+location-selector's cycle (`nextLocationIndex` mapped "auto" to `0`
+instead of `1` — happened to still "work" since `0` fell through the
+same "invalid index, treat as auto" guard as `-1`, but meant tapping the
+location field from auto was a silent no-op instead of actually
+selecting the first location). What this does NOT cover — genuinely
+unverified, see "Known open items" — is anything about real touch input
+or rendering in an actual Minecraft client: whether `monitor_touch`/
+`mouse_click` actually fire the way this assumes, whether a Monitor and
+a term render `setBackgroundColor`/`setCursorPos` consistently between
+the two backends, and the interaction between the dashboard's touch wait
+and `HeadTerminal`'s `parallel.waitForAny` (folded into that already-
+unverified path, not newly proven by anything here). Headless CraftOS-PC
+has no modem, so `HeadTerminal`/`SecondaryTerminal`'s own entry points
+can't reach the dashboard loop at all in that environment — confirmed
+they still load and hit their existing pre-dashboard guard clauses
+cleanly, nothing more.
+
 ## Generic peripheral-call shim
 
 Built after touching a second concrete peripheral shape (inventory calls),
@@ -933,18 +1054,33 @@ does.
 
 ## Known open items (not blocking phase 1, listed so they aren't lost)
 
-- **Head/secondary rednet + `parallel.waitForAny` is unverified in-game.**
-  Implemented (`programs/HeadTerminal.kt`/`SecondaryTerminal.kt`, `common/Rednet.kt`,
+- **Head/secondary rednet + `parallel.waitForAny` is unverified in-game
+  — now also covers the dashboard's touch-event wait.** Implemented
+  (`programs/HeadTerminal.kt`/`SecondaryTerminal.kt`, `common/Rednet.kt`,
   `common/Parallel.kt`) and confirmed to load/compile/run its no-modem
   and no-head-found fallback paths cleanly via CraftOS-PC, but the actual
   multi-computer behavior — role collision detection finding a real
   second head, a secondary's command actually reaching the head and a
-  result coming back, `parallel.waitForAny` genuinely multiplexing local
-  `read()` against `rednet.receive` — has never been exercised, since
+  result coming back, `parallel.waitForAny` genuinely multiplexing the
+  dashboard's touch wait (`displayWaitTouch`, replacing what used to be
+  `read()`) against `rednet.receive` — has never been exercised, since
   that needs two real computers with real modems and there's no headless
   emulation for either. **Test this first**, before relying on any
   multi-terminal setup: boot a head, boot a secondary, confirm a command
   round-trips, then boot a second head and confirm it refuses to start.
+- **The dashboard UI's display/touch layer is unverified in-game** (see
+  "Dashboard UI" above for what IS covered — the pure state-machine
+  logic, via `TestDashboard.kt`). Specifically untested: that
+  `monitor_touch`/`mouse_click` actually fire for a real turtle/pocket
+  computer/monitor the way `ktoxDisplayWaitTouch` assumes; that a
+  wrapped Monitor and this computer's own `term` render
+  `setBackgroundColor`/`setCursorPos`/`getSize` consistently enough that
+  the same drawing code genuinely looks right on both (assumed from
+  CC:Tweaked's monitor/term API compatibility, not independently
+  confirmed); and the reversed pickup-vault assumption itself — that a
+  turtle's own inventory, addressed as an ordinary named
+  `pushItems`/`pullItems` peripheral, actually works (see "Vaults" and
+  the entry below on `ktoxSelfPeripheralName`, same underlying question).
 - **Crafter role is equally unverified, plus two extra unknowns beyond
   the rednet/parallel question above:** the exact `turtle.craft()`
   crafting-grid slot mapping (assumed 1, 2, 3, 5, 6, 7, 9, 10, 11), and
