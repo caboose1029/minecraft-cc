@@ -6,20 +6,6 @@
       "job": { "type": "deploying_andesite" }
     }
   },
-  "create:item_vault_2": {
-    "type": "vault",
-    "job": {
-      "type": "feeder",
-      "job": { "type": "deploying_brass" }
-    }
-  },
-  "create:item_vault_3": {
-    "type": "vault",
-    "job": {
-      "type": "feeder",
-      "job": { "type": "deploying_copper" }
-    }
-  },
   "create:item_vault_5": { "type": "vault", "job": { "type": "storage" } },
   "create:item_vault_6": { "type": "vault", "job": { "type": "storage" } },
   "create:item_vault_7": {
