@@ -61,6 +61,7 @@
   "create:item_vault_14": { "type": "vault", "job": { "type": "pickup", "name": "main", "default": true } },
   "create:item_vault_15": { "type": "vault", "job": { "type": "storage" } },
   "turtle_0": { "type": "vault", "job": { "type": "pickup", "name": "head" } },
+  "turtle_1": { "type": "crafter", "job": { "type": "crafter" } },
   "computercraft:redstone_relay_28": {
     "type": "relay",
     "connections": {

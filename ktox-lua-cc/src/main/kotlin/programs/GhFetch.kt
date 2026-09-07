@@ -66,6 +66,12 @@ fun main(args: Array<String>) {
         "common/Parallel.lua",
         "common/Role.lua",
         "config/peripherals.example.json",
+        // TEMPORARY, testing only - peripherals.json is normally
+        // player-owned and ghfetch must never overwrite it (see
+        // PLAN.md's "Configs" section); syncing the real file here for
+        // now while actively iterating on it across machines. Revert
+        // (delete this line) once testing settles down.
+        "config/peripherals.json",
         "config/job-types.lua",
         "config/resource-tree.lua",
         "Digsite.lua",

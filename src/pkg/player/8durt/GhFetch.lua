@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "GhFetch.kt", {["1-9"]=1,["10"]=25,["11"]=26,["12"]=27,["13"]=29,["14"]=30,["15"]=31,["16"]=32,["17-18"]=33,["19"]=41,["20"]=84,["21"]=85,["22"]=86,["23"]=87,["24"]=88,["25"]=89,["26"]=90,["27"]=91,["28-29"]=92,["30"]=94,["31-32"]=95,["33-34"]=97,["35"]=100,["36-37"]=101,["38-41"]=103}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "GhFetch.kt", {["1-9"]=1,["10"]=25,["11"]=26,["12"]=27,["13"]=29,["14"]=30,["15"]=31,["16"]=32,["17-18"]=33,["19"]=41,["20"]=90,["21"]=91,["22"]=92,["23"]=93,["24"]=94,["25"]=95,["26"]=96,["27"]=97,["28-29"]=98,["30"]=100,["31-32"]=101,["33-34"]=103,["35"]=106,["36-37"]=107,["38-41"]=109}, "programs")
 
 DEFAULT_BRANCH = "feat/ktox-lua-storage"
 
@@ -16,7 +16,7 @@ function main(args)
         fs.makeDir(dirs[d])
         d = ktox_plusAssign(d, 1)
     end
-    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "lib/Span.lua", "lib/Chest.lua", "lib/Shape.lua", "lib/Redstone.lua", "lib/Inventory.lua", "lib/Config.lua", "lib/Executor.lua", "lib/RoleCheck.lua", "lib/Planner.lua", "lib/PassiveFeeder.lua", "lib/Farm.lua", "lib/Cli.lua", "lib/Colors.lua", "lib/Display.lua", "lib/Dashboard.lua", "common/Monitor.lua", "common/Display.lua", "common/Peripheral.lua", "common/Rednet.lua", "common/Parallel.lua", "common/Role.lua", "config/peripherals.example.json", "config/job-types.lua", "config/resource-tree.lua", "Digsite.lua", "ExcavatePro.lua", "DiamondFinder.lua", "TestMonitor.lua", "TestConfig.lua", "TestDashboard.lua", "HeadTerminal.lua", "SecondaryTerminal.lua", "Crafter.lua", "TerminalSetup.lua", "GhFetch.lua"}
+    local files = {"ktox-lib.lua", "ktox-cc-shim.lua", "startup.lua", "lib/Movement.lua", "lib/Position.lua", "lib/Span.lua", "lib/Chest.lua", "lib/Shape.lua", "lib/Redstone.lua", "lib/Inventory.lua", "lib/Config.lua", "lib/Executor.lua", "lib/RoleCheck.lua", "lib/Planner.lua", "lib/PassiveFeeder.lua", "lib/Farm.lua", "lib/Cli.lua", "lib/Colors.lua", "lib/Display.lua", "lib/Dashboard.lua", "common/Monitor.lua", "common/Display.lua", "common/Peripheral.lua", "common/Rednet.lua", "common/Parallel.lua", "common/Role.lua", "config/peripherals.example.json", "config/peripherals.json", "config/job-types.lua", "config/resource-tree.lua", "Digsite.lua", "ExcavatePro.lua", "DiamondFinder.lua", "TestMonitor.lua", "TestConfig.lua", "TestDashboard.lua", "HeadTerminal.lua", "SecondaryTerminal.lua", "Crafter.lua", "TerminalSetup.lua", "GhFetch.lua"}
     local i = 1
     local failures = 0
     while i <= #(files) do

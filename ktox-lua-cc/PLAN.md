@@ -313,6 +313,13 @@ player-owned) — recipes are objective facts about the modpack, not
 per-world configuration, so keeping them in sync centrally is strictly
 better than asking every player to hand-maintain their own copy.
 
+**TEMPORARY exception, testing only:** `GhFetch.kt`'s `files` array
+currently also fetches the real `config/peripherals.json` (not just the
+`.example.json` template), so it doesn't otherwise contradict this rule
+silently. Revert once active testing across machines settles down —
+`peripherals.json` reverts to player-owned/never-overwritten like every
+other world before this.
+
 **1. `peripherals.json`** — maps peripheral name → type/job. Example
 shape:
 
