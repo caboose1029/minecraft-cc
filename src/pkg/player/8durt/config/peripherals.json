@@ -1,37 +1,36 @@
 {
-  "create:item_vault_0": {
+  "create:item_vault_1": {
     "type": "vault",
     "job": {
       "type": "feeder",
       "job": { "type": "deploying_andesite" }
     }
   },
-  "create:item_vault_1": {
+  "create:item_vault_2": {
     "type": "vault",
     "job": {
       "type": "feeder",
       "job": { "type": "deploying_brass" }
     }
   },
-  "create:item_vault_2": {
+  "create:item_vault_3": {
     "type": "vault",
     "job": {
       "type": "feeder",
       "job": { "type": "deploying_copper" }
     }
   },
-  "create:item_vault_4": { "type": "vault", "job": { "type": "storage" } },
   "create:item_vault_5": { "type": "vault", "job": { "type": "storage" } },
-  "create:item_vault_6": {
+  "create:item_vault_6": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_7": {
     "type": "vault",
     "job": {
       "type": "feeder",
       "job": { "type": "cutting" }
     }
   },
-  "create:item_vault_7": { "type": "vault", "job": { "type": "storage" } },
-  "create:item_vault_8": { "type": "vault", "job": { "type": "storage" } },
-  "create:item_vault_9": {
+  "create:item_vault_9": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_10": {
     "type": "vault",
     "job": {
       "type": "passive",
@@ -40,7 +39,7 @@
       "highWatermark": 64
     }
   },
-  "create:item_vault_10": {
+  "create:item_vault_11": {
     "type": "vault",
     "job": {
       "type": "passive",
@@ -49,7 +48,7 @@
       "highWatermark": 64
     }
   },
-  "create:item_vault_11": {
+  "create:item_vault_12": {
     "type": "vault",
     "job": {
       "type": "passive",
@@ -58,8 +57,8 @@
       "highWatermark": 64
     }
   },
-  "create:item_vault_13": { "type": "vault", "job": { "type": "pickup" } },
-  "create:item_vault_14": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_14": { "type": "vault", "job": { "type": "pickup" } },
+  "create:item_vault_15": { "type": "vault", "job": { "type": "storage" } },
   "computercraft:redstone_relay_28": {
     "type": "relay",
     "connections": {
