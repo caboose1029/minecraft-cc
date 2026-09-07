@@ -10,11 +10,9 @@ import lib.detailQtyRect
 import lib.freshDashboardState
 import lib.handleBrowseTouch
 import lib.handleDetailTouch
-import lib.handleKeypadTouch
 import lib.detailFetchCheckboxRect
 import lib.detailLocationRect
 import lib.itemRowRect
-import lib.keypadKeyRect
 import lib.tabRect
 
 // Exercises the dashboard UI's pure state-machine logic (lib/Dashboard.kt)
@@ -23,8 +21,11 @@ import lib.tabRect
 // (scripts/validate.sh TestDashboard.lua). Confirms the render/hit-test
 // coordinate math agrees with itself and that taps resolve to the
 // expected state transitions and command strings. Does NOT confirm real
-// monitor_touch/mouse_click events actually fire the way this assumes -
-// see PLAN.md "Known open items", that part is still unverified in-game.
+// mouse_click events actually fire the way this assumes, or exercise
+// promptForQuantity's real keyboard read at all (CraftOS-PC's headless
+// --script mode can't feed simulated keystrokes - see common/Term.kt's
+// own note on this) - see PLAN.md "Known open items", both still
+// unverified in-game.
 //
 // Usage: TestDashboard (no args)
 
@@ -71,26 +72,15 @@ fun main() {
         println("FAIL: back touch should return to browse mode, got '${afterBack.mode}'")
     }
 
-    // Keypad path: tap the qty field, tap digit "2", tap OK.
+    // Qty field tap is a pure transition to "qtyentry" - runDashboardLoop
+    // is what actually calls the blocking promptForQuantity() for that
+    // mode, not handleDetailTouch, precisely so this stays testable here
+    // without ever touching real keyboard I/O.
     val qtyFieldRect = detailQtyRect(size)
     val afterQtyTap = handleDetailTouch(afterRow, Touch(qtyFieldRect.x, qtyFieldRect.y), size)
     println("after qty field touch: mode=${afterQtyTap.mode}")
-    if (afterQtyTap.mode != "keypad") {
-        println("FAIL: qty field touch should enter keypad mode, got '${afterQtyTap.mode}'")
-    }
-
-    val digitRect = keypadKeyRect(size, 3, 2) // "2"
-    val afterDigit = handleKeypadTouch(afterQtyTap, Touch(digitRect.x, digitRect.y), size)
-    println("after digit '2' touch: qtyText=${afterDigit.qtyText}")
-    if (afterDigit.qtyText != "12") {
-        println("FAIL: expected qtyText '12' (default '1' + tapped '2'), got '${afterDigit.qtyText}'")
-    }
-
-    val okRect = keypadKeyRect(size, 4, 3) // "OK"
-    val afterOk = handleKeypadTouch(afterDigit, Touch(okRect.x, okRect.y), size)
-    println("after OK touch: mode=${afterOk.mode} qtyText=${afterOk.qtyText}")
-    if (afterOk.mode != "detail") {
-        println("FAIL: OK touch should return to detail mode, got '${afterOk.mode}'")
+    if (afterQtyTap.mode != "qtyentry") {
+        println("FAIL: qty field touch should enter qtyentry mode, got '${afterQtyTap.mode}'")
     }
 
     // The Fetch button only appears for a "stocked" item, which headless

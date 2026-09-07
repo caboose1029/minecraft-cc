@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestDashboard.kt", {["1-8"]=1,["9"]=32,["10"]=33,["11"]=35,["12"]=36,["13"]=42,["14"]=43,["15"]=44,["16"]=45,["17-18"]=46,["19"]=49,["20"]=50,["21"]=51,["22"]=52,["23-24"]=53,["25"]=55,["26-27"]=56,["28"]=59,["29"]=60,["30"]=61,["31"]=62,["32"]=63,["33-34"]=64,["35"]=67,["36"]=68,["37"]=69,["38"]=70,["39-40"]=71,["41"]=75,["42"]=76,["43"]=77,["44"]=78,["45-46"]=79,["47"]=82,["48"]=83,["49"]=84,["50"]=85,["51-52"]=86,["53"]=89,["54"]=90,["55"]=91,["56"]=92,["57-58"]=93,["59"]=101,["60"]=102,["61"]=103,["62"]=104,["63"]=105,["64-65"]=106,["66"]=111,["67"]=112,["68"]=113,["69"]=114,["70-71"]=115,["72"]=117,["73"]=118,["74"]=119,["75"]=120,["76-77"]=121,["78"]=126,["79"]=127,["80"]=128,["81"]=129,["82"]=130,["83"]=131,["84-85"]=132,["86"]=137,["87"]=138,["88-89"]=139,["90-95"]=142}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestDashboard.kt", {["1-8"]=1,["9"]=33,["10"]=34,["11"]=36,["12"]=37,["13"]=43,["14"]=44,["15"]=45,["16"]=46,["17-18"]=47,["19"]=50,["20"]=51,["21"]=52,["22"]=53,["23-24"]=54,["25"]=56,["26-27"]=57,["28"]=60,["29"]=61,["30"]=62,["31"]=63,["32"]=64,["33-34"]=65,["35"]=68,["36"]=69,["37"]=70,["38"]=71,["39-40"]=72,["41"]=79,["42"]=80,["43"]=81,["44"]=82,["45-46"]=83,["47"]=91,["48"]=92,["49"]=93,["50"]=94,["51"]=95,["52-53"]=96,["54"]=101,["55"]=102,["56"]=103,["57"]=104,["58-59"]=105,["60"]=107,["61"]=108,["62"]=109,["63"]=110,["64-65"]=111,["66"]=116,["67"]=117,["68"]=118,["69"]=119,["70"]=120,["71"]=121,["72-73"]=122,["74"]=127,["75"]=128,["76-77"]=129,["78-83"]=132}, "programs")
 ktox_require("lib/Dashboard")
 ktox_require("lib/Display")
 
@@ -41,20 +41,8 @@ local function main()
     local qtyFieldRect = detailQtyRect(size)
     local afterQtyTap = handleDetailTouch(afterRow, Touch:new(qtyFieldRect.x, qtyFieldRect.y), size)
     println("after qty field touch: mode=" .. tostring(afterQtyTap.mode))
-    if afterQtyTap.mode ~= "keypad" then
-        println("FAIL: qty field touch should enter keypad mode, got \'" .. tostring(afterQtyTap.mode) .. "\'")
-    end
-    local digitRect = keypadKeyRect(size, 3, 2)
-    local afterDigit = handleKeypadTouch(afterQtyTap, Touch:new(digitRect.x, digitRect.y), size)
-    println("after digit \'2\' touch: qtyText=" .. tostring(afterDigit.qtyText))
-    if afterDigit.qtyText ~= "12" then
-        println("FAIL: expected qtyText \'12\' (default \'1\' + tapped \'2\'), got \'" .. tostring(afterDigit.qtyText) .. "\'")
-    end
-    local okRect = keypadKeyRect(size, 4, 3)
-    local afterOk = handleKeypadTouch(afterDigit, Touch:new(okRect.x, okRect.y), size)
-    println("after OK touch: mode=" .. tostring(afterOk.mode) .. " qtyText=" .. tostring(afterOk.qtyText))
-    if afterOk.mode ~= "detail" then
-        println("FAIL: OK touch should return to detail mode, got \'" .. tostring(afterOk.mode) .. "\'")
+    if afterQtyTap.mode ~= "qtyentry" then
+        println("FAIL: qty field touch should enter qtyentry mode, got \'" .. tostring(afterQtyTap.mode) .. "\'")
     end
     local stockedDetail = DashboardState:new("detail", "stocked", 1, "minecraft:iron_ingot", "stocked", "64", "3", true, -1, "")
     local fetchRect = detailFetchButtonRect(size)

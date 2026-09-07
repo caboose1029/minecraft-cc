@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Dashboard.kt", {["1-135"]=1,["136-140"]=62,["141"]=70,["142"]=71,["143"]=72,["144"]=73,["145"]=74,["146"]=75,["147-148"]=76,["149-153"]=78,["154"]=91,["155"]=92,["156"]=93,["157"]=94,["158-166"]=95,["167"]=102,["168"]=103,["169"]=104,["170"]=105,["171-172"]=106,["173"]=108,["174-175"]=109,["176-182"]=111,["183-188"]=115,["189"]=119,["190-191"]=120,["192"]=122,["193-194"]=123,["195-200"]=125,["201"]=129,["202-203"]=130,["204"]=132,["205-206"]=133,["207-212"]=135,["213"]=139,["214-215"]=140,["216"]=142,["217-218"]=143,["219-224"]=145,["225"]=149,["226"]=150,["227"]=151,["228-229"]=152,["230-236"]=154,["237-242"]=158,["243-249"]=162,["250"]=166,["251-252"]=167,["253"]=169,["254"]=170,["255"]=171,["256-257"]=172,["258-263"]=174,["264"]=181,["265"]=182,["266-267"]=183,["268-272"]=185,["273"]=189,["274"]=190,["275-276"]=191,["277-282"]=193,["283"]=197,["284-285"]=198,["286"]=200,["287"]=201,["288-289"]=202,["290-295"]=204,["296"]=208,["297-298"]=209,["299"]=211,["300"]=212,["301-302"]=213,["303-308"]=215,["309"]=219,["310"]=220,["311-312"]=221,["313"]=223,["314-315"]=224,["316"]=226,["317-318"]=227,["319-323"]=229,["324-329"]=236,["330-335"]=240,["336-341"]=244,["342-347"]=248,["348-353"]=252,["354"]=256,["355-360"]=257,["361-368"]=263,["369-375"]=267,["376"]=271,["377"]=272,["378-379"]=273,["380"]=275,["381-382"]=276,["383-384"]=278,["385"]=280,["386"]=281,["387-388"]=282,["389"]=284,["390-391"]=285,["392-393"]=287,["394"]=289,["395"]=290,["396-397"]=291,["398"]=293,["399-400"]=294,["401-402"]=296,["403"]=298,["404-405"]=299,["406"]=301,["407-408"]=302,["409-414"]=304,["415"]=310,["416"]=311,["417-418"]=312,["419"]=314,["420"]=315,["421-422"]=316,["423-428"]=318,["429"]=322,["430"]=324,["431"]=325,["432"]=326,["433"]=327,["434"]=328,["435-436"]=329,["437"]=331,["438-439"]=332,["440"]=335,["441"]=336,["442"]=337,["443"]=338,["444"]=340,["445"]=341,["446"]=342,["447"]=343,["448"]=344,["449"]=345,["450"]=346,["451"]=347,["452"]=348,["453"]=349,["454"]=350,["455-456"]=351,["457-458"]=353,["459"]=355,["460-461"]=356,["462-463"]=358,["464"]=361,["465"]=362,["466"]=363,["467-468"]=364,["469"]=366,["470-471"]=367,["472-477"]=369,["478"]=373,["479"]=375,["480"]=376,["481"]=377,["482"]=383,["483"]=384,["484"]=386,["485"]=387,["486"]=389,["487"]=393,["488"]=394,["489-490"]=395,["491"]=397,["492"]=399,["493"]=400,["494-495"]=401,["496"]=403,["497-502"]=404,["503"]=408,["504"]=409,["505"]=411,["506"]=412,["507"]=413,["508"]=414,["509"]=415,["510"]=416,["511"]=417,["512"]=418,["513"]=419,["514"]=420,["515-516"]=421,["517"]=423,["518-519"]=424,["520"]=426,["521-522"]=427,["523-531"]=429,["532"]=436,["533-534"]=437,["535"]=439,["536-537"]=440,["538-545"]=442,["546"]=446,["547"]=447,["548"]=448,["549"]=449,["550-551"]=450,["552-553"]=452,["554"]=455,["555"]=456,["556"]=457,["557"]=458,["558"]=459,["559"]=461,["560-561"]=462,["562"]=464,["563-564"]=465,["565"]=468,["566"]=469,["567"]=470,["568"]=471,["569"]=472,["570"]=473,["571"]=474,["572"]=475,["573"]=476,["574"]=477,["575"]=478,["576"]=479,["577"]=480,["578-579"]=481,["580-581"]=483,["582-584"]=485,["585-586"]=488,["587-594"]=491,["595"]=495,["596"]=496,["597-598"]=497,["599"]=500,["600"]=501,["601-602"]=502,["603"]=505,["604"]=506,["605"]=507,["606-607"]=508,["608"]=511,["609"]=512,["610-611"]=513,["612"]=516,["613"]=517,["614"]=518,["615"]=519,["616"]=520,["617"]=521,["618-620"]=522,["621"]=525,["622"]=526,["623"]=527,["624"]=528,["625-626"]=529,["627"]=531,["628-630"]=532,["631-638"]=536,["639"]=540,["640"]=541,["641"]=542,["642"]=543,["643"]=544,["644"]=545,["645"]=546,["646"]=547,["647"]=548,["648"]=549,["649-650"]=550,["651-652"]=552,["653"]=554,["654"]=555,["655"]=556,["656-657"]=557,["658"]=559,["659-660"]=560,["661-662"]=562,["663"]=564,["664"]=565,["665-666"]=566,["667-668"]=568,["669-670"]=570,["671-672"]=572,["673-674"]=574,["675-677"]=576}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Dashboard.kt", {["1-135"]=1,["136-140"]=73,["141"]=84,["142"]=85,["143"]=86,["144"]=87,["145"]=88,["146-147"]=89,["148"]=91,["149"]=92,["150"]=93,["151-153"]=94,["154-159"]=97,["160"]=105,["161"]=106,["162"]=107,["163"]=108,["164"]=109,["165"]=110,["166-167"]=111,["168"]=113,["169"]=114,["170-171"]=115,["172-176"]=117,["177"]=127,["178"]=128,["179"]=129,["180"]=130,["181-189"]=131,["190"]=138,["191"]=139,["192"]=140,["193"]=141,["194-195"]=142,["196"]=144,["197-198"]=145,["199-205"]=147,["206-211"]=151,["212"]=155,["213-214"]=156,["215"]=158,["216-217"]=159,["218-223"]=161,["224"]=165,["225-226"]=166,["227"]=168,["228-229"]=169,["230-235"]=171,["236"]=175,["237-238"]=176,["239"]=178,["240-241"]=179,["242-247"]=181,["248"]=185,["249"]=186,["250"]=187,["251-252"]=188,["253-259"]=190,["260-265"]=194,["266-272"]=198,["273"]=202,["274-275"]=203,["276"]=205,["277"]=206,["278"]=207,["279-280"]=208,["281-286"]=210,["287"]=217,["288"]=218,["289-290"]=219,["291-295"]=221,["296"]=225,["297"]=226,["298-299"]=227,["300-305"]=229,["306"]=233,["307-308"]=234,["309"]=236,["310"]=237,["311-312"]=238,["313-318"]=240,["319"]=244,["320-321"]=245,["322"]=247,["323"]=248,["324-325"]=249,["326-331"]=251,["332"]=255,["333"]=256,["334-335"]=257,["336"]=259,["337-338"]=260,["339"]=262,["340-341"]=263,["342-346"]=265,["347-352"]=272,["353-358"]=276,["359-364"]=280,["365-370"]=284,["371-376"]=288,["377"]=292,["378-383"]=293,["384"]=299,["385"]=300,["386-387"]=301,["388-393"]=303,["394"]=307,["395"]=309,["396"]=310,["397"]=311,["398"]=312,["399"]=313,["400-401"]=314,["402"]=316,["403-404"]=317,["405"]=320,["406"]=321,["407"]=322,["408"]=323,["409"]=325,["410"]=326,["411"]=327,["412"]=328,["413"]=329,["414"]=330,["415"]=331,["416"]=332,["417"]=333,["418"]=334,["419"]=335,["420-421"]=336,["422-423"]=338,["424"]=340,["425-426"]=341,["427-428"]=343,["429"]=346,["430"]=347,["431"]=348,["432-433"]=349,["434"]=351,["435-436"]=352,["437-442"]=354,["443"]=358,["444"]=360,["445"]=361,["446"]=362,["447"]=368,["448"]=369,["449"]=371,["450"]=372,["451"]=374,["452"]=378,["453"]=379,["454-455"]=380,["456"]=382,["457"]=384,["458"]=385,["459-460"]=386,["461"]=388,["462-469"]=389,["470"]=400,["471-472"]=401,["473-480"]=403,["481"]=407,["482"]=408,["483"]=409,["484"]=410,["485-486"]=411,["487-488"]=413,["489"]=416,["490"]=417,["491"]=418,["492"]=419,["493"]=420,["494"]=422,["495-496"]=423,["497"]=425,["498-499"]=426,["500"]=429,["501"]=430,["502"]=431,["503"]=432,["504"]=433,["505"]=434,["506"]=435,["507"]=436,["508"]=437,["509"]=438,["510"]=439,["511"]=440,["512"]=441,["513-514"]=442,["515-516"]=444,["517-519"]=446,["520-521"]=449,["522-529"]=452,["530"]=456,["531"]=457,["532-533"]=458,["534"]=461,["535"]=462,["536-537"]=463,["538"]=466,["539"]=467,["540"]=468,["541-542"]=469,["543"]=472,["544"]=473,["545-546"]=474,["547"]=477,["548"]=478,["549"]=479,["550"]=480,["551"]=481,["552"]=482,["553-555"]=483,["556"]=486,["557"]=487,["558"]=488,["559"]=489,["560-561"]=490,["562"]=492,["563-565"]=493,["566-568"]=497}, "lib")
 ktox_require("lib/Colors")
 ktox_require("lib/Display")
 
@@ -141,12 +141,35 @@ function runDashboardLoop()
     local state = freshDashboardState()
     displayInit()
     while state.readyCommand == "" do
-        local size = displaySize()
-        renderDashboard(state, size)
-        local touch = displayWaitTouch()
-        state = handleDashboardTouch(state, touch, size)
+        if state.mode == "qtyentry" then
+            local newQty = promptForQuantity(state.qtyText)
+            state = DashboardState:new("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "")
+        else
+            local size = displaySize()
+            renderDashboard(state, size)
+            local touch = displayWaitTouch()
+            state = handleDashboardTouch(state, touch, size)
+        end
     end
     return state.readyCommand
+end
+
+---@param current string
+---@return string
+function promptForQuantity(current)
+    term.clear()
+    term.setCursorPos(1, 1)
+    term.write("Enter quantity (currently " .. tostring(current) .. "):")
+    term.setCursorPos(1, 2)
+    local typed = read()
+    if typed == "" then
+        return current
+    end
+    local parsed = ktox_toDoubleOrNull(typed)
+    if parsed == nil or parsed <= 0.0 then
+        return current
+    end
+    return typed
 end
 
 ---@param message string
@@ -355,60 +378,6 @@ function detailCraftButtonRect(size)
     return Rect:new(fetchRect.x + fetchRect.w, 6, size.width - fetchRect.w, 2)
 end
 
----@param row number
----@return number
-function keypadRowY(row)
-    return 2 + row
-end
-
----@param size DisplaySize
----@param row number
----@param col number
----@return Rect
-function keypadKeyRect(size, row, col)
-    return threeColumnRect(size, col, keypadRowY(row), 1)
-end
-
----@param row number
----@param col number
----@return string
-function keypadKeyLabel(row, col)
-    if row == 1 then
-        if col == 1 then
-            return "7"
-        end
-        if col == 2 then
-            return "8"
-        end
-        return "9"
-    end
-    if row == 2 then
-        if col == 1 then
-            return "4"
-        end
-        if col == 2 then
-            return "5"
-        end
-        return "6"
-    end
-    if row == 3 then
-        if col == 1 then
-            return "1"
-        end
-        if col == 2 then
-            return "2"
-        end
-        return "3"
-    end
-    if col == 1 then
-        return "<-"
-    end
-    if col == 2 then
-        return "0"
-    end
-    return "OK"
-end
-
 ---@param state DashboardState
 ---@param size DisplaySize
 function renderDashboard(state, size)
@@ -416,11 +385,7 @@ function renderDashboard(state, size)
         renderBrowse(state, size)
         return
     end
-    if state.mode == "detail" then
-        renderDetail(state, size)
-        return
-    end
-    renderKeypad(state, size)
+    renderDetail(state, size)
 end
 
 ---@param state DashboardState
@@ -469,7 +434,7 @@ function renderBrowse(state, size)
     if state.page < totalPages then
         displayFillRect(size.width - 5, footerY, 6, 1, COLOR_GRAY, COLOR_WHITE, "Next>")
     end
-    displayFillRect(7, footerY, size.width - 12, 1, COLOR_BLACK, COLOR_LIGHT_GRAY, "Page " .. tostring(state.page) .. "/" .. tostring(totalPages))
+    displayFillRect(7, footerY, size.width - 12, 1, COLOR_BLACK, COLOR_GRAY, "Page " .. tostring(state.page) .. "/" .. tostring(totalPages))
 end
 
 ---@param state DashboardState
@@ -480,7 +445,7 @@ function renderDetail(state, size)
     displayFillRect(backRect.x, backRect.y, backRect.w, backRect.h, COLOR_GRAY, COLOR_WHITE, "<Back")
     displayFillRect(backRect.x + backRect.w + 1, 1, size.width - backRect.w - 1, 1, COLOR_BLACK, COLOR_WHITE, tostring(displayItemName(state.selectedItem)) .. " (" .. tostring(state.selectedCount) .. ")")
     local qtyRect = detailQtyRect(size)
-    displayFillRect(qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h, COLOR_BLACK, COLOR_WHITE, "Qty: " .. tostring(state.qtyText) .. " (tap to edit)")
+    displayFillRect(qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h, COLOR_BLACK, COLOR_WHITE, "Qty: " .. tostring(state.qtyText) .. " (tap to type)")
     local locationRect = detailLocationRect(size)
     displayFillRect(locationRect.x, locationRect.y, locationRect.w, locationRect.h, COLOR_BLACK, COLOR_WHITE, "Location: " .. tostring(locationLabel(state.locationIndex)) .. " (tap to cycle)")
     local checkboxRect = detailFetchCheckboxRect(size)
@@ -498,33 +463,6 @@ function renderDetail(state, size)
 end
 
 ---@param state DashboardState
----@param size DisplaySize
-function renderKeypad(state, size)
-    displayClear()
-    displayFillRect(1, 1, size.width, 1, COLOR_BLACK, COLOR_WHITE, "Enter quantity: " .. tostring(state.qtyText))
-    local row = 1
-    while row <= 4 do
-        local col = 1
-        while col <= 3 do
-            local rect = keypadKeyRect(size, row, col)
-            local bg = COLOR_LIGHT_GRAY
-            local fg = COLOR_BLACK
-            local label = keypadKeyLabel(row, col)
-            if label == "OK" then
-                bg = COLOR_GREEN
-                fg = COLOR_BLACK
-            elseif label == "<-" then
-                bg = COLOR_RED
-                fg = COLOR_WHITE
-            end
-            displayFillRect(rect.x, rect.y, rect.w, rect.h, bg, fg, label)
-            col = ktox_plusAssign(col, 1)
-        end
-        row = ktox_plusAssign(row, 1)
-    end
-end
-
----@param state DashboardState
 ---@param touch Touch
 ---@param size DisplaySize
 ---@return DashboardState
@@ -532,10 +470,7 @@ function handleDashboardTouch(state, touch, size)
     if state.mode == "browse" then
         return handleBrowseTouch(state, touch, size)
     end
-    if state.mode == "detail" then
-        return handleDetailTouch(state, touch, size)
-    end
-    return handleKeypadTouch(state, touch, size)
+    return handleDetailTouch(state, touch, size)
 end
 
 ---@param state DashboardState
@@ -598,7 +533,7 @@ function handleDetailTouch(state, touch, size)
     end
     local qtyRect = detailQtyRect(size)
     if touchInRect(touch, qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h) then
-        return DashboardState:new("keypad", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, "")
+        return DashboardState:new("qtyentry", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, "")
     end
     local locationRect = detailLocationRect(size)
     if touchInRect(touch, locationRect.x, locationRect.y, locationRect.w, locationRect.h) then
@@ -627,50 +562,6 @@ function handleDetailTouch(state, touch, size)
             local command = "craft " .. tostring(state.selectedItem) .. " " .. tostring(state.qtyText) .. tostring(locationFlag(state.locationIndex)) .. tostring(fetchFlag)
             return DashboardState:new("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, command)
         end
-    end
-    return state
-end
-
----@param state DashboardState
----@param touch Touch
----@param size DisplaySize
----@return DashboardState
-function handleKeypadTouch(state, touch, size)
-    local row = 1
-    while row <= 4 do
-        local col = 1
-        while col <= 3 do
-            local rect = keypadKeyRect(size, row, col)
-            if touchInRect(touch, rect.x, rect.y, rect.w, rect.h) then
-                local label = keypadKeyLabel(row, col)
-                if label == "OK" then
-                    local qty = state.qtyText
-                    if qty == "" then
-                        qty = "1"
-                    end
-                    return DashboardState:new("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, qty, state.fetchChecked, state.locationIndex, "")
-                end
-                if label == "<-" then
-                    local qty = state.qtyText
-                    if qty ~= "" then
-                        qty = ktoxDropLastChar(qty)
-                    end
-                    if qty == "" then
-                        qty = "0"
-                    end
-                    return DashboardState:new("keypad", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, qty, state.fetchChecked, state.locationIndex, "")
-                end
-                local qty = state.qtyText
-                if qty == "0" then
-                    qty = label
-                else
-                    qty = tostring(qty) .. tostring(label)
-                end
-                return DashboardState:new("keypad", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, qty, state.fetchChecked, state.locationIndex, "")
-            end
-            col = ktox_plusAssign(col, 1)
-        end
-        row = ktox_plusAssign(row, 1)
     end
     return state
 end

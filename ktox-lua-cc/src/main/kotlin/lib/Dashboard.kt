@@ -2,15 +2,15 @@ package lib
 
 import common.ktoxConfigPickupVaultNames
 import common.ktoxConfigStorageVaultNames
-import common.ktoxDropLastChar
 import common.ktoxListCatalog
+import common.readInput
+import common.termClear
+import common.termSetCursorPos
+import common.termWrite
 import lib.COLOR_BLACK
 import lib.COLOR_BLUE
 import lib.COLOR_GRAY
-import lib.COLOR_GREEN
-import lib.COLOR_LIGHT_GRAY
 import lib.COLOR_LIME
-import lib.COLOR_RED
 import lib.COLOR_WHITE
 import lib.DisplaySize
 import lib.Touch
@@ -23,17 +23,28 @@ import lib.touchInRect
 
 // Touch-driven dashboard UI (see PLAN.md "Dashboard UI") — replaces the
 // plain `read()` prompt as HeadTerminal/SecondaryTerminal's local-input
-// step. Renders onto whatever lib/Display.kt picked (a Monitor
-// peripheral, or this computer's own term) and resolves taps into the
-// exact same command strings the CLI already accepts, feeding them
-// through runCliCommand/rednet unchanged — this file only ever produces
-// a String, never touches vault/job logic directly.
+// step. Renders onto this computer's own screen (lib/Display.kt — the
+// main use case is a turtle's or pocket computer's own screen, not an
+// external Monitor peripheral; a monitor-driven dashboard, if built, is
+// a separate program later) and resolves taps into the exact same
+// command strings the CLI already accepts, feeding them through
+// runCliCommand/rednet unchanged — this file only ever produces a
+// String, never touches vault/job logic directly.
 //
-// Three screens (DashboardState.mode): "browse" (tabs + paginated item
-// list), "detail" (one selected item's actions), "keypad" (on-screen
-// numeric entry — a Monitor block can't capture keyboard focus like an
-// opened Computer/Turtle/Pocket screen can, so quantity entry has to be
-// tap-driven to work identically on both display backends).
+// Two screens (DashboardState.mode): "browse" (tabs + paginated item
+// list) and "detail" (one selected item's actions). A third, transient
+// mode ("qtyentry") isn't really a screen at all — see
+// runDashboardLoop()'s handling of it and promptForQuantity() below:
+// this computer's own screen DOES capture real keyboard input while its
+// GUI is open (unlike a Monitor peripheral, which never does), so
+// quantity entry is a normal blocking read() prompt, not a tap-driven
+// keypad. Kept as an explicit state (not just an inline side effect
+// inside handleDetailTouch) specifically so the pure hit-testing logic
+// stays testable: handleDetailTouch itself never blocks on real
+// keyboard input, only runDashboardLoop's dispatch does — see
+// TestDashboard.kt, which exercises the former but can't touch the
+// latter (there's no way to feed simulated keystrokes to CraftOS-PC's
+// headless --script mode - see common/Term.kt's own note on this).
 //
 // Deliberately NOT a mutable state object — DashboardState is an
 // immutable data class, always constructed fresh at every return site
@@ -46,7 +57,7 @@ import lib.touchInRect
 data class Rect(val x: Int, val y: Int, val w: Int, val h: Int)
 
 data class DashboardState(
-    val mode: String, // "browse" | "detail" | "keypad"
+    val mode: String, // "browse" | "detail" | "qtyentry"
     val tab: String, // "stocked" | "craftable" | "unavailable"
     val page: Int, // 1-indexed
     val selectedItem: String,
@@ -65,24 +76,49 @@ fun freshDashboardState(): DashboardState {
 // Blocks until a Fetch/Craft action actually resolves to a command,
 // exactly like read() blocks until Enter — same contract, so callers
 // (HeadTerminal/SecondaryTerminal) don't need to change anything past
-// this call.
+// this call. The "qtyentry" branch is the one place this does real
+// blocking keyboard I/O (promptForQuantity) rather than tap handling —
+// pulled out of handleDetailTouch precisely so that function can stay a
+// pure, testable state transition (see the file header comment).
 fun runDashboardLoop(): String {
     var state = freshDashboardState()
     displayInit()
     while (state.readyCommand == "") {
-        val size = displaySize()
-        renderDashboard(state, size)
-        val touch = displayWaitTouch()
-        state = handleDashboardTouch(state, touch, size)
+        if (state.mode == "qtyentry") {
+            val newQty = promptForQuantity(state.qtyText)
+            state = DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, newQty, state.fetchChecked, state.locationIndex, "")
+        } else {
+            val size = displaySize()
+            renderDashboard(state, size)
+            val touch = displayWaitTouch()
+            state = handleDashboardTouch(state, touch, size)
+        }
     }
     return state.readyCommand
 }
 
+// Real keyboard entry (this computer's own screen, GUI open, has a real
+// keyboard available — unlike a Monitor peripheral). Blank input or a
+// non-positive/non-numeric value keeps whatever quantity was already
+// set, rather than sending a broken command later.
+fun promptForQuantity(current: String): String {
+    termClear()
+    termSetCursorPos(1, 1)
+    termWrite("Enter quantity (currently ${current}):")
+    termSetCursorPos(1, 2)
+    val typed = readInput()
+    if (typed == "") {
+        return current
+    }
+    val parsed = typed.toDoubleOrNull()
+    if (parsed == null || parsed <= 0.0) {
+        return current
+    }
+    return typed
+}
+
 // Shows a Fetch/Craft result on the display and waits for a dismiss tap
-// before the caller loops back to a fresh runDashboardLoop() - without
-// this, a monitor-backed dashboard would show no feedback at all after
-// an action (the result only ever gets println'd to this computer's own
-// term, which the player isn't necessarily looking at). Assumes a
+// before the caller loops back to a fresh runDashboardLoop(). Assumes a
 // single-line message, which every pull/craft result actually is (the
 // only two commands the dashboard ever produces) - a longer message is
 // just truncated by displayFillRect's own width clamp, same as an
@@ -257,53 +293,6 @@ fun detailCraftButtonRect(size: DisplaySize): Rect {
     return Rect(fetchRect.x + fetchRect.w, 6, size.width - fetchRect.w, 2)
 }
 
-// ---- keypad-mode rects (3x4 digit grid + backspace/OK) ----
-
-fun keypadRowY(row: Int): Int {
-    return 2 + row
-}
-
-fun keypadKeyRect(size: DisplaySize, row: Int, col: Int): Rect {
-    return threeColumnRect(size, col, keypadRowY(row), 1)
-}
-
-fun keypadKeyLabel(row: Int, col: Int): String {
-    if (row == 1) {
-        if (col == 1) {
-            return "7"
-        }
-        if (col == 2) {
-            return "8"
-        }
-        return "9"
-    }
-    if (row == 2) {
-        if (col == 1) {
-            return "4"
-        }
-        if (col == 2) {
-            return "5"
-        }
-        return "6"
-    }
-    if (row == 3) {
-        if (col == 1) {
-            return "1"
-        }
-        if (col == 2) {
-            return "2"
-        }
-        return "3"
-    }
-    if (col == 1) {
-        return "<-"
-    }
-    if (col == 2) {
-        return "0"
-    }
-    return "OK"
-}
-
 // ---- rendering ----
 
 fun renderDashboard(state: DashboardState, size: DisplaySize) {
@@ -311,11 +300,7 @@ fun renderDashboard(state: DashboardState, size: DisplaySize) {
         renderBrowse(state, size)
         return
     }
-    if (state.mode == "detail") {
-        renderDetail(state, size)
-        return
-    }
-    renderKeypad(state, size)
+    renderDetail(state, size)
 }
 
 fun renderBrowse(state: DashboardState, size: DisplaySize) {
@@ -366,7 +351,7 @@ fun renderBrowse(state: DashboardState, size: DisplaySize) {
     if (state.page < totalPages) {
         displayFillRect(size.width - 5, footerY, 6, 1, COLOR_GRAY, COLOR_WHITE, "Next>")
     }
-    displayFillRect(7, footerY, size.width - 12, 1, COLOR_BLACK, COLOR_LIGHT_GRAY, "Page ${state.page}/${totalPages}")
+    displayFillRect(7, footerY, size.width - 12, 1, COLOR_BLACK, COLOR_GRAY, "Page ${state.page}/${totalPages}")
 }
 
 fun renderDetail(state: DashboardState, size: DisplaySize) {
@@ -381,7 +366,7 @@ fun renderDetail(state: DashboardState, size: DisplaySize) {
     )
 
     val qtyRect = detailQtyRect(size)
-    displayFillRect(qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h, COLOR_BLACK, COLOR_WHITE, "Qty: ${state.qtyText} (tap to edit)")
+    displayFillRect(qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h, COLOR_BLACK, COLOR_WHITE, "Qty: ${state.qtyText} (tap to type)")
 
     val locationRect = detailLocationRect(size)
     displayFillRect(locationRect.x, locationRect.y, locationRect.w, locationRect.h, COLOR_BLACK, COLOR_WHITE, "Location: ${locationLabel(state.locationIndex)} (tap to cycle)")
@@ -404,42 +389,18 @@ fun renderDetail(state: DashboardState, size: DisplaySize) {
     displayFillRect(craftRect.x, craftRect.y, craftRect.w, craftRect.h, COLOR_BLUE, COLOR_WHITE, "CRAFT")
 }
 
-fun renderKeypad(state: DashboardState, size: DisplaySize) {
-    displayClear()
-    displayFillRect(1, 1, size.width, 1, COLOR_BLACK, COLOR_WHITE, "Enter quantity: ${state.qtyText}")
-
-    var row = 1
-    while (row <= 4) {
-        var col = 1
-        while (col <= 3) {
-            val rect = keypadKeyRect(size, row, col)
-            var bg = COLOR_LIGHT_GRAY
-            var fg = COLOR_BLACK
-            val label = keypadKeyLabel(row, col)
-            if (label == "OK") {
-                bg = COLOR_GREEN
-                fg = COLOR_BLACK
-            } else if (label == "<-") {
-                bg = COLOR_RED
-                fg = COLOR_WHITE
-            }
-            displayFillRect(rect.x, rect.y, rect.w, rect.h, bg, fg, label)
-            col += 1
-        }
-        row += 1
-    }
-}
-
 // ---- touch handling ----
+//
+// Pure state transitions - no I/O, no blocking, always safe to call from
+// a test. The one exception is the qty field's tap, which transitions to
+// "qtyentry" rather than doing the actual keyboard read here - see the
+// file header comment and runDashboardLoop.
 
 fun handleDashboardTouch(state: DashboardState, touch: Touch, size: DisplaySize): DashboardState {
     if (state.mode == "browse") {
         return handleBrowseTouch(state, touch, size)
     }
-    if (state.mode == "detail") {
-        return handleDetailTouch(state, touch, size)
-    }
-    return handleKeypadTouch(state, touch, size)
+    return handleDetailTouch(state, touch, size)
 }
 
 fun handleBrowseTouch(state: DashboardState, touch: Touch, size: DisplaySize): DashboardState {
@@ -499,7 +460,7 @@ fun handleDetailTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
 
     val qtyRect = detailQtyRect(size)
     if (touchInRect(touch, qtyRect.x, qtyRect.y, qtyRect.w, qtyRect.h)) {
-        return DashboardState("keypad", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, "")
+        return DashboardState("qtyentry", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, state.qtyText, state.fetchChecked, state.locationIndex, "")
     }
 
     val locationRect = detailLocationRect(size)
@@ -533,45 +494,5 @@ fun handleDetailTouch(state: DashboardState, touch: Touch, size: DisplaySize): D
         }
     }
 
-    return state
-}
-
-fun handleKeypadTouch(state: DashboardState, touch: Touch, size: DisplaySize): DashboardState {
-    var row = 1
-    while (row <= 4) {
-        var col = 1
-        while (col <= 3) {
-            val rect = keypadKeyRect(size, row, col)
-            if (touchInRect(touch, rect.x, rect.y, rect.w, rect.h)) {
-                val label = keypadKeyLabel(row, col)
-                if (label == "OK") {
-                    var qty = state.qtyText
-                    if (qty == "") {
-                        qty = "1"
-                    }
-                    return DashboardState("detail", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, qty, state.fetchChecked, state.locationIndex, "")
-                }
-                if (label == "<-") {
-                    var qty = state.qtyText
-                    if (qty != "") {
-                        qty = ktoxDropLastChar(qty)
-                    }
-                    if (qty == "") {
-                        qty = "0"
-                    }
-                    return DashboardState("keypad", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, qty, state.fetchChecked, state.locationIndex, "")
-                }
-                var qty = state.qtyText
-                if (qty == "0") {
-                    qty = label
-                } else {
-                    qty = "${qty}${label}"
-                }
-                return DashboardState("keypad", state.tab, state.page, state.selectedItem, state.selectedStatus, state.selectedCount, qty, state.fetchChecked, state.locationIndex, "")
-            }
-            col += 1
-        }
-        row += 1
-    }
     return state
 }

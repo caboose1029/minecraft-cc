@@ -61,7 +61,6 @@ fun main(args: Array<String>) {
         "lib/Dashboard.lua",
         "common/Monitor.lua",
         "common/Display.lua",
-        "common/Str.lua",
         "common/Peripheral.lua",
         "common/Rednet.lua",
         "common/Parallel.lua",
