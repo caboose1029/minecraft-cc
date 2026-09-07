@@ -89,6 +89,9 @@ fun main() {
     } else {
         val count = recipeInputCount(chestRecipe)
         println("Recipe for minecraft:chest: ${count} input(s) via ${chestRecipe.jobType}")
+        if (chestRecipe.jobType != "chest_crafter") {
+            println("MISMATCH: expected job \"chest_crafter\", got \"${chestRecipe.jobType}\" - this recipe won't find its crafter turtle!")
+        }
         var i = 1
         while (i <= count) {
             println("  input ${i}: ${recipeInputCountAt(chestRecipe, i)}x ${recipeInputItem(chestRecipe, i)} -> slot ${recipeInputSlot(chestRecipe, i)}")
