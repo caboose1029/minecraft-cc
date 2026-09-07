@@ -136,6 +136,19 @@ fun promptForSearch(current: String): String {
     return readInput()
 }
 
+// Shows a message and returns immediately WITHOUT waiting for a touch -
+// unlike showDashboardResult below. For putting something on screen
+// before a long blocking call (runCliCommand's craft path can poll for
+// real time, up to a configured timeout, twice - see PLAN.md), so the
+// screen doesn't just sit on the last-rendered detail screen looking
+// frozen for a minute or more. Doesn't fix the underlying wait, just
+// stops it from looking like a hang.
+fun showDashboardBusy(message: String) {
+    displayClear()
+    val size = displaySize()
+    displayFillRect(1, 1, size.width, 1, COLOR_BLACK, COLOR_WHITE, message)
+}
+
 // Shows a Fetch/Craft result on the display and waits for a dismiss tap
 // before the caller loops back to a fresh runDashboardLoop(). Assumes a
 // single-line message, which every pull/craft result actually is (the

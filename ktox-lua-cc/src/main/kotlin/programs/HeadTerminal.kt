@@ -15,6 +15,7 @@ import lib.manageFarms
 import lib.queryForHead
 import lib.runCliCommand
 import lib.runDashboardLoop
+import lib.showDashboardBusy
 import lib.showDashboardResult
 import lib.topUpPassiveFeeders
 
@@ -59,6 +60,11 @@ fun main() {
 
 fun handleLocalInput() {
     val commandLine = runDashboardLoop()
+    // runCliCommand's craft path can block for real time (polling once a
+    // second, up to a configured timeout, twice - see lib/Executor.kt) -
+    // without this the screen just sits on the last-rendered detail
+    // screen looking frozen for a minute or more.
+    showDashboardBusy("Working...")
     val result = runCliCommand(commandLine)
     println(result)
     showDashboardResult(result)

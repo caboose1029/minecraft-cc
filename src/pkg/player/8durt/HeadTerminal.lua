@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "HeadTerminal.kt", {["1-11"]=1,["12"]=34,["13"]=35,["14"]=36,["15"]=37,["16-17"]=38,["18"]=41,["19"]=42,["20"]=43,["21-22"]=44,["23"]=47,["24"]=48,["25-29"]=49,["30"]=55,["31-35"]=56,["36"]=61,["37"]=62,["38"]=63,["39-42"]=64,["43"]=72,["44"]=73,["45-46"]=74,["47"]=76,["48"]=77,["49"]=78,["50-51"]=79,["52"]=81,["53"]=82,["54-60"]=83}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "HeadTerminal.kt", {["1-11"]=1,["12"]=35,["13"]=36,["14"]=37,["15"]=38,["16-17"]=39,["18"]=42,["19"]=43,["20"]=44,["21-22"]=45,["23"]=48,["24"]=49,["25-29"]=50,["30"]=56,["31-35"]=57,["36"]=62,["37"]=67,["38"]=68,["39"]=69,["40-43"]=70,["44"]=78,["45"]=79,["46-47"]=80,["48"]=82,["49"]=83,["50"]=84,["51-52"]=85,["53"]=87,["54"]=88,["55-61"]=89}, "programs")
 ktox_require("lib/RoleCheck")
 ktox_require("lib/Farm")
 ktox_require("lib/Cli")
@@ -34,6 +34,7 @@ end
 
 function handleLocalInput()
     local commandLine = runDashboardLoop()
+    showDashboardBusy("Working...")
     local result = runCliCommand(commandLine)
     println(result)
     showDashboardResult(result)

@@ -1,9 +1,11 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "SecondaryTerminal.kt", {["1-8"]=1,["9"]=25,["10"]=26,["11"]=27,["12"]=28,["13-14"]=29,["15"]=32,["16"]=33,["17"]=34,["18"]=35,["19"]=36,["20"]=37,["21"]=38,["22-23"]=39,["24"]=41,["25"]=42,["26"]=43,["27"]=44,["28-29"]=45,["30"]=47,["31"]=48,["32-40"]=49}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "SecondaryTerminal.kt", {["1-10"]=1,["11"]=36,["12"]=37,["13"]=38,["14"]=39,["15-16"]=40,["17"]=43,["18"]=44,["19"]=45,["20"]=46,["21"]=47,["22"]=48,["23"]=49,["24-25"]=50,["26"]=52,["27"]=53,["28"]=54,["29"]=55,["30"]=56,["31-32"]=57,["33"]=59,["34"]=60,["35-43"]=61}, "programs")
 ktox_require("lib/RoleCheck")
 ktox_require("lib/Dashboard")
+
+CRAFTER_RESULT_TIMEOUT_SECONDS = 300.0
 
 local function main()
     println("Secondary terminal starting...")
@@ -21,7 +23,8 @@ local function main()
             println(message)
             showDashboardResult(message)
         else
-            local got = ktoxRednetReceiveProtocol(VAULT_RESULT_PROTOCOL, 30.0)
+            showDashboardBusy("Working...")
+            local got = ktoxRednetReceiveProtocol(VAULT_RESULT_PROTOCOL, CRAFTER_RESULT_TIMEOUT_SECONDS)
             if got then
                 local message = ktoxRednetLastMessage()
                 println(message)
