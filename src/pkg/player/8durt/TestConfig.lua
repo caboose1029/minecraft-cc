@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-12"]=1,["13"]=26,["14"]=28,["15"]=29,["16-17"]=30,["18-19"]=32,["20"]=35,["21"]=36,["22-23"]=37,["24-25"]=39,["26"]=42,["27"]=43,["28-29"]=44,["30"]=46,["31"]=47,["32"]=48,["33"]=49,["34"]=50,["35-37"]=51,["38"]=55,["39"]=56,["40-41"]=57,["42"]=59,["43"]=60,["44"]=61,["45"]=62,["46"]=63,["47-49"]=64,["50"]=72,["51"]=73,["52-53"]=74,["54"]=76,["55"]=77,["56-58"]=78,["59"]=82,["60"]=84,["61"]=85,["62"]=87,["63"]=88,["64"]=89,["65"]=90,["66"]=91,["67"]=92,["68"]=93,["69"]=94,["70"]=95,["71"]=96,["72"]=97,["73"]=98,["74"]=100,["75"]=101,["76-77"]=102,["78"]=104,["79"]=105,["80"]=106,["81-82"]=107,["83"]=109,["84"]=110,["85"]=111,["86-88"]=112,["89"]=115,["90"]=116,["91"]=117,["92"]=118,["93"]=120,["94"]=121,["95"]=122,["96"]=124,["97"]=125,["98"]=126,["99"]=128,["100"]=129,["101"]=130,["102-107"]=131}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestConfig.kt", {["1-12"]=1,["13"]=26,["14"]=28,["15"]=29,["16-17"]=30,["18-19"]=32,["20"]=35,["21"]=36,["22-23"]=37,["24-25"]=39,["26"]=42,["27"]=43,["28-29"]=44,["30"]=46,["31"]=47,["32"]=48,["33"]=49,["34"]=50,["35-37"]=51,["38"]=55,["39"]=56,["40-41"]=57,["42"]=59,["43"]=60,["44"]=61,["45"]=62,["46"]=63,["47-49"]=64,["50"]=72,["51"]=73,["52-53"]=74,["54"]=76,["55"]=77,["56-58"]=78,["59"]=86,["60"]=87,["61-62"]=88,["63"]=90,["64"]=91,["65-67"]=92,["68"]=96,["69"]=98,["70"]=99,["71"]=101,["72"]=102,["73"]=103,["74"]=104,["75"]=105,["76"]=106,["77"]=107,["78"]=108,["79"]=109,["80"]=110,["81"]=111,["82"]=112,["83"]=114,["84"]=115,["85-86"]=116,["87"]=118,["88"]=119,["89"]=120,["90-91"]=121,["92"]=123,["93"]=124,["94"]=125,["95-97"]=126,["98"]=129,["99"]=130,["100"]=131,["101"]=132,["102"]=134,["103"]=135,["104"]=136,["105"]=138,["106"]=139,["107"]=140,["108"]=142,["109"]=143,["110"]=144,["111-116"]=145}, "programs")
 ktox_require("lib/Config")
 ktox_require("lib/Farm")
 ktox_require("lib/PassiveFeeder")
@@ -54,6 +54,15 @@ local function main()
         println("Recipe for create:andesite_alloy: via " .. tostring(andesite.jobType) .. ", input 2 = " .. tostring(recipeInputItem(andesite, 2)))
         if recipeInputItem(andesite, 2) ~= "minecraft:iron_nugget" then
             println("MISMATCH: expected the priority-1 (iron nugget) recipe to win, got " .. tostring(recipeInputItem(andesite, 2)))
+        end
+    end
+    local strippedLog = findRecipe("minecraft:stripped_oak_log")
+    if strippedLog == nil then
+        println("Recipe for minecraft:stripped_oak_log: none configured")
+    else
+        println("Recipe for minecraft:stripped_oak_log: via " .. tostring(strippedLog.jobType))
+        if strippedLog.jobType ~= "cutting" then
+            println("MISMATCH: expected the priority-1 (Mechanical Saw / " .. "\"" .. "cutting" .. "\"" .. ") recipe to win, got " .. "\"" .. tostring(strippedLog.jobType) .. "\"")
         end
     end
     println("Storage pool count of minecraft:copper_ingot: " .. tostring(storagePoolCount("minecraft:copper_ingot")))

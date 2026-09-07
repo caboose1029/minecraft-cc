@@ -670,16 +670,20 @@ than one-at-a-time human judgment:
 
 **Real corrections this pass found** (the reason a full re-extraction
 was worth doing over patching individual reports of missing items):
-- **`minecraft:stripped_oak_log` was wrong to model as a job at all.**
+- **`minecraft:stripped_oak_log` was wrong to model as a job, initially.**
   An earlier version had it as a `"slicer"` (Mechanical Saw) recipe from
-  `oak_log` — no such recipe exists anywhere in Create's own data.
-  Stripping a log is a vanilla axe *interaction* (right-click), not a
-  data-driven recipe of any kind, so nothing in this system can produce
-  it automatically. Removed entirely rather than fixed — `create:
-  andesite_casing`/`brass_casing`/`copper_casing` all need a stripped
-  log as an input, so a player must keep a feeder manually stocked with
-  them for those casings to be produceable at all; this is a real,
-  permanent gap in what can be fully automated, not a bug.
+  `oak_log` — no such recipe exists anywhere in Create's *data-driven*
+  recipe JSON. Removed rather than fixed, on the assumption stripping was
+  a vanilla axe-only interaction with no automatable path at all — this
+  assumption itself turned out wrong: **confirmed in-game (2026-09-07)
+  that the Mechanical Saw does strip logs**, just as a hardcoded Java
+  behavior rather than a JSON recipe, so no amount of jar extraction
+  would ever have found it. Re-added to `resource-tree.lua`'s
+  `MANUAL_VANILLA_RECIPES` (job `"cutting"`) once confirmed. Farmer's
+  Delight's Cutting Board (`"cutting_board"`) turns out to also strip
+  logs at the same 1:1 ratio — an explicit `priority` pins the Saw as the
+  default winner, since that's the machine actually being built; flip it
+  if a build relies on the Cutting Board for this instead.
 - **The old `"slicer"` job type conflated two different real machines.**
   It held both `farmersdelight:chicken_cuts`/`pumpkin_slice` (Farmer's
   Delight's Cutting Board) and the (incorrect) stripped-log entry above,

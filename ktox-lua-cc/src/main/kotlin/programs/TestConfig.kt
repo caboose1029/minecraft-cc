@@ -79,6 +79,20 @@ fun main() {
         }
     }
 
+    // Both the Mechanical Saw ("cutting") and Farmer's Delight's Cutting
+    // Board ("cutting_board") can strip logs at an identical 1:1 ratio,
+    // so the priority pin (not the efficiency heuristic) is what has to
+    // resolve this tie - confirms the saw wins as intended.
+    val strippedLog = findRecipe("minecraft:stripped_oak_log")
+    if (strippedLog == null) {
+        println("Recipe for minecraft:stripped_oak_log: none configured")
+    } else {
+        println("Recipe for minecraft:stripped_oak_log: via ${strippedLog.jobType}")
+        if (strippedLog.jobType != "cutting") {
+            println("MISMATCH: expected the priority-1 (Mechanical Saw / \"cutting\") recipe to win, got \"${strippedLog.jobType}\"")
+        }
+    }
+
     println("Storage pool count of minecraft:copper_ingot: ${storagePoolCount("minecraft:copper_ingot")}")
 
     val powered = setJobPower("smelter", true)

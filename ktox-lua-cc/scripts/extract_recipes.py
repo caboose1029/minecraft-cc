@@ -197,6 +197,13 @@ JOB_OVERRIDES_BY_OUTPUT = {
 CREATEFOOD_KEEP_KEYWORDS = ("soup", "pie", "pizza", "skewer", "burger")
 
 MANUAL_VANILLA_RECIPES = [
+    # Confirmed in-game (2026-09-07): Create's Mechanical Saw strips logs
+    # the same way an axe does. This is a hardcoded Java behavior, not a
+    # data-driven recipe - no JSON for it exists anywhere in Create's own
+    # jar (only its "cutting" recipes like andesite_alloy -> shaft are
+    # data-driven), so no amount of jar extraction would ever find it.
+    {"output": "minecraft:stripped_oak_log", "outputCount": 1, "job": "cutting",
+     "inputs": [{"item": "minecraft:oak_log", "count": 1}]},
     {"output": "minecraft:charcoal", "outputCount": 1, "job": "smelter",
      "inputs": [{"item": "minecraft:oak_log", "count": 1}]},
     {"output": "minecraft:stone", "outputCount": 1, "job": "smelter",
@@ -550,6 +557,15 @@ def main():
     for r in all_recipes:
         if r["output"] == "create:andesite_alloy":
             r["priority"] = 1 if any(i["item"] == "minecraft:iron_nugget" for i in r["inputs"]) else 2
+        if r["output"] == "minecraft:stripped_oak_log":
+            # Both the Mechanical Saw ("cutting") and Farmer's Delight's
+            # Cutting Board ("cutting_board") can strip logs - identical
+            # 1:1 ratio, so the efficiency heuristic can't break the tie
+            # and Lua's pairs() iteration order isn't guaranteed. Saw
+            # pinned as the default on the (documented) assumption most
+            # builds have one; override here if a build relies on the
+            # Cutting Board for this instead.
+            r["priority"] = 1 if r["job"] == "cutting" else 2
 
     def lua_str(s):
         return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
