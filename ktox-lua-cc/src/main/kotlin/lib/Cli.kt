@@ -45,6 +45,10 @@ const val PULL_USAGE = "Usage: pull <name> <qty> (-h)\n  Pulls <qty> of <name> f
 const val CRAFT_USAGE = "Usage: craft <name> <qty> (--location=<name>) (--fetch=false) (-h)\n  Crafts <qty> of <name>, chaining through intermediate jobs as needed, then pulls the result into a pickup location. Defaults to this terminal's own inventory if it's itself configured as a pickup location, otherwise the config/peripherals.json default; pass --location=<name> to target a specific named pickup location instead. Pass --fetch=false to craft without pulling the result out at all (leaves it in the storage pool)."
 const val TRASH_USAGE = "Usage: trash <name> <qty> (-h)\n  Permanently destroys <qty> of <name> from the storage pool via the trash vault (dumped into lava)."
 
+// The CC terminal has no scrollback a player can page through, so `list`
+// caps its output rather than dumping the whole pool - see runListCommand.
+const val LIST_DISPLAY_LIMIT = 6
+
 fun isHelpFlag(parts: List<String>): Boolean {
     return parts.size >= 2 && (parts[2] == "-h" || parts[2] == "--help")
 }
@@ -97,9 +101,21 @@ fun runListCommand(parts: List<String>): String {
         return "No items found."
     }
 
+    // The CC terminal screen isn't scrollable, so a long unfiltered list
+    // just runs off the top with no way back - only the tail end is ever
+    // actually readable anyway. Show that tail deterministically instead
+    // of whatever happens to survive terminal scroll, and say how much
+    // got cut so it's not mistaken for the whole pool.
     val rows = raw.split("\n")
+    var startIndex = 1
+    if (rows.size > LIST_DISPLAY_LIMIT) {
+        startIndex = rows.size - LIST_DISPLAY_LIMIT + 1
+    }
     var output = ""
-    var i = 1
+    if (startIndex > 1) {
+        output = "(showing last ${LIST_DISPLAY_LIMIT} of ${rows.size} - narrow with a status flag or item-name filter)\n"
+    }
+    var i = startIndex
     while (i <= rows.size) {
         val cols = rows[i].split(",")
         val status = cols[1]
