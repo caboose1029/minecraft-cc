@@ -68,7 +68,28 @@
     "type": "vault",
     "job": {
       "type": "feeder",
-      "job": { "type": "deploying" }
+      "job": { "type": "deploying_andesite" }
+    }
+  },
+  "create:item_vault_25": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_brass" }
+    }
+  },
+  "create:item_vault_26": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_copper" }
+    }
+  },
+  "create:item_vault_27": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_railway" }
     }
   },
   "create:item_vault_13": {

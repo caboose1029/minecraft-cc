@@ -173,6 +173,24 @@ SKIP_TYPES = {
 
 SEQ_SLOTS = [1, 2, 3, 5, 6, 7, 9, 10, 11]
 
+# The generic type-based job mapping puts every create:deploying/
+# item_application recipe under one "deploying" job type - fine when one
+# physical Deployer handles everything, but ktoxConfigFeederForJob/
+# ktoxConfigRelayForJob each return only the FIRST peripheral matching a
+# job type name (pairs() iteration order is not guaranteed), so a build
+# with several dedicated physical Deployers (one per casing, say) can't
+# be told apart by job type alone - every casing would race for whichever
+# single feeder/relay happened to be found first. Split per-output here
+# so each gets its own job type name and can get its own dedicated
+# feeder+relay in peripherals.json. Add more entries as new per-machine
+# splits are needed; anything not listed keeps its generic type-based job.
+JOB_OVERRIDES_BY_OUTPUT = {
+    "create:andesite_casing": "deploying_andesite",
+    "create:brass_casing": "deploying_brass",
+    "create:copper_casing": "deploying_copper",
+    "create:railway_casing": "deploying_railway",
+}
+
 # CreateFood's raw contribution is a huge per-fruit/topping combinatorial
 # system (~3,280 entries) - scoped down to just these meal categories,
 # plus each kept dish's full ingredient closure. See PLAN.md v3 writeup.
@@ -489,6 +507,7 @@ def main():
                         skipped_other += 1
                         continue
 
+                    job = JOB_OVERRIDES_BY_OUTPUT.get(out_id, job)
                     entry = {"output": out_id, "outputCount": result.get("count", 1),
                              "job": job, "inputs": inputs}
                     sig = (out_id, job, tuple((i["item"], i["count"], i.get("slot")) for i in inputs))

@@ -8,6 +8,15 @@
 -- actually read by any loader, and keeping it in sync with hundreds of
 -- resource-tree.lua entries would be pure maintenance burden for zero
 -- runtime benefit.
+--
+-- "deploying" is split into one job type per physical Deployer
+-- (deploying_andesite/_brass/_copper/_railway) rather than one shared
+-- "deploying" type, because ktoxConfigFeederForJob/ktoxConfigRelayForJob
+-- each return only the FIRST peripheral matching a job type name - a
+-- build with several dedicated Deployers (one per casing) needs each to
+-- have its own job type name so its feeder/relay can't be confused with
+-- another Deployer's. See scripts/extract_recipes.py's
+-- JOB_OVERRIDES_BY_OUTPUT for the resource-tree.lua side of this split.
 return {
   crushing = { kind = "machine" },
   milling = { kind = "machine" },
@@ -20,7 +29,10 @@ return {
   mixing_unheated = { kind = "machine" },
   mixing_heated = { kind = "machine", timeoutSeconds = 45 },
   compacting = { kind = "machine" },
-  deploying = { kind = "machine" },
+  deploying_andesite = { kind = "machine" },
+  deploying_brass = { kind = "machine" },
+  deploying_copper = { kind = "machine" },
+  deploying_railway = { kind = "machine" },
   splashing = { kind = "machine" },
   filling = { kind = "machine" },
   cooking_pot = { kind = "machine" },

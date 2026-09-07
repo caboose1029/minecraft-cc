@@ -722,6 +722,28 @@ was worth doing over patching individual reports of missing items):
   concrete item. Excluded rather than guessed at; the handful of recipes
   needing them are missing from the tree as a result.
 
+**One shared job type can't represent several dedicated physical
+machines of the same kind, found while wiring up real casing
+production (2026-09-07):** `ktoxConfigFeederForJob`/
+`ktoxConfigRelayForJob` each return only the *first* peripheral matching
+a job type name — fine when one physical machine handles a job type, but
+a build with e.g. four separate Deployers (one dedicated to each casing
+recipe) can't be told apart by job type alone; every casing would race
+for whichever single feeder/relay happened to be found first in
+`pairs()` iteration order. Fixed by splitting `"deploying"` into one job
+type per physical Deployer — `deploying_andesite`/`deploying_brass`/
+`deploying_copper`/`deploying_railway` — each getting its own dedicated
+feeder (and optionally relay, though a Deployer that runs continuously
+needs none, same as other always-on Create machines). `scripts/
+extract_recipes.py`'s `JOB_OVERRIDES_BY_OUTPUT` renames these four
+outputs' job field on every regeneration, so re-running the extraction
+doesn't silently revert the split back to one shared `"deploying"` type.
+This same pattern — several dedicated physical machines producing
+different recipes that a generic type-based job mapping would otherwise
+lump together — will recur for other job types as more machines are
+added; watch for it rather than assuming one feeder/relay per job type
+name is always enough.
+
 **4. Job-types registry** — explicitly skipped as a separate file (per
 discussion: optional, derivable from the union of job types appearing in
 configs 1/2/3 — no need for a fourth source of truth).
