@@ -875,6 +875,24 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
         return true
     end
 
+    -- Whether `jobType` actually has the peripheral it needs configured
+    -- in peripherals.json - a "machine" job needs a feeder vault (a
+    -- relay is optional, see lib/Executor.kt's runDirectJob - matches
+    -- what execution actually requires, not a stricter check), a
+    -- "crafter" job needs a crafty turtle. Without this, an item whose
+    -- inputs happen to be stocked showed as "craftable" even when
+    -- nothing would actually run it (e.g. a lava_spout recipe with
+    -- buckets in stock, but no Spout ever wired up in peripherals.json)
+    -- - reported directly from in-game use as a real, confusing mismatch
+    -- between what `list`/the dashboard claimed and what `craft` could
+    -- actually do.
+    local function jobIsConfigured(jobType)
+        if ktoxConfigJobKind(jobType) == "crafter" then
+            return ktoxConfigCrafterForJob(jobType) ~= "MISSING"
+        end
+        return ktoxConfigFeederForJob(jobType) ~= "MISSING"
+    end
+
     local lines = {}
     for i = 1, #order do
         local name = order[i]
@@ -883,7 +901,7 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
             local status
             if count > 0 then
                 status = "stocked"
-            elseif recipeFor[name] ~= nil and allInputsStocked(recipeFor[name]) then
+            elseif recipeFor[name] ~= nil and allInputsStocked(recipeFor[name]) and jobIsConfigured(recipeFor[name].job) then
                 status = "craftable"
             else
                 status = "unavailable"

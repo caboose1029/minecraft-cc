@@ -27,6 +27,21 @@ even though `craft` could actually produce it. Left as-is for now
 status glance, not a plan preview — worth revisiting if that mismatch
 turns out to confuse people in practice.
 
+**Fixed, separate gap:** `ktoxListCatalog` used to mark an item
+"craftable" purely from `allInputsStocked` — never checking whether the
+recipe's job type actually had a feeder vault (`ktoxConfigFeederForJob`)
+or crafter turtle (`ktoxConfigCrafterForJob`) configured in
+`peripherals.json` at all. Reported directly from in-game use: a lava
+bucket showed as craftable with buckets in stock, despite no Spout
+(`lava_spout` job) ever being wired up in `peripherals.json` — `craft`
+would have just failed silently (`runDirectJob` already correctly
+returns 0 when its feeder vault is `"MISSING"`; `list` just never agreed
+with it). Now checks `ktoxConfigJobKind` to pick feeder-vault-required
+("machine") vs. crafter-turtle-required ("crafter"), matching exactly
+what `lib/Executor.kt`'s `runDirectJob`/`runCrafterJob` already require
+to actually run — a relay is still optional (see `runDirectJob`'s own
+comment on why), only the feeder vault is checked for a machine job.
+
 **Built (phase 3):** a touch dashboard UI (see "Dashboard UI" below) —
 superseded the plan that a monitor would only ever be a read-only
 dashboard (that assumption is gone; see that section for why). Reason it
