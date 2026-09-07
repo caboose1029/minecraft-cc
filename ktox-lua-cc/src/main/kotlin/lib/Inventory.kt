@@ -5,6 +5,8 @@ import common.ktoxInventoryCountNamed
 import common.ktoxInventoryListPooled
 import common.ktoxInventoryPullNamedFromPool
 import common.ktoxInventoryPullNamedToSlotFromPool
+import common.ktoxInventoryPushNamedFromPool
+import common.ktoxInventoryPushNamedToSlotFromPool
 
 // Storage is treated as one logical resource pool spread across every
 // vault whose config/peripherals.json job.type is "storage" — see
@@ -41,6 +43,33 @@ fun pullFromStoragePoolToSlot(toName: String, toSlot: Int, itemName: String, des
         return 0
     }
     return ktoxInventoryPullNamedToSlotFromPool(toName, toSlot, vaultNames, itemName, desired)
+}
+
+// Same as pullFromStoragePool, but SOURCE-initiated (a storage vault
+// calls pushItems into `toName`) instead of destination-initiated (the
+// pull* functions above, where `toName` calls pullItems on itself).
+// Needed when `toName` is a turtle: wrapping a turtle as a peripheral
+// only exposes generic remote-control methods (confirmed live - no
+// pullItems at all), so a turtle can never do the pulling itself, but
+// should still be a valid routing target for an ordinary vault's own
+// push. UNVERIFIED - working hypothesis, not yet confirmed against a
+// real turtle. See PLAN.md's "Known open items".
+fun pushToStoragePoolTarget(toName: String, itemName: String, desired: Int): Int {
+    val vaultNames = ktoxConfigStorageVaultNames()
+    if (vaultNames == "") {
+        return 0
+    }
+    return ktoxInventoryPushNamedFromPool(vaultNames, toName, itemName, desired)
+}
+
+// Same as pushToStoragePoolTarget, but lands the items in a specific
+// slot of `toName` — needed for a crafter turtle's crafting grid.
+fun pushToStoragePoolTargetSlot(toName: String, toSlot: Int, itemName: String, desired: Int): Int {
+    val vaultNames = ktoxConfigStorageVaultNames()
+    if (vaultNames == "") {
+        return 0
+    }
+    return ktoxInventoryPushNamedToSlotFromPool(vaultNames, toName, toSlot, itemName, desired)
 }
 
 // Raw "name,count" lines (one per distinct item across the whole pool,

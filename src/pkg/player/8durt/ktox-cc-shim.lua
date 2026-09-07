@@ -379,6 +379,79 @@ function ktoxInventoryPullNamedToSlotFromPool(toName, toSlot, sourceNamesCsv, it
     return pulled
 end
 
+-- SOURCE-initiated transfer (the source calls pushItems), the mirror
+-- image of ktoxInventoryPullNamed (dest.pullItems) above — needed when
+-- `toName` is a turtle. Confirmed live: wrapping a turtle as a
+-- peripheral from another computer only exposes generic remote-control
+-- methods (reboot/getLabel/turnOn/isOn/getID/shutdown), no pullItems at
+-- all — a turtle can never be the one pulling into itself from another
+-- computer's perspective. Whether a turtle is still a valid ROUTING
+-- TARGET for an ordinary vault's own pushItems call is the working
+-- hypothesis here, NOT yet confirmed against a real turtle — see
+-- PLAN.md's "Known open items". `pushItems`'s own last argument (toSlot)
+-- is optional in real CC:Tweaked (nil = "any slot") — for the plain
+-- (non-slot-targeted) variant, dest.pushItems(toName, slot, count) below
+-- passes no 4th argument at all, which reads as nil.
+function ktoxInventoryPushNamed(fromName, toName, itemName, desired)
+    local source = peripheral.wrap(fromName)
+    if source == nil then
+        return 0
+    end
+    local pushed = 0
+    for slot, item in pairs(source.list()) do
+        if pushed >= desired then
+            break
+        end
+        if item.name == itemName then
+            pushed = pushed + source.pushItems(toName, slot, desired - pushed)
+        end
+    end
+    return pushed
+end
+
+function ktoxInventoryPushNamedFromPool(sourceNamesCsv, toName, itemName, desired)
+    local pushed = 0
+    for sourceName in string.gmatch(sourceNamesCsv, "[^,]+") do
+        if pushed >= desired then
+            break
+        end
+        pushed = pushed + ktoxInventoryPushNamed(sourceName, toName, itemName, desired - pushed)
+    end
+    return pushed
+end
+
+-- Same as ktoxInventoryPushNamed, but targets a SPECIFIC slot of
+-- `toName` — needed for a crafter turtle's crafting grid, where
+-- placement matters (see PLAN.md "Crafter role"). Mirrors
+-- ktoxInventoryPullNamedToSlot.
+function ktoxInventoryPushNamedToSlot(fromName, toName, toSlot, itemName, desired)
+    local source = peripheral.wrap(fromName)
+    if source == nil then
+        return 0
+    end
+    local pushed = 0
+    for slot, item in pairs(source.list()) do
+        if pushed >= desired then
+            break
+        end
+        if item.name == itemName then
+            pushed = pushed + source.pushItems(toName, slot, desired - pushed, toSlot)
+        end
+    end
+    return pushed
+end
+
+function ktoxInventoryPushNamedToSlotFromPool(sourceNamesCsv, toName, toSlot, itemName, desired)
+    local pushed = 0
+    for sourceName in string.gmatch(sourceNamesCsv, "[^,]+") do
+        if pushed >= desired then
+            break
+        end
+        pushed = pushed + ktoxInventoryPushNamedToSlot(sourceName, toName, toSlot, itemName, desired - pushed)
+    end
+    return pushed
+end
+
 -- Returns a newline-joined "name,count" row per distinct item found
 -- across all of the given source inventories (comma-joined peripheral
 -- names), aggregated by name. Used by the `list` CLI command. Empty

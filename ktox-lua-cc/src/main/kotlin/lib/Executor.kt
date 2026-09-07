@@ -8,7 +8,7 @@ import common.ktoxInventoryIsEmpty
 import common.osSleep
 import common.rednetSend
 import lib.pullFromStoragePool
-import lib.pullFromStoragePoolToSlot
+import lib.pushToStoragePoolTargetSlot
 import lib.queryForCrafter
 import lib.recipeInputCount
 import lib.recipeInputCountAt
@@ -222,7 +222,7 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
                     val itemName = recipeInputItem(recipe, i)
                     val perBatch = recipeInputCountAt(recipe, i)
                     val slot = recipeInputSlot(recipe, i)
-                    pullFromStoragePoolToSlot(crafterName, slot, itemName, perBatch * batches)
+                    pushToStoragePoolTargetSlot(crafterName, slot, itemName, perBatch * batches)
                     i += 1
                 }
 

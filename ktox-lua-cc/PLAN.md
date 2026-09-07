@@ -1139,24 +1139,35 @@ does.
   sweep-every-slot approach catches it regardless). Test with a real
   crafter turtle and a simple known recipe before trusting this for
   anything real.
-- **Turtle-as-pickup-vault is unverified in-game, on two independent
-  points:** (1) a network `pushItems`/`pullItems` call actually landing
-  items in a turtle's own inventory when addressed by peripheral name —
-  previously assumed broken and routed around (see "Vaults" above), now
-  assumed to work instead, but neither direction has been confirmed
-  against real hardware; and (2) `ktoxSelfPeripheralName()`
-  (`ktox-cc-shim.lua`) — a head/secondary terminal finding its own
-  network peripheral name by asking every `"computer"`/`"turtle"`-type
-  peripheral for `getID()` and matching against `os.getComputerID()`,
-  relying on CC:Tweaked's documented `"computer"` peripheral
-  (https://tweaked.cc/peripheral/computer.html) actually exposing itself
-  this way for a machine's OWN wired modem, which has never been
-  confirmed either. If either assumption is wrong, the practical effect
-  is just that self-preference silently falls through to the configured
-  `"default": true` pickup vault instead (`resolvePickupLocation` in
-  `lib/Cli.kt` treats `"MISSING"` as "no self location", not an error) —
-  not a crash, but worth confirming before relying on "the terminal
-  defaults to its own inventory" in practice.
+- **Turtle-as-network-inventory-peripheral: partially CONFIRMED BROKEN
+  in-game, partially still an unverified hypothesis.** Confirmed live
+  (real turtle, real `peripheral.getMethods("turtle_1")` from another
+  networked computer): wrapping a turtle as a peripheral exposes ONLY
+  the generic remote-control surface — `reboot`, `getLabel`, `turnOn`,
+  `isOn`, `getID`, `shutdown` — no `pullItems`/`pushItems`/`list` at all.
+  So the destination-initiated pull idiom this whole codebase otherwise
+  uses (`dest.pullItems(fromName, ...)`) can NEVER work when `dest` is a
+  turtle — not "unverified," actually broken, reproduced via
+  `runCrafterJob`'s ingredient delivery erroring exactly this way
+  (`attempt to call field 'pullItems' (a nil value)`). Fixed by flipping
+  direction: `ktoxInventoryPushNamed(ToSlot)(FromPool)`
+  (`ktox-cc-shim.lua`, `lib/Inventory.kt`'s `pushToStoragePoolTarget(Slot)`)
+  has the SOURCE vault call `pushItems(turtleName, ...)` instead — the
+  turtle is just a routing-target string there, not something a method
+  is called ON. Applied to both `runCrafterJob`'s ingredient delivery
+  and `lib/Cli.kt`'s `deliverToPickupLocation` (pull/craft results
+  landing in a turtle-based pickup location like `turtle_0`). **This
+  push-based direction is itself still an unverified hypothesis, not
+  confirmed** — plausible given how CC:Tweaked's wired-network item
+  routing works (by peripheral NAME, not by which methods a given wrap
+  happens to expose), but genuinely untested against a real turtle.
+  `ktoxSelfPeripheralName()`'s `getID()`-matching approach, by contrast,
+  IS confirmed working — `getID` is right there in the real
+  `getMethods()` output above. If the push hypothesis also turns out
+  wrong, both call sites silently move 0 items rather than crash (same
+  "MISSING"/zero-moved failure shape already established throughout this
+  codebase) — but "silently moves nothing" is exactly the kind of
+  mismatch worth testing for deliberately, not just trusting.
 - Storage-vault load balancing (push-to-emptiest, farm→vault preference
   routing) — problem #3b territory, deferred.
 - Stockpile Switch integration for fast vault-fullness queries — deferred.

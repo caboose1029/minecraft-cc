@@ -172,7 +172,7 @@ function runCrafterJob(recipe, desiredOutput, timeoutSeconds)
                     local itemName = recipeInputItem(recipe, i)
                     local perBatch = recipeInputCountAt(recipe, i)
                     local slot = recipeInputSlot(recipe, i)
-                    pullFromStoragePoolToSlot(crafterName, slot, itemName, perBatch * batches)
+                    pushToStoragePoolTargetSlot(crafterName, slot, itemName, perBatch * batches)
                     i = ktox_plusAssign(i, 1)
                 end
                 local startingOutput = storagePoolCount(recipe.outputName)

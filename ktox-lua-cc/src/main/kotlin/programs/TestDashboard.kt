@@ -111,15 +111,22 @@ fun main() {
         println("FAIL: expected '--fetch=false' appended, got '${afterCraftUnchecked.readyCommand}'")
     }
 
-    // Location selector cycles through named locations (config's real
-    // pickup vault is named "main") and back to "(auto)".
+    // Location selector cycles through named locations and back to
+    // "(auto)". Config now has more than one named pickup vault ("main",
+    // "head"), and Lua's pairs() iteration order isn't stable, so this
+    // deliberately does NOT assert which name comes first - only that
+    // cycling once lands on SOME real named location, not "(auto)".
     val locationRect = detailLocationRect(size)
     val afterLocation1 = handleDetailTouch(stockedDetail, Touch(locationRect.x, locationRect.y), size)
     println("after 1st location touch: locationIndex=${afterLocation1.locationIndex}")
+    if (afterLocation1.locationIndex < 1) {
+        println("FAIL: expected locationIndex to advance to a real location, stayed at ${afterLocation1.locationIndex}")
+    }
     val afterFetchWithLocation = handleDetailTouch(afterLocation1, Touch(fetchRect.x, fetchRect.y), size)
     println("after fetch touch (location set): readyCommand=(${afterFetchWithLocation.readyCommand})")
-    if (afterFetchWithLocation.readyCommand != "pull minecraft:iron_ingot 3 --location=main") {
-        println("FAIL: expected '--location=main' appended, got '${afterFetchWithLocation.readyCommand}'")
+    val locationParts = afterFetchWithLocation.readyCommand.split("--location=")
+    if (locationParts.size < 2 || locationParts[2] == "") {
+        println("FAIL: expected '--location=<name>' appended, got '${afterFetchWithLocation.readyCommand}'")
     }
 
     // A touch outside every rect (the whole screen is tappable in browse

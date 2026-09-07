@@ -98,3 +98,18 @@ fun ktoxInventoryListPooled(sourceNamesCsv: String): String = externalSource()
 @NativeName("ktoxInventoryPullNamedToSlotFromPool")
 fun ktoxInventoryPullNamedToSlotFromPool(toName: String, toSlot: Int, sourceNamesCsv: String, itemName: String, desired: Int): Int =
     externalSource()
+
+// SOURCE-initiated transfer (mirrors the dest-initiated Pull* functions
+// above) - needed when the destination is a turtle. See
+// ktox-cc-shim.lua's own comment on ktoxInventoryPushNamed for why:
+// confirmed live that a turtle wrapped as a peripheral only exposes
+// generic remote-control methods, never pullItems - whether it's still
+// a valid pushItems ROUTING TARGET is unverified, not yet confirmed.
+
+@NativeName("ktoxInventoryPushNamedFromPool")
+fun ktoxInventoryPushNamedFromPool(sourceNamesCsv: String, toName: String, itemName: String, desired: Int): Int =
+    externalSource()
+
+@NativeName("ktoxInventoryPushNamedToSlotFromPool")
+fun ktoxInventoryPushNamedToSlotFromPool(sourceNamesCsv: String, toName: String, toSlot: Int, itemName: String, desired: Int): Int =
+    externalSource()

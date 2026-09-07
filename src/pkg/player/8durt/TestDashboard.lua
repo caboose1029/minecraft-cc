@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestDashboard.kt", {["1-8"]=1,["9"]=33,["10"]=34,["11"]=36,["12"]=37,["13"]=43,["14"]=44,["15"]=45,["16"]=46,["17-18"]=47,["19"]=50,["20"]=51,["21"]=52,["22"]=53,["23-24"]=54,["25"]=56,["26-27"]=57,["28"]=60,["29"]=61,["30"]=62,["31"]=63,["32"]=64,["33-34"]=65,["35"]=68,["36"]=69,["37"]=70,["38"]=71,["39-40"]=72,["41"]=79,["42"]=80,["43"]=81,["44"]=82,["45-46"]=83,["47"]=91,["48"]=92,["49"]=93,["50"]=94,["51"]=95,["52-53"]=96,["54"]=101,["55"]=102,["56"]=103,["57"]=104,["58-59"]=105,["60"]=107,["61"]=108,["62"]=109,["63"]=110,["64-65"]=111,["66"]=116,["67"]=117,["68"]=118,["69"]=119,["70"]=120,["71"]=121,["72-73"]=122,["74"]=127,["75"]=128,["76-77"]=129,["78-83"]=132}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "TestDashboard.kt", {["1-8"]=1,["9"]=33,["10"]=34,["11"]=36,["12"]=37,["13"]=43,["14"]=44,["15"]=45,["16"]=46,["17-18"]=47,["19"]=50,["20"]=51,["21"]=52,["22"]=53,["23-24"]=54,["25"]=56,["26-27"]=57,["28"]=60,["29"]=61,["30"]=62,["31"]=63,["32"]=64,["33-34"]=65,["35"]=68,["36"]=69,["37"]=70,["38"]=71,["39-40"]=72,["41"]=79,["42"]=80,["43"]=81,["44"]=82,["45-46"]=83,["47"]=91,["48"]=92,["49"]=93,["50"]=94,["51"]=95,["52-53"]=96,["54"]=101,["55"]=102,["56"]=103,["57"]=104,["58-59"]=105,["60"]=107,["61"]=108,["62"]=109,["63"]=110,["64-65"]=111,["66"]=119,["67"]=120,["68"]=121,["69"]=122,["70-71"]=123,["72"]=125,["73"]=126,["74"]=127,["75"]=128,["76-77"]=129,["78"]=134,["79"]=135,["80-81"]=136,["82-87"]=139}, "programs")
 ktox_require("lib/Dashboard")
 ktox_require("lib/Display")
 
@@ -66,10 +66,14 @@ local function main()
     local locationRect = detailLocationRect(size)
     local afterLocation1 = handleDetailTouch(stockedDetail, Touch:new(locationRect.x, locationRect.y), size)
     println("after 1st location touch: locationIndex=" .. tostring(afterLocation1.locationIndex))
+    if afterLocation1.locationIndex < 1 then
+        println("FAIL: expected locationIndex to advance to a real location, stayed at " .. tostring(afterLocation1.locationIndex))
+    end
     local afterFetchWithLocation = handleDetailTouch(afterLocation1, Touch:new(fetchRect.x, fetchRect.y), size)
     println("after fetch touch (location set): readyCommand=(" .. tostring(afterFetchWithLocation.readyCommand) .. ")")
-    if afterFetchWithLocation.readyCommand ~= "pull minecraft:iron_ingot 3 --location=main" then
-        println("FAIL: expected \'--location=main\' appended, got \'" .. tostring(afterFetchWithLocation.readyCommand) .. "\'")
+    local locationParts = ktox_split(afterFetchWithLocation.readyCommand, "--location=")
+    if #(locationParts) < 2 or locationParts[2] == "" then
+        println("FAIL: expected \'--location=<name>\' appended, got \'" .. tostring(afterFetchWithLocation.readyCommand) .. "\'")
     end
     local afterMiss = handleBrowseTouch(state, Touch:new(999, 999), size)
     if afterMiss.mode ~= state.mode or afterMiss.tab ~= state.tab then

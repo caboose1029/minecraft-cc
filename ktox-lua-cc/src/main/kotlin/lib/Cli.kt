@@ -9,6 +9,7 @@ import common.ktoxListCatalog
 import common.ktoxSelfPeripheralName
 import lib.ensureStocked
 import lib.pullFromStoragePool
+import lib.pushToStoragePoolTarget
 
 // Shared command dispatcher for both a terminal's own local input and
 // rednet-forwarded input from a secondary terminal (see PLAN.md — same
@@ -70,6 +71,25 @@ fun resolvePickupLocation(explicitLocation: String): String {
         return selfName
     }
     return ktoxConfigPickupVaultDefault()
+}
+
+// Delivers `qty` of `itemName` from the storage pool into `pickupVault`,
+// choosing the transfer DIRECTION based on whether that's this
+// terminal's own inventory. Confirmed live: wrapping a turtle as a
+// peripheral from another computer exposes only generic remote-control
+// methods, never pullItems - so when the pickup vault IS this terminal
+// (a turtle), the ordinary dest.pullItems(...) pullFromStoragePool
+// would always move 0 items with no error, not fail loudly. Push
+// instead (the storage vault calls pushItems, targeting this terminal
+// by name) - UNVERIFIED whether a turtle is a valid pushItems ROUTING
+// TARGET either, that's the current working hypothesis, not confirmed.
+// See PLAN.md's "Known open items".
+fun deliverToPickupLocation(pickupVault: String, itemName: String, qty: Int): Int {
+    val selfName = ktoxSelfPeripheralName()
+    if (selfName != "MISSING" && selfName == pickupVault) {
+        return pushToStoragePoolTarget(pickupVault, itemName, qty)
+    }
+    return pullFromStoragePool(pickupVault, itemName, qty)
 }
 
 // Shared trailing-flag parsing for pull/craft, scanning parts[startIndex..]
@@ -191,7 +211,7 @@ fun runPullCommand(parts: List<String>): String {
         return noPickupLocationMessage(location)
     }
 
-    val pulled = pullFromStoragePool(pickupVault, itemName, qty)
+    val pulled = deliverToPickupLocation(pickupVault, itemName, qty)
     return "Pulled ${pulled} of ${itemName} into the pickup vault (requested ${qty})."
 }
 
@@ -231,7 +251,7 @@ fun runCraftCommand(parts: List<String>): String {
         return "Crafted ${itemName} up to ${qty} (left in the storage pool; --fetch=false)."
     }
 
-    val pulled = pullFromStoragePool(pickupVault, itemName, qty)
+    val pulled = deliverToPickupLocation(pickupVault, itemName, qty)
     return "Pulled ${pulled} of ${itemName} (requested ${qty})."
 }
 
