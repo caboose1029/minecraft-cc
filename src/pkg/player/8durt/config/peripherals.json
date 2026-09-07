@@ -58,6 +58,7 @@
       "highWatermark": 64
     }
   },
+  "create:item_vault_13": { "type": "vault", "job": { "type": "pickup" } },
   "computercraft:redstone_relay_27": {
     "type": "relay",
     "connections": {
