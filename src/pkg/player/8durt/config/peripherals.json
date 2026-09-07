@@ -1,0 +1,67 @@
+{
+  "create:item_vault_0": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_andesite" }
+    }
+  },
+  "create:item_vault_1": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_brass" }
+    }
+  },
+  "create:item_vault_2": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_copper" }
+    }
+  },
+  "create:item_vault_4": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_5": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_6": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "cutting" }
+    }
+  },
+  "create:item_vault_7": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_8": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_9": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:andesite_alloy",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_10": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:brass_ingot",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_11": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:copper_ingot",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "computercraft:redstone_relay_27": {
+    "type": "relay",
+    "connections": {
+      "back": { "job": { "type": "wood_farm" } }
+    }
+  }
+}
