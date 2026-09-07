@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=16,["12-13"]=17,["14"]=19,["15"]=20,["16"]=21,["17-18"]=22,["19"]=24,["20-21"]=25,["22"]=27,["23-24"]=28,["25"]=30,["26-27"]=31,["28-33"]=33,["34"]=37,["35"]=38,["36"]=39,["37"]=40,["38"]=41,["39"]=42,["40"]=43,["41-42"]=44,["43"]=46,["44-45"]=47,["46"]=48,["47"]=49,["48-51"]=50,["52"]=53,["53-54"]=54,["55"]=57,["56"]=58,["57-58"]=59,["59"]=62,["60"]=63,["61"]=64,["62"]=65,["63"]=66,["64"]=67,["65"]=68,["66"]=69,["67"]=70,["68-69"]=71,["70-71"]=73,["72-73"]=75,["74-75"]=77,["76-81"]=79,["82"]=83,["83-84"]=84,["85"]=86,["86"]=87,["87"]=89,["88"]=90,["89-90"]=91,["91"]=94,["92-97"]=95,["98"]=104,["99-100"]=105,["101"]=107,["102"]=108,["103"]=110,["104"]=111,["105-106"]=112,["107"]=115,["108"]=116,["109-114"]=117,["115"]=125,["116-117"]=126,["118"]=128,["119"]=129,["120"]=131,["121"]=132,["122-123"]=133,["124"]=136,["125-127"]=137}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=16,["12-13"]=17,["14"]=19,["15"]=20,["16"]=21,["17-18"]=22,["19"]=24,["20-21"]=25,["22"]=27,["23-24"]=28,["25"]=30,["26-27"]=31,["28-33"]=33,["34"]=37,["35"]=38,["36"]=39,["37"]=40,["38"]=41,["39"]=42,["40"]=43,["41-42"]=44,["43"]=46,["44-45"]=47,["46"]=48,["47"]=49,["48-51"]=50,["52"]=53,["53-54"]=54,["55"]=57,["56"]=58,["57-58"]=59,["59"]=62,["60"]=63,["61"]=64,["62"]=65,["63"]=66,["64"]=67,["65"]=68,["66"]=69,["67"]=70,["68-69"]=71,["70-71"]=73,["72-73"]=75,["74-75"]=77,["76-81"]=79,["82"]=83,["83-84"]=84,["85"]=86,["86"]=87,["87"]=88,["88-89"]=89,["90"]=91,["91"]=93,["92"]=94,["93-94"]=95,["95"]=98,["96-101"]=99,["102"]=108,["103-104"]=109,["105"]=111,["106"]=112,["107"]=113,["108-109"]=114,["110"]=116,["111"]=118,["112"]=119,["113-114"]=120,["115"]=123,["116"]=124,["117-122"]=125,["123"]=133,["124-125"]=134,["126"]=136,["127"]=137,["128"]=138,["129-130"]=139,["131"]=141,["132"]=143,["133"]=144,["134-135"]=145,["136"]=148,["137-139"]=149}, "lib")
 ktox_require("lib/Planner")
 ktox_require("lib/Inventory")
 
@@ -83,7 +83,11 @@ function runPullCommand(parts)
         return "Usage: pull <name> <qty>"
     end
     local itemName = parts[2]
-    local qty = ktox_toInt(ktox_toDouble(parts[3]))
+    local qtyRaw = ktox_toDoubleOrNull(parts[3])
+    if qtyRaw == nil then
+        return "Usage: pull <name> <qty> - " .. "\"" .. tostring(parts[3]) .. "\"" .. " isn\'t a number."
+    end
+    local qty = ktox_toInt(qtyRaw)
     local pickupVault = ktoxConfigPickupVault()
     if pickupVault == "MISSING" then
         return "No pickup vault configured (job.type " .. "\"" .. "pickup" .. "\"" .. " in config/peripherals.json)."
@@ -99,7 +103,11 @@ function runCraftCommand(parts)
         return "Usage: craft <name> <qty>"
     end
     local itemName = parts[2]
-    local qty = ktox_toInt(ktox_toDouble(parts[3]))
+    local qtyRaw = ktox_toDoubleOrNull(parts[3])
+    if qtyRaw == nil then
+        return "Usage: craft <name> <qty> - " .. "\"" .. tostring(parts[3]) .. "\"" .. " isn\'t a number."
+    end
+    local qty = ktox_toInt(qtyRaw)
     local pickupVault = ktoxConfigPickupVault()
     if pickupVault == "MISSING" then
         return "No pickup vault configured (job.type " .. "\"" .. "pickup" .. "\"" .. " in config/peripherals.json)."
@@ -116,7 +124,11 @@ function runTrashCommand(parts)
         return "Usage: trash <name> <qty>"
     end
     local itemName = parts[2]
-    local qty = ktox_toInt(ktox_toDouble(parts[3]))
+    local qtyRaw = ktox_toDoubleOrNull(parts[3])
+    if qtyRaw == nil then
+        return "Usage: trash <name> <qty> - " .. "\"" .. tostring(parts[3]) .. "\"" .. " isn\'t a number."
+    end
+    local qty = ktox_toInt(qtyRaw)
     local trashVault = ktoxConfigTrashVault()
     if trashVault == "MISSING" then
         return "No trash vault configured (job.type " .. "\"" .. "trash" .. "\"" .. " in config/peripherals.json)."

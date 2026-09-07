@@ -84,7 +84,11 @@ fun runPullCommand(parts: List<String>): String {
         return "Usage: pull <name> <qty>"
     }
     val itemName = parts[2]
-    val qty = parts[3].toDouble().toInt()
+    val qtyRaw = parts[3].toDoubleOrNull()
+    if (qtyRaw == null) {
+        return "Usage: pull <name> <qty> - \"${parts[3]}\" isn't a number."
+    }
+    val qty = qtyRaw.toInt()
 
     val pickupVault = ktoxConfigPickupVault()
     if (pickupVault == "MISSING") {
@@ -105,7 +109,11 @@ fun runCraftCommand(parts: List<String>): String {
         return "Usage: craft <name> <qty>"
     }
     val itemName = parts[2]
-    val qty = parts[3].toDouble().toInt()
+    val qtyRaw = parts[3].toDoubleOrNull()
+    if (qtyRaw == null) {
+        return "Usage: craft <name> <qty> - \"${parts[3]}\" isn't a number."
+    }
+    val qty = qtyRaw.toInt()
 
     val pickupVault = ktoxConfigPickupVault()
     if (pickupVault == "MISSING") {
@@ -126,7 +134,11 @@ fun runTrashCommand(parts: List<String>): String {
         return "Usage: trash <name> <qty>"
     }
     val itemName = parts[2]
-    val qty = parts[3].toDouble().toInt()
+    val qtyRaw = parts[3].toDoubleOrNull()
+    if (qtyRaw == null) {
+        return "Usage: trash <name> <qty> - \"${parts[3]}\" isn't a number."
+    }
+    val qty = qtyRaw.toInt()
 
     val trashVault = ktoxConfigTrashVault()
     if (trashVault == "MISSING") {

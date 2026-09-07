@@ -809,6 +809,30 @@ secondary over rednet — same dispatcher either way:
 - `trash <name> <qty>` — permanently destroys items via the trash vault.
   Its own explicit command on purpose; nothing else ever routes here.
 
+**Real bug, found during physical build-out testing (2026-09-07): a
+non-numeric `<qty>` crashed the whole head loop, not just that one
+command.** `pull`/`craft`/`trash` all parsed their quantity argument with
+`.toDouble()`, which transpiles to `ktox_toDouble` — `tonumber(s)` then
+`error(...)` if that's `nil`. Nothing in the CLI dispatch chain catches
+Lua errors (this codebase doesn't use try/catch anywhere — untested
+territory for ktox, and not needed once the actual fix is this simple),
+so a mistyped quantity propagated all the way up through
+`parallel.waitForAny` in `Head.kt`'s main loop and killed the whole
+program — which is what actually explains "the terminal doesn't give me
+the cursor back after a bad command": the program wasn't hung, it had
+crashed, dropping to whatever's underneath (the raw CraftOS shell, or a
+frozen screen depending on how it's launched). Diagnosed by testing
+`runCliCommand` directly against real CraftOS-PC with a battery of bad
+inputs (`"asdf"`, `""`, `"craft"`, `"craft <item> notanumber"`) rather
+than guessing — only the last one actually threw. Fixed by switching to
+`.toDoubleOrNull()` (backed by `ktox_toDoubleOrNull`, which already
+existed in the runtime for exactly this) and returning a normal `Usage:
+...` string on `null` instead of ever reaching `.toDouble()`'s error
+path. Worth grepping for `.toDouble()`/`.toInt()` calls on any other
+string that ultimately originates from a human typing at a live prompt
+(as opposed to internally-generated, machine-formatted strings) if a
+similar hang gets reported elsewhere.
+
 ## Generic peripheral-call shim
 
 Built after touching a second concrete peripheral shape (inventory calls),

@@ -143,4 +143,16 @@ fun main() {
     println(runCliCommand("craft minecraft:dried_kelp_block 1"))
     println("--- craft lava bucket (fluid-adjacent, no stock - should not hang) ---")
     println(runCliCommand("craft minecraft:lava_bucket 1"))
+
+    println("--- unknown command (single word, no args) ---")
+    println(runCliCommand("asdf"))
+    println("--- unknown command (multiple words) ---")
+    println(runCliCommand("asdf jkl"))
+    println("--- empty command ---")
+    println(runCliCommand(""))
+    println("--- known verb, missing args ---")
+    println(runCliCommand("craft"))
+    println("--- known verb, non-numeric qty ---")
+    println(runCliCommand("craft minecraft:andesite_alloy notanumber"))
+    println("after all unknown-command tests")
 }
