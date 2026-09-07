@@ -106,6 +106,8 @@ fun main() {
     println(runCliCommand("pull minecraft:copper_ingot 5"))
     println("--- pull --location=main (named lookup) ---")
     println(runCliCommand("pull minecraft:copper_ingot 5 --location=main"))
+    println("--- pull --location=head (turtle_0, the head terminal's own inventory) ---")
+    println(runCliCommand("pull minecraft:copper_ingot 5 --location=head"))
     println("--- pull --location=nonexistent (should report no such location, not the generic 'no pickup vault' message) ---")
     println(runCliCommand("pull minecraft:copper_ingot 5 --location=nonexistent"))
     println("--- craft --location=main --fetch=false (both flags, should not fetch) ---")
