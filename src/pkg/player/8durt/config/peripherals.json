@@ -59,7 +59,8 @@
     }
   },
   "create:item_vault_13": { "type": "vault", "job": { "type": "pickup" } },
-  "computercraft:redstone_relay_27": {
+  "create:item_vault_14": { "type": "vault", "job": { "type": "storage" } },
+  "computercraft:redstone_relay_28": {
     "type": "relay",
     "connections": {
       "back": { "job": { "type": "wood_farm" } }
