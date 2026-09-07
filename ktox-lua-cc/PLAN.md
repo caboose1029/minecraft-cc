@@ -120,7 +120,67 @@ on its own dedicated protocols:
   "done" signal back — it just polls the storage pool for the output
   count exactly like a machine job (see "CLI" below), so a crafter job
   and a machine job look identical from the executor's point of view
-  once the craft command has been sent.
+  once the craft command has been sent. **Now clears its grid FIRST and
+  refuses to craft unless that verifiably succeeded** (`isInventoryEmpty`
+  in `programs/Crafter.kt`) — see the real incident below for why.
+
+**Real incident, found during physical build-out testing: the crafter
+turtle crafted `create:brass_block` on every request, regardless of what
+was actually asked for (`craft create:raw_zinc_block 10`, then
+`craft minecraft:chest 1` — both produced brass).** Two compounding
+causes, confirmed via direct inspection rather than guessing:
+1. `ktoxPreferRecipe`'s "fewer raw inputs per unit output" heuristic
+   (`totalInputCount / outputCount`, lower wins — see "Configs" below)
+   is a bad proxy for a REVERSIBLE compacting/decompacting pair. A
+   decompacting recipe (1 block → 9 ingots) always scores extremely low
+   (looks maximally "efficient") even though it's circular and useless
+   for actually producing new stock — it needs the block, which itself
+   needs the ingots. `create:brass_ingot` had three candidate recipes
+   with no explicit `priority` set at all: the genuine
+   `mixing_heated` machine recipe (copper + zinc → brass_ingot, score
+   1.0) lost to the `brass_block → 9× brass_ingot` decompacting recipe
+   (score ≈0.111) purely on this flawed heuristic. `create:andesite_alloy`
+   had already been given explicit `priority` fields for exactly this
+   reason (see its resource-tree.lua entries) — brass just never got the
+   same treatment. **Fixed** by adding explicit priorities to all three
+   `create:brass_ingot` candidates (`mixing_heated` = 1, the
+   `brass_nugget` crafter path = 2, the `brass_block` decompacting path
+   = 3) and, found by the same sweep, all five `create:zinc_ingot`
+   candidates (the three genuine `smelter` recipes = 1, the
+   `zinc_nugget` crafter path = 2, the `zinc_block` decompacting path =
+   3 — same exact pattern, hadn't actually been hit yet, would have been
+   eventually). Not exhaustively swept beyond these two — the same
+   pattern could exist elsewhere in `resource-tree.lua`'s ~1900+ entries;
+   revisit if another item shows the same symptom.
+2. `create:brass_ingot` is also a configured **passive feeder**
+   (`create:item_vault_11`, low 8/high 64 — see "Vaults" above), which
+   `topUpPassiveFeeders()` checks (and, via `ensureStocked`, potentially
+   acts on) after **every single head command**, unconditionally — not
+   just commands that actually touch brass. So even once the real
+   request (`raw_zinc_block`/`chest`) finished, the very next thing the
+   head did automatically was top up brass_ingot — using the crafter
+   turtle for a completely unrelated production cycle the player never
+   asked for in that moment, timed right after their own request in a
+   way that reasonably looked connected. This part isn't a bug exactly
+   (passive feeders are supposed to top up opportunistically — see
+   "Vaults") — it's what turned a wrong recipe *preference* into a
+   *constant, automatic* wrong action, and why it looked like it "always
+   happens" rather than a one-off.
+3. **Defense in depth, since (1) could recur for an item not yet
+   caught:** `turtle.craft()` matches whatever's physically in the grid
+   right now — it has no notion of which recipe the head intended. If
+   ingredient delivery to a slot silently fails (no error, just moves
+   fewer than expected — the established failure shape for every
+   `pull`/`push` helper in this codebase) while OTHER ingredients from a
+   previous job are still sitting there, the turtle will happily craft
+   whatever the leftover contents happen to form. `programs/Crafter.kt`
+   now dumps and verifies the grid is actually empty (`isInventoryEmpty`)
+   before ever calling `turtleCraft()` — refuses (crafts nothing) rather
+   than crafting from unverified contents. This can't fix delivery
+   failing in the first place (a real-world check matters too: is there
+   a non-full storage vault directly in front of this turtle for
+   `turtle.drop()` to land in?), but it turns a silent wrong-item craft
+   into a safe no-op.
 
 The head still does all the deciding: it computes how many ingredient
 sets are needed, pushes each ingredient into the crafter turtle's

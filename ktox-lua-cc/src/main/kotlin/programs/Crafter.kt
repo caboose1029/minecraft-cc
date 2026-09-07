@@ -62,9 +62,40 @@ fun handleOneMessage(jobType: String) {
         rednetSend(senderId, jobType, VAULT_CRAFTER_REPLY_PROTOCOL)
     } else if (protocol == VAULT_CRAFTER_CMD_PROTOCOL) {
         val quantity = ktoxRednetLastMessage().toDouble().toInt()
-        turtleCraft(quantity)
+        // turtle.craft() matches whatever's PHYSICALLY in the grid right
+        // now - it has no notion of "the recipe the head intended".
+        // Confirmed live: leftover ingredients from an earlier successful
+        // craft (brass ingots forming brass_block's exact 9-slot shape)
+        // sat through dumpAllForward() below never actually clearing them
+        // (most likely turtleDrop() silently failing - nothing valid in
+        // front to receive them, or that vault was full) and got
+        // re-crafted into brass_block on every subsequent, unrelated
+        // craft request (raw_zinc_block, minecraft:chest) regardless of
+        // what ingredients the head had actually tried to deliver.
+        // Clearing FIRST and refusing to craft unless that verifiably
+        // succeeded turns a silent wrong-item craft (real materials
+        // wasted) into a safe no-op (0 produced, matching every other
+        // "couldn't do this" case already in this codebase) - it can't
+        // fix WHY the drop isn't landing (a real-world check: is there a
+        // non-full storage vault directly in front of this turtle?), but
+        // it stops the turtle from ever crafting from stale contents.
         dumpAllForward()
+        if (isInventoryEmpty()) {
+            turtleCraft(quantity)
+            dumpAllForward()
+        }
     }
+}
+
+fun isInventoryEmpty(): Boolean {
+    var slot = 1
+    while (slot <= 16) {
+        if (turtleGetItemCount(slot) > 0) {
+            return false
+        }
+        slot += 1
+    }
+    return true
 }
 
 // Drops everything the turtle is holding toward whatever it's facing —
