@@ -73,3 +73,39 @@ fun recipeInputSlot(recipe: Recipe, index: Int): Int {
 fun jobKind(jobType: String): String {
     return ktoxConfigJobKind(jobType)
 }
+
+// Whether `index` is the FIRST input entry naming this item, among the
+// recipe's inputs. A recipe with the same item repeated across several
+// grid slots (e.g. 9 separate "create:raw_zinc" entries, one per slot,
+// for raw_zinc_block) is stored as one entry per slot - this is how both
+// the head (staging a total per distinct item, not per slot) and the
+// crafter (assigning one staging slot per distinct item) avoid double-
+// counting/double-staging the same item. Shared here rather than
+// duplicated in both lib/Executor.kt and programs/Crafter.kt.
+fun isFirstInputOccurrence(recipe: Recipe, index: Int): Boolean {
+    val itemName = recipeInputItem(recipe, index)
+    var i = 1
+    while (i < index) {
+        if (recipeInputItem(recipe, i) == itemName) {
+            return false
+        }
+        i += 1
+    }
+    return true
+}
+
+// Total of `itemName` needed across every input entry that names it
+// (there may be several, one per grid slot it fills), scaled by
+// `batches`.
+fun totalNeededForItem(recipe: Recipe, itemName: String, batches: Int): Int {
+    var total = 0
+    val inputCount = recipeInputCount(recipe)
+    var i = 1
+    while (i <= inputCount) {
+        if (recipeInputItem(recipe, i) == itemName) {
+            total += recipeInputCountAt(recipe, i)
+        }
+        i += 1
+    }
+    return total * batches
+}

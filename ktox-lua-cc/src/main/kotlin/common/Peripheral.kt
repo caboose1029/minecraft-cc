@@ -64,6 +64,21 @@ fun ktoxConfigTrashVault(): String = externalSource()
 @NativeName("ktoxConfigCrafterForJob")
 fun ktoxConfigCrafterForJob(jobType: String): String = externalSource()
 
+@NativeName("ktoxConfigCrafterChests")
+fun ktoxConfigCrafterChests(crafterName: String): String = externalSource()
+
+@NativeName("ktoxInventoryDrainAll")
+fun ktoxInventoryDrainAll(fromName: String, toName: String): Int = externalSource()
+
+@NativeName("ktoxSetLastCrafterFailure")
+fun ktoxSetLastCrafterFailure(reason: String): Boolean = externalSource()
+
+@NativeName("ktoxGetLastCrafterFailure")
+fun ktoxGetLastCrafterFailure(): String = externalSource()
+
+@NativeName("ktoxClearLastCrafterFailure")
+fun ktoxClearLastCrafterFailure(): Boolean = externalSource()
+
 @NativeName("ktoxConfigPassiveFeeders")
 fun ktoxConfigPassiveFeeders(): String = externalSource()
 
@@ -97,10 +112,6 @@ fun ktoxInventoryPullNamedFromPool(toName: String, sourceNamesCsv: String, itemN
 
 @NativeName("ktoxInventoryListPooled")
 fun ktoxInventoryListPooled(sourceNamesCsv: String): String = externalSource()
-
-@NativeName("ktoxInventoryPullNamedToSlotFromPool")
-fun ktoxInventoryPullNamedToSlotFromPool(toName: String, toSlot: Int, sourceNamesCsv: String, itemName: String, desired: Int): Int =
-    externalSource()
 
 // SOURCE-initiated transfer (mirrors the dest-initiated Pull* functions
 // above) - needed when the destination is a turtle. See

@@ -20,19 +20,24 @@ const val VAULT_RESULT_PROTOCOL = "vault-result"
 // different job type.
 const val VAULT_CRAFTER_QUERY_PROTOCOL = "vault-crafter-query"
 const val VAULT_CRAFTER_REPLY_PROTOCOL = "vault-crafter-reply"
+// Payload packed as "<outputItemName>,<batches>" - see PLAN.md "Crafter
+// role" for the chest-above/chest-below physical flow this drives. The
+// crafter looks up the recipe for outputItemName itself (findRecipe,
+// same shared lib/Config.kt function the head uses) rather than being
+// told the ingredient/slot shape - it only needs to know WHAT to make
+// and HOW MANY times.
 const val VAULT_CRAFTER_CMD_PROTOCOL = "vault-crafter-cmd"
 
-// "Suck ingredient into a specific grid slot" - payload packed as
-// "slot,count" (e.g. "1,9"). See PLAN.md "Crafter role" for why
-// ingredient delivery uses a physical turtle.suckUp() instead of a
-// network push into the turtle: confirmed live that a turtle exposed as
-// a peripheral has no inventory methods at all, and the follow-up
-// source-pushes-into-turtle hypothesis also didn't pan out in practice.
-// No reply protocol needed - the head confirms completion by polling the
-// staging feeder vault's own emptiness (an ordinary vault peripheral
-// check, already proven, see lib/Executor.kt's waitForFeederEmpty),
-// not a rednet round trip.
-const val VAULT_CRAFTER_SUCK_PROTOCOL = "vault-crafter-suck"
+// Crafter -> head, freeform failure reason (payload IS the message, no
+// packing - matches VAULT_RESULT_PROTOCOL's own freeform-string
+// convention). Sent whenever a physical step doesn't work as expected
+// (a suckUp/dropDown/transferTo that didn't move what was expected, no
+// known recipe, leftover inventory at job start, ...) so the head can
+// surface a SPECIFIC reason instead of just a generic timeout once
+// nothing shows up in the drop-down chest. Fire-and-forget, no ack
+// needed - see lib/Executor.kt's runCrafterJob for how the head listens
+// for this alongside its normal completion polling.
+const val VAULT_CRAFTER_FAILURE_PROTOCOL = "vault-crafter-failure"
 
 // Broadcasts a role query and waits up to `listenSeconds` for a head to
 // answer. Returns the head's rednet ID if one replied, -1 otherwise (no

@@ -7,36 +7,77 @@ import common.ktoxRednetReceiveAny
 import common.rednetOpenAny
 import common.rednetSend
 import common.turtleCraft
-import common.turtleDrop
+import common.turtleDropDown
 import common.turtleGetItemCount
 import common.turtleSelect
 import common.turtleSuckUp
+import common.turtleTransferTo
+import lib.Recipe
 import lib.VAULT_CRAFTER_CMD_PROTOCOL
+import lib.VAULT_CRAFTER_FAILURE_PROTOCOL
 import lib.VAULT_CRAFTER_QUERY_PROTOCOL
 import lib.VAULT_CRAFTER_REPLY_PROTOCOL
-import lib.VAULT_CRAFTER_SUCK_PROTOCOL
+import lib.findRecipe
+import lib.isFirstInputOccurrence
+import lib.recipeInputCount
+import lib.recipeInputCountAt
+import lib.recipeInputItem
+import lib.recipeInputSlot
 
 // A crafty turtle (see PLAN.md "Crafter role") — a third terminal role
 // alongside head/secondary, but not a CLI: it never talks to a player
-// directly, just sits waiting for the head to (1) tell it to suck a
-// staged ingredient batch, from directly above, into a specific
-// crafting-grid slot (1, 2, 3, 5, 6, 7, 9, 10, 11), one ingredient at a
-// time, and (2) send a craft command once every ingredient has landed.
-// Runs turtle.craft(), then drops everything it's holding toward
-// whatever it's physically facing — expected to be an ordinary storage
-// vault. Both the suck-in and drop-out sides are PHYSICAL turtle.*
-// calls, never a network push/pull targeting this turtle's own
-// inventory — confirmed live that a turtle exposed as a peripheral has
-// no inventory methods at all (only generic remote-control ones), and a
-// follow-up "have the SOURCE push into the turtle by name instead"
-// hypothesis didn't pan out in practice either — see PLAN.md's "Crafter
-// role" for the two failed attempts before landing on this. Never
-// decides anything itself, same principle as SecondaryTerminal.kt, just
-// a different kind of thin client — the head is still the only thing
-// that knows what to craft, how much, or why.
+// directly, just sits waiting for the head to tell it what to craft.
+// Physical flow is top to bottom, matching Create's own machine
+// convention: a chest sits directly ABOVE (ingredient staging, the head
+// fills it) and a chest directly BELOW (finished output, the head
+// empties it) — turtle.suckUp() pulls ingredients in, turtle.dropDown()
+// pushes results out. Both are PHYSICAL turtle.* operations, never a
+// network push/pull targeting this turtle's own inventory — confirmed
+// live that a turtle exposed as a peripheral has no inventory methods at
+// all, and a network-push workaround tried after that didn't hold up
+// either. See PLAN.md's "Crafter role" for the two failed network-based
+// designs before this one.
+//
+// The head only ever sends "<outputItemName>,<batches>" - it does NOT
+// dictate ingredient/slot placement. This turtle looks the recipe up
+// itself (findRecipe, the same shared lib/Config.kt function the head
+// uses) and works out which of its own currently-held items go in which
+// crafting-grid slot (1, 2, 3, 5, 6, 7, 9, 10, 11) - "plan the grid
+// arrangement" is now crafter-side logic, deliberately, even though the
+// head still decides WHAT to craft and HOW MANY. Any physical step that
+// doesn't behave as expected (a suckUp/transferTo/craft call that
+// returns false, or fewer items than expected) reports a SPECIFIC reason
+// back to the head (VAULT_CRAFTER_FAILURE_PROTOCOL) rather than failing
+// silently - see runCraftTask.
 //
 // Usage: crafter <jobType> (normally auto-launched by startup.lua via
 // role.txt, not run by hand — see TerminalSetup.kt)
+
+// Non-grid slots (outside the 3x3 pattern at 1,2,3,5,6,7,9,10,11) -
+// each distinct ingredient the recipe needs gets its OWN staging slot
+// from this list for the duration of gathering+placing it, so several
+// different item types never get combined in one slot by accident.
+fun stagingSlotAt(index: Int): Int {
+    if (index == 1) {
+        return 4
+    }
+    if (index == 2) {
+        return 8
+    }
+    if (index == 3) {
+        return 12
+    }
+    if (index == 4) {
+        return 13
+    }
+    if (index == 5) {
+        return 14
+    }
+    if (index == 6) {
+        return 15
+    }
+    return 16
+}
 
 fun main(args: Array<String>) {
     if (args.size < 1) {
@@ -70,42 +111,108 @@ fun handleOneMessage(jobType: String) {
     val protocol = ktoxRednetLastProtocol()
     if (protocol == VAULT_CRAFTER_QUERY_PROTOCOL && ktoxRednetLastMessage() == jobType) {
         rednetSend(senderId, jobType, VAULT_CRAFTER_REPLY_PROTOCOL)
-    } else if (protocol == VAULT_CRAFTER_SUCK_PROTOCOL) {
-        // "slot,count" - suck a staged ingredient batch from directly
-        // above (see PLAN.md - the head stages it into a feeder vault
-        // positioned there first) into a specific crafting-grid slot.
-        // No reply - the head confirms completion by polling the feeder
-        // vault's own emptiness, not a rednet round trip.
-        val parts = ktoxRednetLastMessage().split(",")
-        val slot = parts[1].toDouble().toInt()
-        val count = parts[2].toDouble().toInt()
-        turtleSelect(slot)
-        turtleSuckUp(count)
     } else if (protocol == VAULT_CRAFTER_CMD_PROTOCOL) {
-        val quantity = ktoxRednetLastMessage().toDouble().toInt()
-        // turtle.craft() matches whatever's PHYSICALLY in the grid right
-        // now - it has no notion of "the recipe the head intended".
-        // Confirmed live: leftover ingredients from an earlier successful
-        // craft (brass ingots forming brass_block's exact 9-slot shape)
-        // sat through dumpAllForward() below never actually clearing them
-        // (most likely turtleDrop() silently failing - nothing valid in
-        // front to receive them, or that vault was full) and got
-        // re-crafted into brass_block on every subsequent, unrelated
-        // craft request (raw_zinc_block, minecraft:chest) regardless of
-        // what ingredients the head had actually tried to deliver.
-        // Clearing FIRST and refusing to craft unless that verifiably
-        // succeeded turns a silent wrong-item craft (real materials
-        // wasted) into a safe no-op (0 produced, matching every other
-        // "couldn't do this" case already in this codebase) - it can't
-        // fix WHY the drop isn't landing (a real-world check: is there a
-        // non-full storage vault directly in front of this turtle?), but
-        // it stops the turtle from ever crafting from stale contents.
-        dumpAllForward()
-        if (isInventoryEmpty()) {
-            turtleCraft(quantity)
-            dumpAllForward()
+        val parts = ktoxRednetLastMessage().split(",")
+        val outputItemName = parts[1]
+        val batches = parts[2].toDouble().toInt()
+        runCraftTask(senderId, outputItemName, batches)
+    }
+}
+
+// Loud, informative failure reporting - printed locally (in case anyone
+// is actually looking at this turtle's own screen) AND sent back to the
+// head, so it can surface the SPECIFIC reason in its own result instead
+// of a generic timeout once nothing shows up in the chest below.
+fun reportFailure(headId: Int, reason: String) {
+    println("FAILURE: ${reason}")
+    rednetSend(headId, reason, VAULT_CRAFTER_FAILURE_PROTOCOL)
+}
+
+fun runCraftTask(headId: Int, outputItemName: String, batches: Int) {
+    dumpAllDown()
+    if (!isInventoryEmpty()) {
+        reportFailure(headId, "Crafter's inventory wasn't empty at the start of a job (dropDown didn't clear it) - check the chest below isn't full or missing.")
+        return
+    }
+
+    val recipe = findRecipe(outputItemName)
+    if (recipe == null) {
+        reportFailure(headId, "Crafter has no known recipe for ${outputItemName}.")
+        return
+    }
+
+    val inputCount = recipeInputCount(recipe)
+    var stagingIndex = 0
+    var i = 1
+    while (i <= inputCount) {
+        if (isFirstInputOccurrence(recipe, i)) {
+            stagingIndex += 1
+            val itemName = recipeInputItem(recipe, i)
+            val stagingSlot = stagingSlotAt(stagingIndex)
+            val ok = stageAndDistribute(headId, recipe, itemName, stagingSlot, batches, inputCount)
+            if (!ok) {
+                dumpAllDown()
+                return
+            }
+        }
+        i += 1
+    }
+
+    val crafted = turtleCraft(batches)
+    if (!crafted) {
+        reportFailure(headId, "turtle.craft() failed for ${outputItemName} - ingredients may not have matched the expected shape.")
+        dumpAllDown()
+        return
+    }
+
+    dumpAllDown()
+}
+
+// Sucks `itemName` from the chest above into `stagingSlot`, distributing
+// it into every grid slot the recipe needs it in, ONE target slot at a
+// time - never accumulating more than one target slot's worth in the
+// staging slot at once, so a large total (spread across several grid
+// slots) can't overflow a single slot's stack limit even when the total
+// needed across every slot combined would exceed it.
+fun stageAndDistribute(headId: Int, recipe: Recipe, itemName: String, stagingSlot: Int, batches: Int, inputCount: Int): Boolean {
+    var j = 1
+    while (j <= inputCount) {
+        if (recipeInputItem(recipe, j) == itemName) {
+            val targetSlot = recipeInputSlot(recipe, j)
+            val needed = recipeInputCountAt(recipe, j) * batches
+            val gathered = gatherInto(stagingSlot, needed)
+            if (gathered < needed) {
+                reportFailure(headId, "suckUp only retrieved ${gathered} of ${needed} needed ${itemName} from the chest above.")
+                return false
+            }
+            turtleSelect(stagingSlot)
+            val moved = turtleTransferTo(targetSlot, needed)
+            if (!moved) {
+                reportFailure(headId, "Couldn't move ${itemName} from the staging slot into crafting-grid slot ${targetSlot}.")
+                return false
+            }
+        }
+        j += 1
+    }
+    return true
+}
+
+// Sucks up to `needed` of whatever's directly above into `stagingSlot`,
+// looping (the chest above can split one item across several of its own
+// slots) until either `needed` is reached or suckUp stops making
+// progress (nothing left up there).
+fun gatherInto(stagingSlot: Int, needed: Int): Int {
+    turtleSelect(stagingSlot)
+    var gathered = turtleGetItemCount(stagingSlot)
+    while (gathered < needed) {
+        val before = gathered
+        turtleSuckUp(needed - gathered)
+        gathered = turtleGetItemCount(stagingSlot)
+        if (gathered <= before) {
+            return gathered
         }
     }
+    return gathered
 }
 
 fun isInventoryEmpty(): Boolean {
@@ -119,18 +226,15 @@ fun isInventoryEmpty(): Boolean {
     return true
 }
 
-// Drops everything the turtle is holding toward whatever it's facing —
-// deliberately doesn't try to track which specific slot turtle.craft()'s
-// result landed in (unverified/unconfirmed exact behavior), just clears
-// the whole inventory after every craft. Safe as long as this turtle
-// only ever holds craft-relevant items, which it should as a dedicated
-// crafter with nothing else pushed into it.
-fun dumpAllForward() {
+// Drops everything the turtle is holding straight down into the chest
+// below — both for delivering a finished craft result and for clearing
+// stale contents before starting a new job (see runCraftTask).
+fun dumpAllDown() {
     var slot = 1
     while (slot <= 16) {
         turtleSelect(slot)
         if (turtleGetItemCount(slot) > 0) {
-            turtleDrop(64)
+            turtleDropDown(64)
         }
         slot += 1
     }

@@ -1,9 +1,11 @@
 package lib
 
+import common.ktoxClearLastCrafterFailure
 import common.ktoxConfigPickupVaultByName
 import common.ktoxConfigPickupVaultDefault
 import common.ktoxConfigStorageVaultNames
 import common.ktoxConfigTrashVault
+import common.ktoxGetLastCrafterFailure
 import common.ktoxIsConfiguredPickupLocation
 import common.ktoxListCatalog
 import common.ktoxSelfPeripheralName
@@ -245,14 +247,25 @@ fun runCraftCommand(parts: List<String>): String {
         }
     }
 
+    // Cleared before running, not just checked after - a stale failure
+    // from an earlier, unrelated craft attempt must never leak into this
+    // one's result just because nothing overwrote it this time (e.g. an
+    // ensureStocked call that never actually reaches runCrafterJob at
+    // all, because the item was already stocked).
+    ktoxClearLastCrafterFailure()
     ensureStocked(itemName, qty, 0)
+    val crafterFailure = ktoxGetLastCrafterFailure()
+    var failureSuffix = ""
+    if (crafterFailure != "") {
+        failureSuffix = " ${crafterFailure}"
+    }
 
     if (!fetch) {
-        return "Crafted ${itemName} up to ${qty} (left in the storage pool; --fetch=false)."
+        return "Crafted ${itemName} up to ${qty} (left in the storage pool; --fetch=false).${failureSuffix}"
     }
 
     val pulled = deliverToPickupLocation(pickupVault, itemName, qty)
-    return "Pulled ${pulled} of ${itemName} (requested ${qty})."
+    return "Pulled ${pulled} of ${itemName} (requested ${qty}).${failureSuffix}"
 }
 
 // Permanently destroys items from the storage pool via the trash vault

@@ -1,10 +1,10 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Executor.kt", {["1-16"]=1,["17"]=34,["18"]=35,["19-20"]=36,["21-27"]=38,["28-34"]=46,["35"]=50,["36-42"]=51,["43"]=57,["44"]=58,["45"]=59,["46"]=60,["47"]=61,["48"]=62,["49"]=63,["50"]=64,["51"]=65,["52-53"]=66,["54-55"]=68,["56-60"]=70,["61"]=79,["62"]=80,["63"]=81,["64-71"]=82,["72"]=95,["73"]=96,["74"]=97,["75"]=98,["76"]=99,["77-78"]=100,["79"]=103,["80"]=104,["81"]=105,["82"]=106,["83"]=107,["84"]=108,["85"]=109,["86"]=110,["87-88"]=111,["89-97"]=113,["98"]=138,["99"]=139,["100-101"]=140,["102"]=142,["103"]=144,["104"]=145,["105"]=146,["106"]=147,["107"]=148,["108"]=149,["109"]=150,["110"]=152,["111-112"]=153,["113"]=155,["114"]=156,["115"]=158,["116"]=159,["117"]=160,["118-119"]=161,["120"]=163,["121"]=164,["122"]=165,["123"]=166,["124"]=167,["125"]=168,["126"]=169,["127"]=170,["128"]=171,["129-130"]=172,["131-133"]=174,["134"]=177,["135-136"]=178,["137-139"]=180,["140-141"]=183,["142-149"]=185,["150"]=207,["151"]=208,["152-153"]=209,["154"]=211,["155"]=212,["156-157"]=213,["158"]=216,["159"]=217,["160"]=218,["161"]=219,["162"]=220,["163"]=221,["164"]=222,["165"]=224,["166-167"]=225,["168"]=227,["169"]=228,["170-171"]=229,["172"]=231,["173"]=232,["174"]=233,["175"]=234,["176"]=235,["177"]=236,["178"]=237,["179"]=238,["180"]=239,["181"]=240,["182"]=241,["183-184"]=242,["185"]=245,["186"]=246,["187"]=248,["188"]=249,["189"]=250,["190"]=251,["191"]=252,["192"]=253,["193"]=254,["194"]=255,["195"]=256,["196-197"]=257,["198-200"]=259,["201-203"]=262,["204-205"]=265,["206-208"]=267}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Executor.kt", {["1-16"]=1,["17"]=42,["18"]=43,["19-20"]=44,["21-27"]=46,["28-34"]=54,["35"]=58,["36-42"]=59,["43"]=65,["44"]=66,["45"]=67,["46"]=68,["47"]=69,["48"]=70,["49"]=71,["50"]=72,["51"]=73,["52-53"]=74,["54-55"]=76,["56-60"]=78,["61"]=87,["62"]=88,["63"]=89,["64-71"]=90,["72"]=103,["73"]=104,["74"]=105,["75"]=106,["76"]=107,["77-78"]=108,["79"]=111,["80"]=112,["81"]=113,["82"]=114,["83"]=115,["84"]=116,["85"]=117,["86"]=118,["87-88"]=119,["89-97"]=121,["98"]=146,["99"]=147,["100-101"]=148,["102"]=150,["103"]=152,["104"]=153,["105"]=154,["106"]=155,["107"]=156,["108"]=157,["109"]=158,["110"]=160,["111-112"]=161,["113"]=163,["114"]=164,["115"]=166,["116"]=167,["117"]=168,["118-119"]=169,["120"]=171,["121"]=172,["122"]=173,["123"]=174,["124"]=175,["125"]=176,["126"]=177,["127"]=178,["128"]=179,["129-130"]=180,["131-133"]=182,["134"]=185,["135-136"]=186,["137-139"]=188,["140-141"]=191,["142-149"]=193,["150"]=205,["151"]=206,["152"]=207,["153"]=208,["154"]=209,["155"]=210,["156"]=211,["157"]=212,["158"]=213,["159"]=214,["160-162"]=215,["163-164"]=218,["165-172"]=220,["173"]=245,["174"]=246,["175"]=247,["176-177"]=248,["178"]=250,["179"]=251,["180"]=252,["181-182"]=253,["183"]=255,["184"]=256,["185"]=257,["186-187"]=258,["188"]=261,["189"]=262,["190"]=263,["191"]=264,["192"]=267,["193"]=268,["194"]=270,["195"]=271,["196"]=272,["197"]=274,["198-199"]=275,["200"]=277,["201"]=278,["202"]=279,["203-204"]=280,["205-206"]=282,["207"]=284,["208"]=285,["209"]=287,["210"]=288,["211"]=289,["212"]=290,["213"]=291,["214"]=292,["215"]=296,["216"]=297,["217-218"]=298,["219"]=300,["220"]=301,["221"]=302,["222"]=303,["223-224"]=304,["225-228"]=306,["229"]=311,["230-231"]=312,["232-233"]=314,["234"]=317,["235-237"]=318,["238-239"]=321,["240-242"]=323}, "lib")
 ktox_require("lib/Inventory")
-ktox_require("lib/RoleCheck")
 ktox_require("lib/Config")
+ktox_require("lib/RoleCheck")
 ktox_require("lib/Redstone")
 
 DEFAULT_JOB_TIMEOUT_SECONDS = 30
@@ -143,22 +143,54 @@ function runDirectJob(recipe, desiredOutput, timeoutSeconds)
 end
 
 ---@param recipe Recipe
+---@param aboveChest string
+---@param batches number
+---@return boolean
+function stageIngredients(recipe, aboveChest, batches)
+    local inputCount = recipeInputCount(recipe)
+    local i = 1
+    while i <= inputCount do
+        if isFirstInputOccurrence(recipe, i) then
+            local itemName = recipeInputItem(recipe, i)
+            local needed = totalNeededForItem(recipe, itemName, batches)
+            pullFromStoragePool(aboveChest, itemName, needed)
+            local actual = ktoxInventoryCountNamed(aboveChest, itemName)
+            if actual < needed then
+                ktoxSetLastCrafterFailure("Couldn\'t stage " .. tostring(needed) .. " of " .. tostring(itemName) .. " into " .. tostring(aboveChest) .. " for the crafter (only got " .. tostring(actual) .. ").")
+                return false
+            end
+        end
+        i = ktox_plusAssign(i, 1)
+    end
+    return true
+end
+
+---@param recipe Recipe
 ---@param desiredOutput number
 ---@param timeoutSeconds number
 ---@return number
 function runCrafterJob(recipe, desiredOutput, timeoutSeconds)
     local crafterName = ktoxConfigCrafterForJob(recipe.jobType)
     if crafterName == "MISSING" then
+        ktoxSetLastCrafterFailure("No crafter turtle configured for job type " .. "\"" .. tostring(recipe.jobType) .. "\"" .. ".")
         return 0
     end
-    local feederVault = ktoxConfigFeederForJob(recipe.jobType)
-    if feederVault == "MISSING" then
+    local chests = crafterChestsFor(crafterName)
+    if chests == nil then
+        ktoxSetLastCrafterFailure("Crafter " .. "\"" .. tostring(crafterName) .. "\"" .. " has no aboveChest/belowChest configured in peripherals.json.")
+        return 0
+    end
+    local storageVault = firstStorageVaultName()
+    if storageVault == "MISSING" then
+        ktoxSetLastCrafterFailure("No storage vault configured to move crafted items into.")
         return 0
     end
     local totalProduced = 0
     local attempt = 1
     local giveUp = false
     while attempt <= 2 and totalProduced < desiredOutput and not giveUp do
+        drainVaultInto(chests.above, storageVault)
+        drainVaultInto(chests.below, storageVault)
         local remaining = desiredOutput - totalProduced
         local desiredBatches = ceilDiv(remaining, recipe.outputCount)
         local batches = maxAffordableBatches(recipe, desiredBatches)
@@ -167,37 +199,39 @@ function runCrafterJob(recipe, desiredOutput, timeoutSeconds)
         else
             local crafterId = queryForCrafter(recipe.jobType, 2.0)
             if crafterId == -1 then
+                ktoxSetLastCrafterFailure("Crafter turtle for job type " .. "\"" .. tostring(recipe.jobType) .. "\"" .. " didn\'t answer.")
+                giveUp = true
+            elseif not stageIngredients(recipe, chests.above, batches) then
                 giveUp = true
             else
                 local expectedThisAttempt = batches * recipe.outputCount
-                local inputCount = recipeInputCount(recipe)
-                local i = 1
-                while i <= inputCount do
-                    local itemName = recipeInputItem(recipe, i)
-                    local perBatch = recipeInputCountAt(recipe, i)
-                    local slot = recipeInputSlot(recipe, i)
-                    local stageCount = perBatch * batches
-                    pullFromStoragePool(feederVault, itemName, stageCount)
-                    rednet.send(crafterId, tostring(slot) .. "," .. tostring(stageCount), VAULT_CRAFTER_SUCK_PROTOCOL)
-                    waitForFeederEmpty(feederVault)
-                    i = ktox_plusAssign(i, 1)
-                end
-                local startingOutput = storagePoolCount(recipe.outputName)
-                rednet.send(crafterId, tostring(batches), VAULT_CRAFTER_CMD_PROTOCOL)
-                local lastCount = startingOutput
+                rednet.send(crafterId, tostring(recipe.outputName) .. "," .. tostring(batches), VAULT_CRAFTER_CMD_PROTOCOL)
+                local lastCount = 0
                 local secondsSinceProgress = 0
                 local madeThisAttempt = 0
-                while secondsSinceProgress < timeoutSeconds and madeThisAttempt < expectedThisAttempt do
+                local crafterFailure = ""
+                while secondsSinceProgress < timeoutSeconds and madeThisAttempt < expectedThisAttempt and crafterFailure == "" do
                     os.sleep(1.0)
-                    local currentCount = storagePoolCount(recipe.outputName)
-                    madeThisAttempt = currentCount - startingOutput
-                    if currentCount > lastCount then
-                        secondsSinceProgress = 0
-                        lastCount = currentCount
+                    local gotFailure = ktoxRednetReceiveProtocol(VAULT_CRAFTER_FAILURE_PROTOCOL, 0.0)
+                    if gotFailure then
+                        crafterFailure = ktoxRednetLastMessage()
                     else
-                        secondsSinceProgress = ktox_plusAssign(secondsSinceProgress, 1)
+                        local currentCount = ktoxInventoryCountNamed(chests.below, recipe.outputName)
+                        madeThisAttempt = currentCount
+                        if currentCount > lastCount then
+                            secondsSinceProgress = 0
+                            lastCount = currentCount
+                        else
+                            secondsSinceProgress = ktox_plusAssign(secondsSinceProgress, 1)
+                        end
                     end
                 end
+                if crafterFailure ~= "" then
+                    ktoxSetLastCrafterFailure(crafterFailure)
+                elseif madeThisAttempt < expectedThisAttempt then
+                    ktoxSetLastCrafterFailure("Crafter timed out - expected " .. tostring(expectedThisAttempt) .. "x " .. tostring(recipe.outputName) .. " in the chest below, only saw " .. tostring(madeThisAttempt) .. ".")
+                end
+                drainVaultInto(chests.below, storageVault)
                 totalProduced = ktox_plusAssign(totalProduced, madeThisAttempt)
             end
         end

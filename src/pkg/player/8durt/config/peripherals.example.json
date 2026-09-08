@@ -43,13 +43,10 @@
   },
   "computercraft:turtle_advanced_0": {
     "type": "crafter",
-    "job": { "type": "crafter" }
-  },
-  "create:item_vault_32": {
-    "type": "vault",
     "job": {
-      "type": "feeder",
-      "job": { "type": "crafter" }
+      "type": "crafter",
+      "aboveChest": "minecraft:chest_12",
+      "belowChest": "minecraft:chest_13"
     }
   },
   "create:item_vault_7": {

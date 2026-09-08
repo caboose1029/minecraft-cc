@@ -4,19 +4,27 @@ import common.ktoxConfigCrafterForJob
 import common.ktoxConfigFeederForJob
 import common.ktoxConfigJobTimeoutSecondsRaw
 import common.ktoxConfigRelayForJob
+import common.ktoxInventoryCountNamed
 import common.ktoxInventoryIsEmpty
+import common.ktoxRednetLastMessage
+import common.ktoxRednetReceiveProtocol
+import common.ktoxSetLastCrafterFailure
 import common.osSleep
 import common.rednetSend
+import lib.crafterChestsFor
+import lib.drainVaultInto
+import lib.firstStorageVaultName
+import lib.isFirstInputOccurrence
 import lib.pullFromStoragePool
 import lib.queryForCrafter
 import lib.recipeInputCount
 import lib.recipeInputCountAt
 import lib.recipeInputItem
-import lib.recipeInputSlot
 import lib.setJobPower
 import lib.storagePoolCount
+import lib.totalNeededForItem
 import lib.VAULT_CRAFTER_CMD_PROTOCOL
-import lib.VAULT_CRAFTER_SUCK_PROTOCOL
+import lib.VAULT_CRAFTER_FAILURE_PROTOCOL
 
 const val DEFAULT_JOB_TIMEOUT_SECONDS = 30
 
@@ -185,31 +193,68 @@ fun runDirectJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
     return totalProduced
 }
 
+// Stages every distinct ingredient `recipe` needs (summed across however
+// many grid slots it fills, times `batches`) into `aboveChest`, then
+// verifies the full amount actually landed there before returning true -
+// a silent short-delivery (the established failure shape for every
+// pull/push helper in this codebase) would otherwise only surface later
+// as a confusing crafter-side failure, not here where the real cause is
+// obvious. Sets ktoxSetLastCrafterFailure with a specific reason and
+// returns false on the first shortfall.
+fun stageIngredients(recipe: Recipe, aboveChest: String, batches: Int): Boolean {
+    val inputCount = recipeInputCount(recipe)
+    var i = 1
+    while (i <= inputCount) {
+        if (isFirstInputOccurrence(recipe, i)) {
+            val itemName = recipeInputItem(recipe, i)
+            val needed = totalNeededForItem(recipe, itemName, batches)
+            pullFromStoragePool(aboveChest, itemName, needed)
+            val actual = ktoxInventoryCountNamed(aboveChest, itemName)
+            if (actual < needed) {
+                ktoxSetLastCrafterFailure("Couldn't stage ${needed} of ${itemName} into ${aboveChest} for the crafter (only got ${actual}).")
+                return false
+            }
+        }
+        i += 1
+    }
+    return true
+}
+
 // Runs one crafter-kind job (a crafty turtle running turtle.craft() —
 // see PLAN.md "Crafter role") to produce up to `desiredOutput` more of
-// the recipe's output. Same batching/timeout/polling shape as
-// runDirectJob. Ingredient delivery is PHYSICAL, not a network push:
-// stages each ingredient into a feeder vault positioned above the
-// crafter (ktoxConfigFeederForJob(recipe.jobType) - the same generic
-// feeder-lookup machine jobs already use, just now also configured for
-// job type "crafter"), then tells the crafter turtle to suck it into
-// its SPECIFIC crafting-grid slot (recipeInputSlot) via
-// VAULT_CRAFTER_SUCK_PROTOCOL, waiting for the feeder to drain
-// (waitForFeederEmpty - an ordinary vault peripheral check, already
-// proven) before moving to the next ingredient. This replaced a network
-// push directly into the turtle - confirmed live that doesn't work
-// (a turtle exposed as a peripheral has no inventory methods at all),
-// see PLAN.md's "Crafter role" for the two failed attempts before this
-// one. The crafter itself drops the result toward an adjacent storage
-// vault once done (see Crafter.kt), so this still polls the storage
-// pool for progress exactly like a machine job.
+// the recipe's output. Same batching/timeout shape as runDirectJob, but
+// the physical flow is chest-above -> turtle -> chest-below, top to
+// bottom, matching Create's own machine convention (see PLAN.md): stage
+// every distinct ingredient into a dedicated chest above the crafter
+// (crafterChestsFor - a physically dedicated pair of chests declared on
+// the crafter's OWN peripherals.json entry, not pooled/shared vaults),
+// tell the crafter what to make and how many times
+// ("<outputItemName>,<batches>" - it looks up the recipe/slot shape
+// itself, same shared lib/Config.kt functions the head uses here), then
+// watch the chest below for the result while also listening for an
+// explicit failure report (VAULT_CRAFTER_FAILURE_PROTOCOL) so a genuine
+// problem surfaces as a specific reason, not just a generic timeout.
+// Both chests are drained back into storage proactively before every
+// attempt, not just once — stale contents from an earlier attempt/job
+// should never be able to linger and contaminate the next one (this is
+// the THIRD ingredient-delivery design tried this session; the first two
+// - a network push into the turtle's grid slots, then a network-signaled
+// per-slot turtle.suckUp() - are both gone, see PLAN.md's "Known open
+// items" for why neither held up).
 fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int {
     val crafterName = ktoxConfigCrafterForJob(recipe.jobType)
     if (crafterName == "MISSING") {
+        ktoxSetLastCrafterFailure("No crafter turtle configured for job type \"${recipe.jobType}\".")
         return 0
     }
-    val feederVault = ktoxConfigFeederForJob(recipe.jobType)
-    if (feederVault == "MISSING") {
+    val chests = crafterChestsFor(crafterName)
+    if (chests == null) {
+        ktoxSetLastCrafterFailure("Crafter \"${crafterName}\" has no aboveChest/belowChest configured in peripherals.json.")
+        return 0
+    }
+    val storageVault = firstStorageVaultName()
+    if (storageVault == "MISSING") {
+        ktoxSetLastCrafterFailure("No storage vault configured to move crafted items into.")
         return 0
     }
 
@@ -217,6 +262,11 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
     var attempt = 1
     var giveUp = false
     while (attempt <= 2 && totalProduced < desiredOutput && !giveUp) {
+        // Proactively drain both chests before every attempt - stale
+        // leftovers from an earlier attempt/job should never linger.
+        drainVaultInto(chests.above, storageVault)
+        drainVaultInto(chests.below, storageVault)
+
         val remaining = desiredOutput - totalProduced
         val desiredBatches = ceilDiv(remaining, recipe.outputCount)
         val batches = maxAffordableBatches(recipe, desiredBatches)
@@ -226,39 +276,45 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
         } else {
             val crafterId = queryForCrafter(recipe.jobType, 2.0)
             if (crafterId == -1) {
+                ktoxSetLastCrafterFailure("Crafter turtle for job type \"${recipe.jobType}\" didn't answer.")
+                giveUp = true
+            } else if (!stageIngredients(recipe, chests.above, batches)) {
                 giveUp = true
             } else {
                 val expectedThisAttempt = batches * recipe.outputCount
-                val inputCount = recipeInputCount(recipe)
-                var i = 1
-                while (i <= inputCount) {
-                    val itemName = recipeInputItem(recipe, i)
-                    val perBatch = recipeInputCountAt(recipe, i)
-                    val slot = recipeInputSlot(recipe, i)
-                    val stageCount = perBatch * batches
-                    pullFromStoragePool(feederVault, itemName, stageCount)
-                    rednetSend(crafterId, "${slot},${stageCount}", VAULT_CRAFTER_SUCK_PROTOCOL)
-                    waitForFeederEmpty(feederVault)
-                    i += 1
-                }
+                rednetSend(crafterId, "${recipe.outputName},${batches}", VAULT_CRAFTER_CMD_PROTOCOL)
 
-                val startingOutput = storagePoolCount(recipe.outputName)
-                rednetSend(crafterId, "${batches}", VAULT_CRAFTER_CMD_PROTOCOL)
-
-                var lastCount = startingOutput
+                var lastCount = 0
                 var secondsSinceProgress = 0
                 var madeThisAttempt = 0
-                while (secondsSinceProgress < timeoutSeconds && madeThisAttempt < expectedThisAttempt) {
+                var crafterFailure = ""
+                while (secondsSinceProgress < timeoutSeconds && madeThisAttempt < expectedThisAttempt && crafterFailure == "") {
                     osSleep(1.0)
-                    val currentCount = storagePoolCount(recipe.outputName)
-                    madeThisAttempt = currentCount - startingOutput
-                    if (currentCount > lastCount) {
-                        secondsSinceProgress = 0
-                        lastCount = currentCount
+                    // Non-blocking (0s timeout) check for an explicit
+                    // failure report, interleaved with the normal
+                    // completion poll below.
+                    val gotFailure = ktoxRednetReceiveProtocol(VAULT_CRAFTER_FAILURE_PROTOCOL, 0.0)
+                    if (gotFailure) {
+                        crafterFailure = ktoxRednetLastMessage()
                     } else {
-                        secondsSinceProgress += 1
+                        val currentCount = ktoxInventoryCountNamed(chests.below, recipe.outputName)
+                        madeThisAttempt = currentCount
+                        if (currentCount > lastCount) {
+                            secondsSinceProgress = 0
+                            lastCount = currentCount
+                        } else {
+                            secondsSinceProgress += 1
+                        }
                     }
                 }
+
+                if (crafterFailure != "") {
+                    ktoxSetLastCrafterFailure(crafterFailure)
+                } else if (madeThisAttempt < expectedThisAttempt) {
+                    ktoxSetLastCrafterFailure("Crafter timed out - expected ${expectedThisAttempt}x ${recipe.outputName} in the chest below, only saw ${madeThisAttempt}.")
+                }
+
+                drainVaultInto(chests.below, storageVault)
                 totalProduced += madeThisAttempt
             }
         }

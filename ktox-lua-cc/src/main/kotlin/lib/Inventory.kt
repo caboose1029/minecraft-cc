@@ -1,10 +1,11 @@
 package lib
 
+import common.ktoxConfigCrafterChests
 import common.ktoxConfigStorageVaultNames
 import common.ktoxInventoryCountNamed
+import common.ktoxInventoryDrainAll
 import common.ktoxInventoryListPooled
 import common.ktoxInventoryPullNamedFromPool
-import common.ktoxInventoryPullNamedToSlotFromPool
 import common.ktoxInventoryPushNamedFromPool
 
 // Storage is treated as one logical resource pool spread across every
@@ -31,17 +32,6 @@ fun pullFromStoragePool(toName: String, itemName: String, desired: Int): Int {
         return 0
     }
     return ktoxInventoryPullNamedFromPool(toName, vaultNames, itemName, desired)
-}
-
-// Same as pullFromStoragePool, but lands the items in a specific slot of
-// `toName` — needed for a crafter turtle's crafting grid, where
-// placement matters (see PLAN.md "Crafter role").
-fun pullFromStoragePoolToSlot(toName: String, toSlot: Int, itemName: String, desired: Int): Int {
-    val vaultNames = ktoxConfigStorageVaultNames()
-    if (vaultNames == "") {
-        return 0
-    }
-    return ktoxInventoryPullNamedToSlotFromPool(toName, toSlot, vaultNames, itemName, desired)
 }
 
 // Same as pullFromStoragePool, but SOURCE-initiated (a storage vault
@@ -84,4 +74,43 @@ fun pushToStoragePoolTarget(toName: String, itemName: String, desired: Int): Int
 fun listStoragePoolLines(): List<String> {
     val raw = ktoxInventoryListPooled(ktoxConfigStorageVaultNames())
     return raw.split("\n")
+}
+
+// The peripheral name of the first configured storage vault - used as
+// "some real vault in the pool" when a caller needs a concrete
+// destination (draining a crafter's chests back into the pool) rather
+// than a name filter across all of them. Which ONE doesn't matter, since
+// every storage vault is treated as the same logical pool. "MISSING" if
+// none are configured.
+fun firstStorageVaultName(): String {
+    val vaultNames = ktoxConfigStorageVaultNames()
+    if (vaultNames == "") {
+        return "MISSING"
+    }
+    return vaultNames.split(",")[1]
+}
+
+data class CrafterChests(val above: String, val below: String)
+
+// The chest-above/chest-below peripheral names dedicated to `crafterName`
+// (see PLAN.md "Crafter role" - a physical chest-in-chest-out flow, not
+// a network push into the turtle, which is confirmed not to work). null
+// if either isn't configured on that crafter's own peripherals.json
+// entry (job.aboveChest / job.belowChest).
+fun crafterChestsFor(crafterName: String): CrafterChests? {
+    val raw = ktoxConfigCrafterChests(crafterName)
+    if (raw == "MISSING") {
+        return null
+    }
+    val parts = raw.split(",")
+    return CrafterChests(parts[1], parts[2])
+}
+
+// Moves everything out of `fromName` into `toName`, regardless of item
+// identity - for proactively draining a crafter's staging/output chest
+// before a new job (clearing stale leftovers) or collecting a finished
+// craft result. Both ends are ordinary vault peripherals here, never a
+// turtle.
+fun drainVaultInto(fromName: String, toName: String): Int {
+    return ktoxInventoryDrainAll(fromName, toName)
 }

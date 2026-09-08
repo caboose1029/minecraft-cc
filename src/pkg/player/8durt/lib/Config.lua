@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Config.kt", {["1-53"]=1,["54"]=27,["55"]=28,["56-57"]=29,["58"]=34,["59-64"]=35,["65-71"]=44,["72"]=49,["73-79"]=50,["80"]=54,["81-87"]=55,["88"]=62,["89"]=63,["90"]=64,["91-92"]=65,["93-98"]=67,["99-101"]=74}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Config.kt", {["1-53"]=1,["54"]=27,["55"]=28,["56-57"]=29,["58"]=34,["59-64"]=35,["65-71"]=44,["72"]=49,["73-79"]=50,["80"]=54,["81-87"]=55,["88"]=62,["89"]=63,["90"]=64,["91-92"]=65,["93-98"]=67,["99-105"]=74,["106"]=86,["107"]=87,["108"]=88,["109"]=89,["110-111"]=90,["112-113"]=92,["114-121"]=94,["122"]=101,["123"]=102,["124"]=103,["125"]=104,["126"]=105,["127-128"]=106,["129-130"]=108,["131-133"]=110}, "lib")
 
 ---@class Recipe
 ---@field outputName string
@@ -97,5 +97,37 @@ end
 ---@return string
 function jobKind(jobType)
     return ktoxConfigJobKind(jobType)
+end
+
+---@param recipe Recipe
+---@param index number
+---@return boolean
+function isFirstInputOccurrence(recipe, index)
+    local itemName = recipeInputItem(recipe, index)
+    local i = 1
+    while i < index do
+        if recipeInputItem(recipe, i) == itemName then
+            return false
+        end
+        i = ktox_plusAssign(i, 1)
+    end
+    return true
+end
+
+---@param recipe Recipe
+---@param itemName string
+---@param batches number
+---@return number
+function totalNeededForItem(recipe, itemName, batches)
+    local total = 0
+    local inputCount = recipeInputCount(recipe)
+    local i = 1
+    while i <= inputCount do
+        if recipeInputItem(recipe, i) == itemName then
+            total = ktox_plusAssign(total, recipeInputCountAt(recipe, i))
+        end
+        i = ktox_plusAssign(i, 1)
+    end
+    return total * batches
 end
 

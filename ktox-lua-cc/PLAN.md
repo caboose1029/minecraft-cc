@@ -108,28 +108,41 @@ on its own dedicated protocols:
   by job type instead of role, and deliberately with **no** collision
   detection: multiple crafters answering the same job type isn't guarded
   against in phase 1 (unlike a second head, which is refused outright).
-- `"vault-crafter-suck"` (payload: `"slot,count"`) — suck a staged
-  ingredient batch from directly above into a specific crafting-grid
-  slot. No reply — the head confirms completion by polling the staging
-  feeder vault's own emptiness (an ordinary vault peripheral check,
-  already proven — `waitForFeederEmpty`), not a rednet round trip.
-- `"vault-crafter-cmd"` (payload: a quantity) — craft that many, then
-  drop everything the turtle is holding toward whatever it's physically
-  facing. This turtle is expected to be positioned facing an ordinary
-  storage vault, so the drop lands the result straight back in the pool —
-  a **physical `turtle.drop()`**, not a network push (see "Turtle-as-
-  network-inventory-peripheral" below — confirmed broken for pulling,
-  and the push-based workaround tried after that didn't pan out either;
-  the crafter's ingredient delivery went through two failed network-
-  based designs before landing on `"vault-crafter-suck"`, both physical
-  turtle.\* operations, same proven pattern as this drop). The head
-  never needs an explicit "done" signal back — it just polls the storage
-  pool for the output count exactly like a machine job (see "CLI"
-  below), so a crafter job and a machine job look identical from the
-  executor's point of view once the craft command has been sent. Also
-  clears its grid FIRST and refuses to craft unless that verifiably
-  succeeded (`isInventoryEmpty` in `programs/Crafter.kt`) — see the real
-  incident below for why.
+- `"vault-crafter-cmd"` (payload: `"<outputItemName>,<batches>"`) — craft
+  `batches` repetitions of the recipe that produces `outputItemName`.
+  Deliberately minimal: the head does NOT dictate ingredient/slot
+  placement — the crafter looks the recipe up itself (`findRecipe`, the
+  same shared `lib/Config.kt` function the head uses) and works out
+  which of its own currently-held items go in which crafting-grid slot.
+  "Plan the grid arrangement" is crafter-side logic on purpose; the head
+  still decides WHAT to craft and HOW MANY.
+- `"vault-crafter-failure"` (payload: a freeform reason string, same
+  convention as `"vault-result"`) — sent whenever a physical step didn't
+  behave as expected (a `suckUp`/`transferTo`/`craft` call that returned
+  false or moved fewer than expected, no known recipe, leftover
+  inventory at job start). Fire-and-forget; the head listens for it
+  (a non-blocking, 0-second-timeout check interleaved with its normal
+  completion poll — see `runCrafterJob`) so a genuine failure surfaces as
+  a *specific* reason instead of a generic timeout once nothing shows up
+  in the chest below.
+
+**Physical flow (third design this session — see the real incident
+below and "Turtle-as-network-inventory-peripheral" further down for why
+the first two, both network-based, didn't hold up): top to bottom,
+matching Create's own machine convention.** A chest sits directly ABOVE
+the crafter (ingredient staging — the head fills it, `job.aboveChest` on
+the crafter's own `peripherals.json` entry) and a chest directly BELOW
+(finished output — the crafter fills it, `job.belowChest`). Both chests
+are physically dedicated to this one turtle, not pooled/shared storage,
+so they're declared as fields on the crafter's OWN entry rather than
+getting independent top-level `peripherals.json` entries (see
+`peripherals.example.json`'s `computercraft:turtle_advanced_0`). Both
+`turtle.suckUp()` (pulling ingredients in) and `turtle.dropDown()`
+(pushing results out) are PHYSICAL, locally-executed turtle operations —
+never a network call targeting this turtle's own inventory, confirmed
+twice now not to work. Also clears its grid first and refuses to craft
+unless that verifiably succeeded (`isInventoryEmpty` in
+`programs/Crafter.kt`) — see the real incident below for why.
 
 **Real incident, found during physical build-out testing: the crafter
 turtle crafted `create:brass_block` on every request, regardless of what
@@ -189,30 +202,38 @@ causes, confirmed via direct inspection rather than guessing:
    `turtle.drop()` to land in?), but it turns a silent wrong-item craft
    into a safe no-op.
 
-The head still does all the deciding: it computes how many ingredient
-sets are needed and, for each one, stages it into a feeder vault
-positioned directly above the crafter turtle (`ktoxConfigFeederForJob`
-now also resolves `"crafter"` as a job type, same generic feeder-vault
-lookup machine jobs already use — reused, not a new config path),
-signals `"vault-crafter-suck"` naming the *specific* crafting-grid slot
-(slot numbers 1, 2, 3, 5, 6, 7, 9, 10, 11 form the 3x3 grid inside the
-turtle's 16 slots; this mapping is my best understanding of
-`turtle.craft()`'s expected layout, **still unverified in-game**), waits
-for the feeder to drain, then repeats for the next ingredient before
-finally sending the craft command. The crafter turtle only ever
-executes, never plans — this replaced a network push directly into the
-turtle's grid slots (`pushItems`'s optional 4th argument), which turned
-out not to work in practice (see "Turtle-as-network-inventory-
-peripheral" below) — `lib/Executor.kt`'s `runCrafterJob` doc comment has
-the full mechanism.
+**Head side (`lib/Executor.kt`'s `runCrafterJob`):** on every attempt
+(not just once), proactively drains both chests back into storage
+(`drainVaultInto` — an unfiltered `pullItems` sweep, ordinary vault-to-
+vault, no turtle involved) so stale contents from an earlier attempt or
+job can never linger and contaminate the next one. Then, per DISTINCT
+ingredient the recipe needs (`isFirstInputOccurrence`/
+`totalNeededForItem` in `lib/Config.kt`, shared with the crafter side
+below — a recipe repeats the same item across several grid-slot entries,
+one per slot, e.g. 9 separate `"create:raw_zinc"` entries for
+`raw_zinc_block`, and both sides need to treat those as ONE item to
+stage/gather, not nine), pulls the full needed total into the above
+chest and VERIFIES it actually landed (`stageIngredients`) — a silent
+short-delivery (the established failure shape for every pull/push helper
+in this codebase) surfaces right here, with a specific reason, rather
+than only showing up later as a confusing crafter-side failure. Only
+then sends `"vault-crafter-cmd"` and watches the chest below.
 
-**Physical setup requirement, new:** a feeder vault must sit directly
-above the crafter turtle (`turtle.suckUp()` — see
-`peripherals.example.json`'s `create:item_vault_32` for the config
-shape: `job.type: "feeder"`, `job.job.type: "crafter"`). Without one
-configured, `runCrafterJob` refuses to run at all (`ktoxConfigFeederForJob`
-returns `"MISSING"`) rather than silently doing nothing — same fail-
-loud-not-silent posture as a missing crafter turtle itself.
+**Crafter side (`programs/Crafter.kt`):** for each distinct ingredient,
+assigns it one of 7 dedicated staging slots outside the 3×3 grid pattern
+(slots 4, 8, 12, 13, 14, 15, 16 — the grid itself is 1, 2, 3, 5, 6, 7, 9,
+10, 11, this mapping is my best understanding of `turtle.craft()`'s
+expected layout, **still unverified in-game**) so several different
+ingredient types staged at once never combine in one slot by accident.
+Sucks and distributes ONE target grid slot at a time (`stageAndDistribute`)
+rather than accumulating a whole multi-slot total in the staging slot
+first — a recipe needing, say, 90 of an item spread across 9 grid slots
+(10 each) would overflow one 64-stack slot if gathered all at once, even
+though each individual target slot's share stays comfortably under 64.
+Once every ingredient is placed, calls `turtle.craft(batches)`, then
+`turtle.dropDown()`s everything regardless of outcome (see the real
+incident below for why this ALSO runs before a job starts, as a
+verified-empty precondition, not just after).
 
 Provisioning: `terminalsetup crafter <jobType>` writes `role.txt` as
 `crafter:<jobType>` (vs. plain `head`/`secondary`) — `startup.lua` parses
@@ -222,10 +243,11 @@ every boot, same auto-launch mechanism as the other two roles.
 **Unverified, flagged for in-game testing** (same caveat as the rest of
 the rednet/parallel work — see "Known open items"): the exact
 `turtle.craft()` grid-slot mapping, whether `turtle.craft()`'s result
-lands somewhere `dumpAllForward()`'s "select every slot, drop if
-non-empty" sweep actually catches, whether `turtle.suckUp()` actually
-sucks from a feeder vault sitting above the turtle the way this assumes,
-and the full head→crafter round trip end to end.
+reliably lands somewhere `dumpAllDown()`'s "select every slot, drop if
+non-empty" sweep actually catches, whether `turtle.suckUp()`/
+`turtle.dropDown()` actually interact with chests positioned directly
+above/below the turtle the way this assumes, and the full head→crafter
+round trip end to end.
 
 ## Vaults
 
@@ -1252,13 +1274,16 @@ does.
   turtle's own inventory, addressed as an ordinary named
   `pushItems`/`pullItems` peripheral, actually works (see "Vaults" and
   the entry below on `ktoxSelfPeripheralName`, same underlying question).
-- **Crafter role is equally unverified, plus two extra unknowns beyond
+- **Crafter role is equally unverified, plus extra unknowns beyond
   the rednet/parallel question above:** the exact `turtle.craft()`
-  crafting-grid slot mapping (assumed 1, 2, 3, 5, 6, 7, 9, 10, 11), and
-  where the craft result actually lands (assumed `dumpAllForward()`'s
-  sweep-every-slot approach catches it regardless). Test with a real
-  crafter turtle and a simple known recipe before trusting this for
-  anything real.
+  crafting-grid slot mapping (assumed 1, 2, 3, 5, 6, 7, 9, 10, 11), where
+  the craft result actually lands (assumed `dumpAllDown()`'s
+  sweep-every-slot approach catches it regardless), and — new with the
+  chest-based redesign — whether `turtle.suckUp()`/`turtle.dropDown()`
+  actually interact with chests placed directly above/below the turtle
+  the way the whole design assumes. Test with a real crafter turtle, a
+  real chest above and below it, and a simple known recipe before
+  trusting this for anything real.
 - **Turtle-as-network-inventory-peripheral: CONFIRMED BROKEN in-game, in
   BOTH directions tried so far.** Confirmed live (real turtle, real
   `peripheral.getMethods("turtle_1")` from another networked computer):
@@ -1278,15 +1303,23 @@ does.
   as the crafter always producing the wrong item (stale/repeated
   grid contents from a delivery that silently moved nothing, see the
   brass incident above) and, separately, as `craft`/`pull` hanging for a
-  full timeout with nothing ever arriving. **Fixed for the crafter's
-  ingredient delivery** by abandoning network peripheral calls into a
-  turtle entirely — `runCrafterJob` now stages each ingredient into an
-  ordinary feeder vault (a ktoxConfigFeederForJob("crafter") vault
-  positioned above the turtle — a normal vault-to-vault transfer,
-  already proven working elsewhere) and tells the crafter turtle to
-  `turtle.suckUp()` it into a specific grid slot itself — the same
-  physical, locally-executed pattern already proven for output
-  (`turtle.drop()`). **`lib/Cli.kt`'s `deliverToPickupLocation` (pull/
+  full timeout with nothing ever arriving. First fix attempt: stage each
+  ingredient into a single shared feeder vault above the turtle and tell
+  the crafter to `turtle.suckUp()` a specific grid slot per rednet
+  message (`"vault-crafter-suck"`). **That also proved fragile in
+  practice** (single feeder vault couldn't cleanly represent several
+  distinct ingredient types staged for one job at once) and was replaced
+  by the current, third design: a DEDICATED chest above and a dedicated
+  chest below the crafter (declared as `aboveChest`/`belowChest` on the
+  crafter's own `peripherals.json` job entry, not standalone vault
+  entries), with the head staging+verifying the full multi-ingredient
+  total into the above chest before ever messaging the crafter, and the
+  crafter independently resolving its own recipe/grid-slot layout and
+  physically `suckUp`/`transferTo`-ing each ingredient itself — see
+  "Crafter role" above for the full flow. Every network peripheral call
+  INTO a turtle is now gone from the crafter's path entirely; only
+  physical `turtle.*` self-operations and ordinary vault-to-vault
+  transfers remain. **`lib/Cli.kt`'s `deliverToPickupLocation` (pull/
   craft results landing in a turtle-based pickup location like
   `turtle_0`) still uses the unfixed push-based approach** and is very
   likely broken the same way — not yet confirmed or fixed, since the

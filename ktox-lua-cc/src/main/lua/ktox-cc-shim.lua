@@ -343,40 +343,30 @@ function ktoxInventoryPullNamedFromPool(toName, sourceNamesCsv, itemName, desire
     return pulled
 end
 
--- Same as ktoxInventoryPullNamed, but lands the items in a SPECIFIC slot
--- of `toName` rather than wherever the destination's own pullItems
--- logic would put them — needed for a crafter turtle's crafting grid,
--- where placement matters (see PLAN.md "Crafter role"). Uses
--- pullItems's optional 4th (toSlot) argument.
-function ktoxInventoryPullNamedToSlot(toName, toSlot, fromName, itemName, desired)
+
+-- Moves EVERYTHING out of `fromName` into `toName`, regardless of item
+-- identity (no itemName filter, unlike every other transfer helper here)
+-- — for emptying a crafter's dedicated staging/output chest, either
+-- proactively before a new job (clearing stale leftovers) or to collect
+-- a finished craft result. Both `fromName`/`toName` are ordinary
+-- inventory peripherals (chests/vaults) here, never a turtle — this is
+-- the already-proven dest.pullItems idiom, no new risk. Returns how many
+-- stacks were moved (not item count - `desired` isn't meaningful when
+-- draining everything).
+function ktoxInventoryDrainAll(fromName, toName)
     local dest = peripheral.wrap(toName)
     local source = peripheral.wrap(fromName)
     if dest == nil or source == nil then
         return 0
     end
-    local pulled = 0
+    local moved = 0
     for slot, item in pairs(source.list()) do
-        if pulled >= desired then
-            break
-        end
-        if item.name == itemName then
-            pulled = pulled + dest.pullItems(fromName, slot, desired - pulled, toSlot)
+        local ok = dest.pullItems(fromName, slot)
+        if ok ~= nil and ok > 0 then
+            moved = moved + 1
         end
     end
-    return pulled
-end
-
--- Pool version of ktoxInventoryPullNamedToSlot — searches every vault in
--- sourceNamesCsv until `desired` is satisfied or all are exhausted.
-function ktoxInventoryPullNamedToSlotFromPool(toName, toSlot, sourceNamesCsv, itemName, desired)
-    local pulled = 0
-    for sourceName in string.gmatch(sourceNamesCsv, "[^,]+") do
-        if pulled >= desired then
-            break
-        end
-        pulled = pulled + ktoxInventoryPullNamedToSlot(toName, toSlot, sourceName, itemName, desired - pulled)
-    end
-    return pulled
+    return moved
 end
 
 -- SOURCE-initiated transfer (the source calls pushItems), the mirror
@@ -870,6 +860,49 @@ function ktoxConfigCrafterForJob(jobType)
         end
     end
     return "MISSING"
+end
+
+-- The chest-above/chest-below peripheral names dedicated to `crafterName`
+-- (job.aboveChest / job.belowChest on that crafter's OWN peripherals.json
+-- entry — physically dedicated infrastructure for one turtle, not pooled
+-- storage, so it doesn't get its own top-level entries the way vaults
+-- do). Packed as "above,below". "MISSING" if either is absent.
+function ktoxConfigCrafterChests(crafterName)
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        local entry = config[crafterName]
+        if entry ~= nil and entry.job ~= nil and entry.job.aboveChest ~= nil and entry.job.belowChest ~= nil then
+            return entry.job.aboveChest .. "," .. entry.job.belowChest
+        end
+    end
+    return "MISSING"
+end
+
+-- Caches the most recent crafter-job failure reason (from a
+-- VAULT_CRAFTER_FAILURE_PROTOCOL reply, or a head-side check like
+-- "couldn't stage ingredients" / "no chests configured") across the
+-- runCrafterJob/ensureStocked call chain, so runCraftCommand (lib/Cli.kt)
+-- can surface a SPECIFIC reason in the final result string instead of a
+-- generic "0 produced" — without threading a new return type through
+-- ensureStocked's whole recursive call tree. Same "cache one value in a
+-- shim local, expose via getter/setter" idiom already proven for
+-- ktoxRednetLast* above. Cleared explicitly at the start of each `craft`
+-- command (see clearLastCrafterFailure in lib/Cli.kt) so a stale failure
+-- from an earlier, unrelated command can't leak into a later one.
+local ktoxLastCrafterFailureValue = ""
+
+function ktoxSetLastCrafterFailure(reason)
+    ktoxLastCrafterFailureValue = reason
+    return true
+end
+
+function ktoxGetLastCrafterFailure()
+    return ktoxLastCrafterFailureValue
+end
+
+function ktoxClearLastCrafterFailure()
+    ktoxLastCrafterFailureValue = ""
+    return true
 end
 
 -- Builds the full item catalog for the `list` CLI command: every item
