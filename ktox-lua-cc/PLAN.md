@@ -1357,8 +1357,14 @@ does.
 - Storage-vault load balancing (push-to-emptiest, farm→vault preference
   routing) — problem #3b territory, deferred.
 - Stockpile Switch integration for fast vault-fullness queries — deferred.
-- Recursive planner (phase 2).
-- Monitor/touch dashboard UI — deferred behind CLI.
+- **External Monitor-peripheral dashboard — deferred, not the same thing
+  as the touch dashboard that IS built.** The touch dashboard (see
+  "Dashboard UI" above) is scoped to a terminal's own term/pocket screen
+  only, per an explicit correction earlier this session (an initial
+  build supported a Monitor peripheral too; simplified back down to
+  term-only since that's the actual use case). A separate dashboard
+  driving a wall-mounted Monitor block would be new work, not an
+  extension of the existing one.
 - Config-driven stock-percentage preferences (#3b) and its precedence
   question (shared ingredient with conflicting consumer preferences —
   current lean: the item closer to the top of the tree wins) — deferred
