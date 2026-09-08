@@ -64,8 +64,19 @@ fun ktoxConfigTrashVault(): String = externalSource()
 @NativeName("ktoxConfigCrafterForJob")
 fun ktoxConfigCrafterForJob(jobType: String): String = externalSource()
 
-@NativeName("ktoxConfigCrafterChests")
-fun ktoxConfigCrafterChests(crafterName: String): String = externalSource()
+// aboveChest/belowChest are read off ANY peripherals.json entry by name
+// (job.aboveChest/job.belowChest), shared by the crafter (see
+// programs/Crafter.kt) and by a turtle-based pickup terminal's
+// self-suckUp/self-deposit path (lib/Cli.kt) — same schema either way.
+@NativeName("ktoxConfigChestsFor")
+fun ktoxConfigChestsFor(peripheralName: String): String = externalSource()
+
+// True only when this computer itself is a turtle (global `turtle` is
+// non-nil) — guards any physical turtle.* call site (self-pickup,
+// deposit) so it's never reached on a plain computer head, which would
+// otherwise crash with "attempt to index global 'turtle' (a nil value)".
+@NativeName("ktoxIsTurtle")
+fun ktoxIsTurtle(): Boolean = externalSource()
 
 @NativeName("ktoxInventoryDrainAll")
 fun ktoxInventoryDrainAll(fromName: String, toName: String): Int = externalSource()
@@ -112,14 +123,3 @@ fun ktoxInventoryPullNamedFromPool(toName: String, sourceNamesCsv: String, itemN
 
 @NativeName("ktoxInventoryListPooled")
 fun ktoxInventoryListPooled(sourceNamesCsv: String): String = externalSource()
-
-// SOURCE-initiated transfer (mirrors the dest-initiated Pull* functions
-// above) - needed when the destination is a turtle. See
-// ktox-cc-shim.lua's own comment on ktoxInventoryPushNamed for why:
-// confirmed live that a turtle wrapped as a peripheral only exposes
-// generic remote-control methods, never pullItems - whether it's still
-// a valid pushItems ROUTING TARGET is unverified, not yet confirmed.
-
-@NativeName("ktoxInventoryPushNamedFromPool")
-fun ktoxInventoryPushNamedFromPool(sourceNamesCsv: String, toName: String, itemName: String, desired: Int): Int =
-    externalSource()

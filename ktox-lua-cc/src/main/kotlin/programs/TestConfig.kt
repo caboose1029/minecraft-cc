@@ -118,6 +118,10 @@ fun main() {
     println(runCliCommand("craft create:brass_ingot 5"))
     println("--- trash ---")
     println(runCliCommand("trash minecraft:cobblestone 64"))
+    println("--- deposit -h ---")
+    println(runCliCommand("deposit -h"))
+    println("--- deposit (headless CraftOS-PC has no turtle global - should fail loud, not crash) ---")
+    println(runCliCommand("deposit"))
 
     val chestRecipe = findRecipe("minecraft:chest")
     if (chestRecipe == null) {

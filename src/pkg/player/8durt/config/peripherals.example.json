@@ -11,7 +11,12 @@
   "create:item_vault_3": { "type": "vault", "job": { "type": "pickup", "name": "main", "default": true } },
   "computercraft:turtle_advanced_1": {
     "type": "vault",
-    "job": { "type": "pickup", "name": "workshop" }
+    "job": {
+      "type": "pickup",
+      "name": "workshop",
+      "aboveChest": "minecraft:chest_40",
+      "belowChest": "minecraft:chest_41"
+    }
   },
   "create:item_vault_6": { "type": "vault", "job": { "type": "trash" } },
   "create:item_vault_4": {

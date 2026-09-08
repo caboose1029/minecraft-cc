@@ -269,21 +269,33 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
 - **Pickup vault** (`job.type: "pickup"`) — where `pull`/`craft` results
   land for a player (or turtle) to grab. Any addressable inventory
   peripheral can be a pickup vault, **including a turtle's own
-  inventory in principle** — earlier revisions of this doc treated "a
-  turtle targeting its own inventory as a named `pushItems`/`pullItems`
+  inventory** — earlier revisions of this doc treated "a turtle
+  targeting its own inventory as a named `pushItems`/`pullItems`
   peripheral" as unreliable and routed around it (an ordinary vault
   block next to the terminal, always). That caveat turned out to be
   right, just for a different reason than assumed: confirmed live that a
   turtle wrapped as a peripheral exposes no inventory methods at all
   (only generic remote-control ones), so it can never do the pulling
-  itself. `lib/Cli.kt`'s `deliverToPickupLocation` currently works around
-  this by having the SOURCE vault push into the turtle by name instead
-  (`pushToStoragePoolTarget`) — the same fallback tried for crafter
-  ingredient delivery, which did NOT hold up once actually tested (see
-  "Crafter role" above and "Turtle-as-network-inventory-peripheral"
-  below) — so this is now suspected to have the same problem, not yet
-  confirmed or fixed. `peripherals.json` can configure any number
-  of pickup vaults, each optionally labeled with a `"name"` (its
+  itself, and a SOURCE-vault-pushes-into-the-turtle fallback (tried
+  here, and for crafter ingredient delivery) did not hold up either —
+  see "Turtle-as-network-inventory-peripheral" below. **Fixed** using
+  the same physical chest pattern as the crafter redesign: a turtle-
+  based pickup vault declares `job.aboveChest`/`job.belowChest` on its
+  own `peripherals.json` entry (identical schema/shim function,
+  `ktoxConfigChestsFor`, as the crafter — "let's get the terminals set
+  up the same way"), and since the pickup terminal IS the machine
+  running `lib/Cli.kt`, it can act directly with no rednet round trip:
+  `deliverToPickupLocation` stages the requested item into `aboveChest`
+  (an ordinary vault-to-vault pull, safe) then calls
+  `turtle.suckUp()` on itself (`deliverViaSelfSuckUp`, `lib/Inventory.kt`)
+  across as many of its own inventory slots as needed. The `belowChest`
+  half enables the new symmetric **`deposit`** command below — a player
+  physically loads items into the turtle's own inventory, then `deposit`
+  sweeps them out (`turtle.dropDown()`, `depositSelfInventory`) into
+  `belowChest` and drains that into the storage pool. Both are
+  unverified in-game like the rest of this session's physical-turtle
+  work (see "Known open items"). `peripherals.json` can configure any
+  number of pickup vaults, each optionally labeled with a `"name"` (its
   routable location name — see "CLI" below for `craft --location=`) and
   at most one marked `"default": true` (a missing `"default"` field
   behaves as `false`, no separate handling needed — Lua's own falsy
@@ -1005,6 +1017,15 @@ short-circuits cleanly even with a malformed rest of the command line.
   practice.
 - `trash <name> <qty>` — permanently destroys items via the trash vault.
   Its own explicit command on purpose; nothing else ever routes here.
+- `deposit` — sweeps everything currently in THIS terminal's own
+  inventory back into the storage pool. Only meaningful for a turtle
+  terminal with `job.belowChest` configured (see "Vaults" above) — a
+  plain computer head, or a turtle with no belowChest configured, gets a
+  specific reason why it can't, not a silent no-op. A genuinely minor
+  feature (a player standing at a chest-adjacent terminal would usually
+  just put items straight into a storage vault instead) but built the
+  same way as everything else here since it's a natural extension of the
+  crafter's chest-based physical pattern.
 
 **Literal `[`/`]` in a Kotlin string transpiles to invalid Lua** (ktox
 emits `\[`/`\]`, not a real Lua escape — confirmed via CraftOS-PC:
@@ -1270,10 +1291,11 @@ does.
   to tap-driven rendering afterward — an untested combination, and
   headless CraftOS-PC's `--script` mode can't feed simulated keystrokes
   at all, so this specific gap can't be closed the way the tap logic
-  was); and the reversed pickup-vault assumption itself — that a
-  turtle's own inventory, addressed as an ordinary named
-  `pushItems`/`pullItems` peripheral, actually works (see "Vaults" and
-  the entry below on `ktoxSelfPeripheralName`, same underlying question).
+  was); and the turtle-based self-pickup/deposit path itself
+  (`deliverViaSelfSuckUp`/`depositSelfInventory`, see "Vaults" above) —
+  `turtle.suckUp()`/`turtle.dropDown()` actually interacting with real
+  chests placed above/below a pickup terminal is unverified the same way
+  it is for the crafter.
 - **Crafter role is equally unverified, plus extra unknowns beyond
   the rednet/parallel question above:** the exact `turtle.craft()`
   crafting-grid slot mapping (assumed 1, 2, 3, 5, 6, 7, 9, 10, 11), where
@@ -1321,15 +1343,17 @@ does.
   physical `turtle.*` self-operations and ordinary vault-to-vault
   transfers remain. **`lib/Cli.kt`'s `deliverToPickupLocation` (pull/
   craft results landing in a turtle-based pickup location like
-  `turtle_0`) still uses the unfixed push-based approach** and is very
-  likely broken the same way — not yet confirmed or fixed, since the
-  actively reported bug was specifically about the crafter. If/when
-  this needs fixing, the pattern is the same: turtle_0 IS the machine
-  running `lib/Cli.kt`, so it can call `turtle.suckUp()` on itself
-  directly (no rednet needed at all) from a staging vault positioned
-  above it, rather than going through a network push. `ktoxSelfPeripheralName()`'s
-  `getID()`-matching approach, by contrast, IS confirmed working — `getID`
-  is right there in the real `getMethods()` output above.
+  `turtle_0`) has since been fixed the same way:** it no longer uses the
+  push-based approach at all — since the pickup terminal IS the machine
+  running `lib/Cli.kt`, it calls `turtle.suckUp()` on itself directly (no
+  rednet needed) from a `job.aboveChest` staging chest, and a new
+  `deposit` command does the reverse via `job.belowChest` and
+  `turtle.dropDown()` (see "Vaults" and "CLI" above). The old
+  `pushToStoragePoolTarget`/`ktoxInventoryPushNamedFromPool` machinery
+  has been deleted outright rather than left dead, since nothing calls
+  it anymore. `ktoxSelfPeripheralName()`'s `getID()`-matching approach,
+  by contrast, IS confirmed working — `getID` is right there in the real
+  `getMethods()` output above.
 - Storage-vault load balancing (push-to-emptiest, farm→vault preference
   routing) — problem #3b territory, deferred.
 - Stockpile Switch integration for fast vault-fullness queries — deferred.

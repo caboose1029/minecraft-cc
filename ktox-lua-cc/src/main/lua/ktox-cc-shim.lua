@@ -369,47 +369,6 @@ function ktoxInventoryDrainAll(fromName, toName)
     return moved
 end
 
--- SOURCE-initiated transfer (the source calls pushItems), the mirror
--- image of ktoxInventoryPullNamed (dest.pullItems) above — needed when
--- `toName` is a turtle. Confirmed live: wrapping a turtle as a
--- peripheral from another computer only exposes generic remote-control
--- methods (reboot/getLabel/turnOn/isOn/getID/shutdown), no pullItems at
--- all — a turtle can never be the one pulling into itself from another
--- computer's perspective. Whether a turtle is still a valid ROUTING
--- TARGET for an ordinary vault's own pushItems call is the working
--- hypothesis here, NOT yet confirmed against a real turtle — see
--- PLAN.md's "Known open items". `pushItems`'s own last argument (toSlot)
--- is optional in real CC:Tweaked (nil = "any slot") — for the plain
--- (non-slot-targeted) variant, dest.pushItems(toName, slot, count) below
--- passes no 4th argument at all, which reads as nil.
-function ktoxInventoryPushNamed(fromName, toName, itemName, desired)
-    local source = peripheral.wrap(fromName)
-    if source == nil then
-        return 0
-    end
-    local pushed = 0
-    for slot, item in pairs(source.list()) do
-        if pushed >= desired then
-            break
-        end
-        if item.name == itemName then
-            pushed = pushed + source.pushItems(toName, slot, desired - pushed)
-        end
-    end
-    return pushed
-end
-
-function ktoxInventoryPushNamedFromPool(sourceNamesCsv, toName, itemName, desired)
-    local pushed = 0
-    for sourceName in string.gmatch(sourceNamesCsv, "[^,]+") do
-        if pushed >= desired then
-            break
-        end
-        pushed = pushed + ktoxInventoryPushNamed(sourceName, toName, itemName, desired - pushed)
-    end
-    return pushed
-end
-
 -- Returns a newline-joined "name,count" row per distinct item found
 -- across all of the given source inventories (comma-joined peripheral
 -- names), aggregated by name. Used by the `list` CLI command. Empty
@@ -862,20 +821,30 @@ function ktoxConfigCrafterForJob(jobType)
     return "MISSING"
 end
 
--- The chest-above/chest-below peripheral names dedicated to `crafterName`
--- (job.aboveChest / job.belowChest on that crafter's OWN peripherals.json
--- entry — physically dedicated infrastructure for one turtle, not pooled
--- storage, so it doesn't get its own top-level entries the way vaults
--- do). Packed as "above,below". "MISSING" if either is absent.
-function ktoxConfigCrafterChests(crafterName)
+-- The chest-above/chest-below peripheral names dedicated to
+-- `peripheralName` (job.aboveChest / job.belowChest on that entry's OWN
+-- peripherals.json entry — physically dedicated infrastructure for one
+-- turtle, not pooled storage, so it doesn't get its own top-level
+-- entries the way vaults do). Shared schema for two callers: the
+-- crafter (programs/Crafter.kt) and a turtle-based pickup terminal's
+-- self-suckUp/self-deposit path (lib/Cli.kt). Packed as "above,below".
+-- "MISSING" if either is absent.
+function ktoxConfigChestsFor(peripheralName)
     local config = ktoxReadJSONFile("config/peripherals.json")
     if config ~= nil then
-        local entry = config[crafterName]
+        local entry = config[peripheralName]
         if entry ~= nil and entry.job ~= nil and entry.job.aboveChest ~= nil and entry.job.belowChest ~= nil then
             return entry.job.aboveChest .. "," .. entry.job.belowChest
         end
     end
     return "MISSING"
+end
+
+-- True only when this computer itself is a turtle (global `turtle` is
+-- non-nil) - guards any physical turtle.* call site so it's never
+-- reached on a plain computer head.
+function ktoxIsTurtle()
+    return turtle ~= nil
 end
 
 -- Caches the most recent crafter-job failure reason (from a

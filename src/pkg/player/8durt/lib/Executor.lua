@@ -175,7 +175,7 @@ function runCrafterJob(recipe, desiredOutput, timeoutSeconds)
         ktoxSetLastCrafterFailure("No crafter turtle configured for job type " .. "\"" .. tostring(recipe.jobType) .. "\"" .. ".")
         return 0
     end
-    local chests = crafterChestsFor(crafterName)
+    local chests = chestsFor(crafterName)
     if chests == nil then
         ktoxSetLastCrafterFailure("Crafter " .. "\"" .. tostring(crafterName) .. "\"" .. " has no aboveChest/belowChest configured in peripherals.json.")
         return 0

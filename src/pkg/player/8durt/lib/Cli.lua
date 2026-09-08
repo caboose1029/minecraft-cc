@@ -1,15 +1,15 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=22,["12-13"]=23,["14"]=25,["15"]=26,["16"]=27,["17-18"]=28,["19"]=30,["20-21"]=31,["22"]=33,["23-24"]=34,["25"]=36,["26-27"]=37,["28-43"]=39,["44-49"]=56,["50"]=68,["51-52"]=69,["53"]=71,["54"]=72,["55-56"]=73,["57-64"]=75,["65"]=90,["66"]=91,["67-68"]=92,["69-75"]=94,["76"]=103,["77"]=104,["78"]=105,["79"]=106,["80-81"]=107,["82-83"]=109,["84-90"]=111,["91"]=115,["92"]=116,["93"]=117,["94"]=118,["95-96"]=119,["97-98"]=121,["99-104"]=123,["105"]=129,["106-107"]=130,["108-113"]=132,["114"]=136,["115-116"]=137,["117"]=139,["118"]=140,["119"]=141,["120"]=142,["121"]=143,["122"]=144,["123"]=145,["124-125"]=146,["126"]=148,["127-128"]=149,["129"]=150,["130"]=151,["131-134"]=152,["135"]=155,["136-137"]=156,["138"]=159,["139"]=160,["140-141"]=161,["142"]=169,["143"]=170,["144"]=171,["145-146"]=172,["147"]=174,["148"]=175,["149-150"]=176,["151"]=178,["152"]=179,["153"]=180,["154"]=181,["155"]=182,["156"]=183,["157"]=184,["158-159"]=185,["160-161"]=187,["162-163"]=189,["164-165"]=191,["166-171"]=193,["172"]=197,["173-174"]=198,["175"]=200,["176-177"]=201,["178"]=203,["179"]=204,["180"]=205,["181-182"]=206,["183"]=208,["184"]=210,["185"]=211,["186"]=212,["187-188"]=213,["189"]=216,["190-195"]=217,["196"]=226,["197-198"]=227,["199"]=229,["200-201"]=230,["202"]=232,["203"]=233,["204"]=234,["205-206"]=235,["207"]=237,["208"]=239,["209"]=240,["210"]=242,["211"]=243,["212"]=244,["213"]=245,["214-216"]=246,["217"]=255,["218"]=256,["219"]=257,["220"]=258,["221"]=259,["222-223"]=260,["224"]=263,["225-226"]=264,["227"]=267,["228-233"]=268,["234"]=276,["235-236"]=277,["237"]=279,["238-239"]=280,["240"]=282,["241"]=283,["242"]=284,["243-244"]=285,["245"]=287,["246"]=289,["247"]=290,["248-249"]=291,["250"]=294,["251-253"]=295}, "lib")
-ktox_require("lib/Planner")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Cli.kt", {["1-10"]=1,["11"]=25,["12-13"]=26,["14"]=28,["15"]=29,["16"]=30,["17-18"]=31,["19"]=33,["20-21"]=34,["22"]=36,["23-24"]=37,["25"]=39,["26-27"]=40,["28"]=42,["29-30"]=43,["31-48"]=45,["49-54"]=63,["55"]=75,["56-57"]=76,["58"]=78,["59"]=79,["60-61"]=80,["62-69"]=82,["70"]=103,["71"]=104,["72"]=105,["73-74"]=106,["75"]=108,["76"]=109,["77-78"]=110,["79-80"]=112,["81-86"]=114,["87"]=124,["88-89"]=125,["90"]=127,["91-92"]=128,["93"]=130,["94"]=131,["95-96"]=132,["97"]=134,["98"]=135,["99-100"]=136,["101"]=138,["102-108"]=139,["109"]=148,["110"]=149,["111"]=150,["112"]=151,["113-114"]=152,["115-116"]=154,["117-123"]=156,["124"]=160,["125"]=161,["126"]=162,["127"]=163,["128-129"]=164,["130-131"]=166,["132-137"]=168,["138"]=174,["139-140"]=175,["141-146"]=177,["147"]=181,["148-149"]=182,["150"]=184,["151"]=185,["152"]=186,["153"]=187,["154"]=188,["155"]=189,["156"]=190,["157-158"]=191,["159"]=193,["160-161"]=194,["162"]=195,["163"]=196,["164-167"]=197,["168"]=200,["169-170"]=201,["171"]=204,["172"]=205,["173-174"]=206,["175"]=214,["176"]=215,["177"]=216,["178-179"]=217,["180"]=219,["181"]=220,["182-183"]=221,["184"]=223,["185"]=224,["186"]=225,["187"]=226,["188"]=227,["189"]=228,["190"]=229,["191-192"]=230,["193-194"]=232,["195-196"]=234,["197-198"]=236,["199-204"]=238,["205"]=242,["206-207"]=243,["208"]=245,["209-210"]=246,["211"]=248,["212"]=249,["213"]=250,["214-215"]=251,["216"]=253,["217"]=255,["218"]=256,["219"]=257,["220-221"]=258,["222"]=261,["223-228"]=262,["229"]=271,["230-231"]=272,["232"]=274,["233-234"]=275,["235"]=277,["236"]=278,["237"]=279,["238-239"]=280,["240"]=282,["241"]=284,["242"]=285,["243"]=287,["244"]=288,["245"]=289,["246"]=290,["247-249"]=291,["250"]=300,["251"]=301,["252"]=302,["253"]=303,["254"]=304,["255-256"]=305,["257"]=308,["258-259"]=309,["260"]=312,["261-266"]=313,["267"]=321,["268-269"]=322,["270"]=324,["271-272"]=325,["273"]=327,["274"]=328,["275"]=329,["276-277"]=330,["278"]=332,["279"]=334,["280"]=335,["281-282"]=336,["283"]=339,["284-286"]=340}, "lib")
 ktox_require("lib/Inventory")
+ktox_require("lib/Planner")
 
 ---@param commandLine string
 ---@return string
 function runCliCommand(commandLine)
     if commandLine == "" then
-        return "Empty command. Try: list, pull, craft."
+        return "Empty command. Try: list, pull, craft, deposit."
     end
     local parts = ktox_split(commandLine, " ")
     local verb = parts[1]
@@ -25,7 +25,10 @@ function runCliCommand(commandLine)
     if verb == "trash" then
         return runTrashCommand(parts)
     end
-    return "Unknown command: " .. tostring(verb) .. ". Try: list, pull, craft, trash."
+    if verb == "deposit" then
+        return runDepositCommand(parts)
+    end
+    return "Unknown command: " .. tostring(verb) .. ". Try: list, pull, craft, trash, deposit."
 end
 
 LIST_USAGE = "Usage: list (--stocked|--craftable|--unavailable) (item-name-filter) (-h)" .. "\n" .. "  Lists items in the storage pool. Optional status flag narrows to one status; optional trailing text filters to item names containing that substring (e.g. " .. "\"" .. "list --stocked iron" .. "\"" .. ")."
@@ -35,6 +38,8 @@ PULL_USAGE = "Usage: pull <name> <qty> (--location=<name>) (-h)" .. "\n" .. "  P
 CRAFT_USAGE = "Usage: craft <name> <qty> (--location=<name>) (--fetch=false) (-h)" .. "\n" .. "  Crafts <qty> of <name>, chaining through intermediate jobs as needed, then pulls the result into a pickup location. Defaults to this terminal\'s own inventory if it\'s itself configured as a pickup location, otherwise the config/peripherals.json default; pass --location=<name> to target a specific named pickup location instead. Pass --fetch=false to craft without pulling the result out at all (leaves it in the storage pool)."
 
 TRASH_USAGE = "Usage: trash <name> <qty> (-h)" .. "\n" .. "  Permanently destroys <qty> of <name> from the storage pool via the trash vault (dumped into lava)."
+
+DEPOSIT_USAGE = "Usage: deposit (-h)" .. "\n" .. "  Deposits everything currently in THIS terminal\'s own inventory into the storage pool. Only works when this terminal is itself a turtle with job.aboveChest and job.belowChest configured in config/peripherals.json (same schema as a crafter turtle) - there\'s no way to deposit into a plain computer head, and there\'s rarely a reason to use this over just putting items straight into a storage vault."
 
 LIST_DISPLAY_LIMIT = 6
 
@@ -64,9 +69,37 @@ end
 function deliverToPickupLocation(pickupVault, itemName, qty)
     local selfName = ktoxSelfPeripheralName()
     if selfName ~= "MISSING" and selfName == pickupVault then
-        return pushToStoragePoolTarget(pickupVault, itemName, qty)
+        if not ktoxIsTurtle() then
+            return 0
+        end
+        local chests = chestsFor(selfName)
+        if chests == nil then
+            return 0
+        end
+        return deliverViaSelfSuckUp(chests.above, itemName, qty)
     end
     return pullFromStoragePool(pickupVault, itemName, qty)
+end
+
+---@param parts table
+---@return string
+function runDepositCommand(parts)
+    if isHelpFlag(parts) then
+        return DEPOSIT_USAGE
+    end
+    if not ktoxIsTurtle() then
+        return "This terminal isn\'t a turtle, so it has no inventory of its own to deposit from - put items directly into a storage vault instead."
+    end
+    local selfName = ktoxSelfPeripheralName()
+    if selfName == "MISSING" then
+        return "This terminal isn\'t wired onto the network under a discoverable peripheral name, so it can\'t resolve its own job.belowChest config."
+    end
+    local chests = chestsFor(selfName)
+    if chests == nil then
+        return "No aboveChest/belowChest configured for this terminal (job.aboveChest/job.belowChest in config/peripherals.json) - can\'t deposit."
+    end
+    local deposited = depositSelfInventory(chests.below)
+    return "Deposited " .. tostring(deposited) .. " item(s) into storage."
 end
 
 ---@param parts table

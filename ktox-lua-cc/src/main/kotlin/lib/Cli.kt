@@ -7,11 +7,14 @@ import common.ktoxConfigStorageVaultNames
 import common.ktoxConfigTrashVault
 import common.ktoxGetLastCrafterFailure
 import common.ktoxIsConfiguredPickupLocation
+import common.ktoxIsTurtle
 import common.ktoxListCatalog
 import common.ktoxSelfPeripheralName
+import lib.chestsFor
+import lib.deliverViaSelfSuckUp
+import lib.depositSelfInventory
 import lib.ensureStocked
 import lib.pullFromStoragePool
-import lib.pushToStoragePoolTarget
 
 // Shared command dispatcher for both a terminal's own local input and
 // rednet-forwarded input from a secondary terminal (see PLAN.md — same
@@ -20,7 +23,7 @@ import lib.pushToStoragePoolTarget
 // multi-line) string to print or send back.
 fun runCliCommand(commandLine: String): String {
     if (commandLine == "") {
-        return "Empty command. Try: list, pull, craft."
+        return "Empty command. Try: list, pull, craft, deposit."
     }
     val parts = commandLine.split(" ")
     val verb = parts[1]
@@ -36,7 +39,10 @@ fun runCliCommand(commandLine: String): String {
     if (verb == "trash") {
         return runTrashCommand(parts)
     }
-    return "Unknown command: ${verb}. Try: list, pull, craft, trash."
+    if (verb == "deposit") {
+        return runDepositCommand(parts)
+    }
+    return "Unknown command: ${verb}. Try: list, pull, craft, trash, deposit."
 }
 
 // Literal square brackets in a Kotlin string transpile to invalid Lua
@@ -47,6 +53,7 @@ const val LIST_USAGE = "Usage: list (--stocked|--craftable|--unavailable) (item-
 const val PULL_USAGE = "Usage: pull <name> <qty> (--location=<name>) (-h)\n  Pulls <qty> of <name> from the storage pool into a pickup location. --location=<name> targets a specific named one; without it, this terminal's own inventory if it's itself configured as a pickup location, otherwise whichever pickup location is marked \"default\" in config/peripherals.json."
 const val CRAFT_USAGE = "Usage: craft <name> <qty> (--location=<name>) (--fetch=false) (-h)\n  Crafts <qty> of <name>, chaining through intermediate jobs as needed, then pulls the result into a pickup location. Defaults to this terminal's own inventory if it's itself configured as a pickup location, otherwise the config/peripherals.json default; pass --location=<name> to target a specific named pickup location instead. Pass --fetch=false to craft without pulling the result out at all (leaves it in the storage pool)."
 const val TRASH_USAGE = "Usage: trash <name> <qty> (-h)\n  Permanently destroys <qty> of <name> from the storage pool via the trash vault (dumped into lava)."
+const val DEPOSIT_USAGE = "Usage: deposit (-h)\n  Deposits everything currently in THIS terminal's own inventory into the storage pool. Only works when this terminal is itself a turtle with job.aboveChest and job.belowChest configured in config/peripherals.json (same schema as a crafter turtle) - there's no way to deposit into a plain computer head, and there's rarely a reason to use this over just putting items straight into a storage vault."
 
 // The CC terminal has no scrollback a player can page through, so `list`
 // caps its output rather than dumping the whole pool - see runListCommand.
@@ -76,22 +83,60 @@ fun resolvePickupLocation(explicitLocation: String): String {
 }
 
 // Delivers `qty` of `itemName` from the storage pool into `pickupVault`,
-// choosing the transfer DIRECTION based on whether that's this
+// choosing the transfer MECHANISM based on whether that's this
 // terminal's own inventory. Confirmed live: wrapping a turtle as a
 // peripheral from another computer exposes only generic remote-control
-// methods, never pullItems - so when the pickup vault IS this terminal
-// (a turtle), the ordinary dest.pullItems(...) pullFromStoragePool
-// would always move 0 items with no error, not fail loudly. Push
-// instead (the storage vault calls pushItems, targeting this terminal
-// by name) - UNVERIFIED whether a turtle is a valid pushItems ROUTING
-// TARGET either, that's the current working hypothesis, not confirmed.
-// See PLAN.md's "Known open items".
+// methods, never pullItems/pushItems - so when the pickup vault IS this
+// terminal (a turtle), no ordinary network transfer can ever reach it in
+// either direction (the push-based fallback tried here previously was
+// the same hypothesis that failed for the crafter's ingredient delivery
+// - see PLAN.md's "Turtle-as-network-inventory-peripheral"). Uses the
+// same physical chest-above pattern as the crafter instead
+// (deliverViaSelfSuckUp): this terminal IS the machine running this
+// code, so it can turtle.suckUp() from its own configured aboveChest
+// directly, no rednet involved. Falls back to 0 (no aboveChest/belowChest
+// configured, or this terminal isn't actually a turtle) rather than
+// crashing - a plain-computer pickup location never reaches this branch
+// in the first place, since the ordinary vault-to-vault pull below
+// already works fine for those.
 fun deliverToPickupLocation(pickupVault: String, itemName: String, qty: Int): Int {
     val selfName = ktoxSelfPeripheralName()
     if (selfName != "MISSING" && selfName == pickupVault) {
-        return pushToStoragePoolTarget(pickupVault, itemName, qty)
+        if (!ktoxIsTurtle()) {
+            return 0
+        }
+        val chests = chestsFor(selfName)
+        if (chests == null) {
+            return 0
+        }
+        return deliverViaSelfSuckUp(chests.above, itemName, qty)
     }
     return pullFromStoragePool(pickupVault, itemName, qty)
+}
+
+// `deposit` — the reverse of a self-pickup: a player physically loads
+// items into this turtle's own inventory (opening it in-game), then runs
+// this to sweep everything back into the storage pool. Dumps every
+// occupied slot into job.belowChest (turtle.dropDown(), physical, no
+// rednet), then drains that chest into the pool. Only meaningful for a
+// turtle terminal with belowChest configured - see DEPOSIT_USAGE.
+fun runDepositCommand(parts: List<String>): String {
+    if (isHelpFlag(parts)) {
+        return DEPOSIT_USAGE
+    }
+    if (!ktoxIsTurtle()) {
+        return "This terminal isn't a turtle, so it has no inventory of its own to deposit from - put items directly into a storage vault instead."
+    }
+    val selfName = ktoxSelfPeripheralName()
+    if (selfName == "MISSING") {
+        return "This terminal isn't wired onto the network under a discoverable peripheral name, so it can't resolve its own job.belowChest config."
+    }
+    val chests = chestsFor(selfName)
+    if (chests == null) {
+        return "No aboveChest/belowChest configured for this terminal (job.aboveChest/job.belowChest in config/peripherals.json) - can't deposit."
+    }
+    val deposited = depositSelfInventory(chests.below)
+    return "Deposited ${deposited} item(s) into storage."
 }
 
 // Shared trailing-flag parsing for pull/craft, scanning parts[startIndex..]

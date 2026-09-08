@@ -11,7 +11,7 @@ import common.ktoxRednetReceiveProtocol
 import common.ktoxSetLastCrafterFailure
 import common.osSleep
 import common.rednetSend
-import lib.crafterChestsFor
+import lib.chestsFor
 import lib.drainVaultInto
 import lib.firstStorageVaultName
 import lib.isFirstInputOccurrence
@@ -226,7 +226,7 @@ fun stageIngredients(recipe: Recipe, aboveChest: String, batches: Int): Boolean 
 // the physical flow is chest-above -> turtle -> chest-below, top to
 // bottom, matching Create's own machine convention (see PLAN.md): stage
 // every distinct ingredient into a dedicated chest above the crafter
-// (crafterChestsFor - a physically dedicated pair of chests declared on
+// (chestsFor - a physically dedicated pair of chests declared on
 // the crafter's OWN peripherals.json entry, not pooled/shared vaults),
 // tell the crafter what to make and how many times
 // ("<outputItemName>,<batches>" - it looks up the recipe/slot shape
@@ -247,7 +247,7 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
         ktoxSetLastCrafterFailure("No crafter turtle configured for job type \"${recipe.jobType}\".")
         return 0
     }
-    val chests = crafterChestsFor(crafterName)
+    val chests = chestsFor(crafterName)
     if (chests == null) {
         ktoxSetLastCrafterFailure("Crafter \"${crafterName}\" has no aboveChest/belowChest configured in peripherals.json.")
         return 0
