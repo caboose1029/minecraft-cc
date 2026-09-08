@@ -1,7 +1,7 @@
 -- package: lib
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Inventory.kt", {["1-8"]=1,["9"]=21,["10"]=22,["11-12"]=23,["13-20"]=25,["21"]=33,["22"]=34,["23-24"]=35,["25-29"]=37,["30"]=53,["31-35"]=54,["36"]=64,["37"]=65,["38-39"]=66,["40-78"]=68,["79"]=81,["80"]=82,["81-82"]=83,["83"]=85,["84-90"]=86,["91-98"]=95,["99"]=114,["100"]=115,["101-102"]=116,["103"]=118,["104"]=119,["105"]=120,["106"]=121,["107"]=122,["108"]=123,["109"]=124,["110"]=125,["111"]=126,["112-114"]=127,["115-116"]=130,["117-122"]=132,["123"]=146,["124"]=147,["125"]=148,["126"]=149,["127-128"]=150,["129-130"]=152,["131"]=154,["132"]=155,["133-134"]=156,["135-137"]=158}, "lib")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "lib/Inventory.kt", {["1-8"]=1,["9"]=22,["10"]=23,["11-12"]=24,["13-20"]=26,["21"]=34,["22"]=35,["23-24"]=36,["25-29"]=38,["30"]=54,["31-35"]=55,["36"]=65,["37"]=66,["38-39"]=67,["40-44"]=69,["45"]=82,["46"]=83,["47-48"]=84,["49-87"]=86,["88"]=99,["89"]=100,["90-91"]=101,["92"]=103,["93-99"]=104,["100-107"]=113,["108"]=132,["109"]=133,["110-111"]=134,["112"]=136,["113"]=137,["114"]=138,["115"]=139,["116"]=140,["117"]=141,["118"]=142,["119"]=143,["120"]=144,["121-123"]=145,["124-125"]=148,["126-131"]=150,["132"]=164,["133"]=165,["134"]=166,["135"]=167,["136-137"]=168,["138-139"]=170,["140"]=172,["141"]=173,["142-143"]=174,["144-146"]=176}, "lib")
 
 ---@param itemName string
 ---@return number
@@ -38,6 +38,15 @@ function firstStorageVaultName()
         return "MISSING"
     end
     return ktox_split(vaultNames, ",")[1]
+end
+
+---@return string
+function leastFullStorageVaultName()
+    local vaultNames = ktoxConfigStorageVaultNames()
+    if vaultNames == "" then
+        return "MISSING"
+    end
+    return ktoxLeastFullStorageVault(vaultNames)
 end
 
 ---@class Chests
@@ -128,7 +137,7 @@ function depositSelfInventory(belowChest)
         end
         slot = ktox_plusAssign(slot, 1)
     end
-    local storageVault = firstStorageVaultName()
+    local storageVault = leastFullStorageVaultName()
     if storageVault == "MISSING" then
         return 0
     end

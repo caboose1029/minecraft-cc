@@ -1,8 +1,9 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "HeadTerminal.kt", {["1-11"]=1,["12"]=35,["13"]=36,["14"]=37,["15"]=38,["16-17"]=39,["18"]=42,["19"]=43,["20"]=44,["21-22"]=45,["23"]=48,["24"]=49,["25-29"]=50,["30"]=56,["31-35"]=57,["36"]=62,["37"]=67,["38"]=68,["39"]=69,["40-43"]=70,["44"]=78,["45"]=79,["46-47"]=80,["48"]=82,["49"]=83,["50"]=84,["51-52"]=85,["53"]=87,["54"]=88,["55-61"]=89}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "HeadTerminal.kt", {["1-12"]=1,["13"]=36,["14"]=37,["15"]=38,["16"]=39,["17-18"]=40,["19"]=43,["20"]=44,["21"]=45,["22-23"]=46,["24"]=49,["25"]=50,["26-30"]=51,["31"]=57,["32"]=58,["33-37"]=59,["38"]=64,["39"]=69,["40"]=70,["41"]=71,["42-45"]=72,["46"]=80,["47"]=81,["48-49"]=82,["50"]=84,["51"]=85,["52"]=86,["53-54"]=87,["55"]=89,["56"]=90,["57-63"]=91}, "programs")
 ktox_require("lib/RoleCheck")
+ktox_require("lib/DepositChest")
 ktox_require("lib/Farm")
 ktox_require("lib/Cli")
 ktox_require("lib/Dashboard")
@@ -29,6 +30,7 @@ local function main()
         end)
         topUpPassiveFeeders()
         manageFarms()
+        drainDepositChests()
     end
 end
 

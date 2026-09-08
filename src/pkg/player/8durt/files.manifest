@@ -14,6 +14,7 @@ lib/RoleCheck.lua
 lib/Planner.lua
 lib/PassiveFeeder.lua
 lib/Farm.lua
+lib/DepositChest.lua
 lib/Cli.lua
 lib/Colors.lua
 lib/Display.lua

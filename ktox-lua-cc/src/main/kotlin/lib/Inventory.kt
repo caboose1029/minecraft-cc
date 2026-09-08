@@ -6,6 +6,7 @@ import common.ktoxInventoryCountNamed
 import common.ktoxInventoryDrainAll
 import common.ktoxInventoryListPooled
 import common.ktoxInventoryPullNamedFromPool
+import common.ktoxLeastFullStorageVault
 import common.turtleDropDown
 import common.turtleGetItemCount
 import common.turtleSelect
@@ -66,6 +67,23 @@ fun firstStorageVaultName(): String {
         return "MISSING"
     }
     return vaultNames.split(",")[1]
+}
+
+// Load balancing (see PLAN.md's "Vaults" section - "spreading pushes
+// toward the emptiest vault" was flagged there and deferred): which
+// storage vault a new push should land in, rather than always
+// firstStorageVaultName()'s fixed choice. Prefers the least-full vault
+// (by occupied-slot ratio), skipping any a configured Stockpile Switch
+// currently flags as full unless every vault is flagged full - see
+// ktoxLeastFullStorageVault (ktox-cc-shim.lua) for the actual selection
+// logic, kept in Lua since it needs real looping over each vault's own
+// inventory contents. "MISSING" if no storage vault is configured at all.
+fun leastFullStorageVaultName(): String {
+    val vaultNames = ktoxConfigStorageVaultNames()
+    if (vaultNames == "") {
+        return "MISSING"
+    }
+    return ktoxLeastFullStorageVault(vaultNames)
 }
 
 data class Chests(val above: String, val below: String)
@@ -151,7 +169,7 @@ fun depositSelfInventory(belowChest: String): Int {
         }
         slot += 1
     }
-    val storageVault = firstStorageVaultName()
+    val storageVault = leastFullStorageVaultName()
     if (storageVault == "MISSING") {
         return 0
     }

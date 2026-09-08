@@ -13,7 +13,7 @@ import common.osSleep
 import common.rednetSend
 import lib.chestsFor
 import lib.drainVaultInto
-import lib.firstStorageVaultName
+import lib.leastFullStorageVaultName
 import lib.isFirstInputOccurrence
 import lib.pullFromStoragePool
 import lib.queryForCrafter
@@ -252,8 +252,7 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
         ktoxSetLastCrafterFailure("Crafter \"${crafterName}\" has no aboveChest/belowChest configured in peripherals.json.")
         return 0
     }
-    val storageVault = firstStorageVaultName()
-    if (storageVault == "MISSING") {
+    if (leastFullStorageVaultName() == "MISSING") {
         ktoxSetLastCrafterFailure("No storage vault configured to move crafted items into.")
         return 0
     }
@@ -264,8 +263,11 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
     while (attempt <= 2 && totalProduced < desiredOutput && !giveUp) {
         // Proactively drain both chests before every attempt - stale
         // leftovers from an earlier attempt/job should never linger.
-        drainVaultInto(chests.above, storageVault)
-        drainVaultInto(chests.below, storageVault)
+        // Picked fresh each time (not cached from outside the loop) since
+        // load balancing should reflect whichever vault is emptiest RIGHT
+        // NOW, which can change between attempts.
+        drainVaultInto(chests.above, leastFullStorageVaultName())
+        drainVaultInto(chests.below, leastFullStorageVaultName())
 
         val remaining = desiredOutput - totalProduced
         val desiredBatches = ceilDiv(remaining, recipe.outputCount)
@@ -314,7 +316,7 @@ fun runCrafterJob(recipe: Recipe, desiredOutput: Int, timeoutSeconds: Int): Int 
                     ktoxSetLastCrafterFailure("Crafter timed out - expected ${expectedThisAttempt}x ${recipe.outputName} in the chest below, only saw ${madeThisAttempt}.")
                 }
 
-                drainVaultInto(chests.below, storageVault)
+                drainVaultInto(chests.below, leastFullStorageVaultName())
                 totalProduced += madeThisAttempt
             }
         }

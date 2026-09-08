@@ -1,6 +1,13 @@
 {
-  "create:item_vault_0": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_0": {
+    "type": "vault",
+    "job": {
+      "type": "storage",
+      "fullSwitch": { "relay": "computercraft:redstone_relay_3", "side": "top" }
+    }
+  },
   "create:item_vault_1": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_32": { "type": "vault", "job": { "type": "deposit_chest" } },
   "create:item_vault_2": {
     "type": "vault",
     "job": {

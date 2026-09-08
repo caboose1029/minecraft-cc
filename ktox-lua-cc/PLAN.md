@@ -19,13 +19,18 @@ Recurses into a missing input before running the current level's job, so
 jobs execute in dependency order purely via call-stack unwinding (no
 explicit job-list data structure, which ktox has no good collection type
 for anyway). Guarded by `MAX_PLANNER_DEPTH` (5) against a cyclic
-resource-tree config. **Known gap:** `list --craftable`'s classification
-(`ktoxListCatalog` in ktox-cc-shim.lua) still only checks ONE hop — an
-item needing a 2+-level chain to produce shows as "unavailable" in `list`
-even though `craft` could actually produce it. Left as-is for now
-(disclosed here rather than fixed) since `list`'s job is just a quick
-status glance, not a plan preview — worth revisiting if that mismatch
-turns out to confuse people in practice.
+resource-tree config. **Fixed (2026-09-07), previously a known gap:**
+`list --craftable`'s classification (`ktoxListCatalog` in
+ktox-cc-shim.lua) used to only check ONE hop — an item needing a
+2+-level chain to produce showed as "unavailable" in `list` even though
+`craft` could actually produce it. Now a recursive `canProduce(name,
+depth, memo)` walks the same recipe chain `ensureStocked` would, up to
+the same `MAX_LIST_CRAFT_DEPTH` (5, matching `MAX_PLANNER_DEPTH`) so
+`list`/the dashboard can never disagree with what `craft` can actually
+do past the first hop. Memoized per `ktoxListCatalog` call (recipes
+share ingredients constantly) and cycle-safe (an item is marked
+"not yet known" before recursing into its own inputs, same reasoning as
+the brass incident below).
 
 **Fixed, separate gap:** `ktoxListCatalog` used to mark an item
 "craftable" purely from `allInputsStocked` — never checking whether the
@@ -251,7 +256,10 @@ round trip end to end.
 
 ## Vaults
 
-Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
+Six kinds, distinguished by `job.type` in `peripherals.json` (see below;
+the sixth, `deposit_chest`, was added later — see its own entry below the
+original five for why it's documented separately rather than woven into
+this list):
 
 - **Storage vaults** — raw pooled storage. Machines/farms drop output into
   these. All storage-job vaults are treated as **one logical resource
@@ -361,10 +369,67 @@ Five kinds, distinguished by `job.type` in `peripherals.json` (see below):
   (`minecraft:bucket`, low 4 / high 16 in the example config) sitting at
   the Spout's depot.
 
-Stockpile Switch is a good fit for storage-vault fullness (aggregate fill
-%, doesn't care about item identity) but **not** for per-item shortage
-detection on a mixed vault — that still requires software-side counting
-via `list()`/`getItemDetail`. Not wired up in phase 1; noted for later.
+- **Deposit chest** (`job.type: "deposit_chest"`, built 2026-09-07) — a
+  plain vault a player physically loads by hand (opens it in-game, drops
+  items in), swept opportunistically into the storage pool by the head
+  after each command, same cadence as passive feeders/farms
+  (`lib/DepositChest.kt`'s `drainDepositChests()`). **Deliberately a
+  different job type from the turtle-only `deposit` CLI command** (see
+  "CLI" above) — that one sweeps a TURTLE's own inventory via
+  `job.aboveChest`/`job.belowChest` and needs a player standing at a
+  terminal; this one is just an ordinary vault-to-vault drain, for a
+  build where a plain chest near the factory floor is more convenient
+  than walking to a terminal. An unfiltered `ktoxInventoryDrainAll`
+  sweep, same primitive the crafter's chest-draining already uses — no
+  new transfer mechanism needed, just a new place to point it from.
+
+**Load balancing (built 2026-09-07) — "spreading pushes toward the
+emptiest vault", flagged above as deferred, is no longer deferred.**
+Every push that used to always target `firstStorageVaultName()` (the
+crafter's output drain in `lib/Executor.kt`'s `runCrafterJob`, the
+turtle `deposit` command's `depositSelfInventory`, and the new deposit
+chest above) now targets `leastFullStorageVaultName()` instead — picked
+fresh on each call, not cached, since which vault is emptiest can change
+between one drain and the next. The actual vault-comparison logic
+(`ktoxLeastFullStorageVault` in ktox-cc-shim.lua) stays in hand-written
+Lua rather than Kotlin, same reasoning as `ktoxListCatalog`/
+`ktoxInventoryCountNamed` above — it needs real looping over each
+candidate vault's own `inv.list()`/`inv.size()`, which Kotlin's
+collection gap can't express directly. "Fullness" is a **slot-occupancy
+ratio** (`ktoxVaultFullFraction` — occupied slots ÷ `inv.size()`), not
+raw item count, since raw count would misjudge a vault holding a few
+high-stack-size items as "empty" next to one holding many low-stack-size
+items. **Farm→vault preference routing** (the other half of the original
+#3b idea — a specific farm always feeding a specific vault) is still
+NOT built; a farm's physical drop point is decided by where its chute
+physically points in the world, not by anything this system's software
+controls, so that half of the original idea doesn't actually apply to
+software load balancing the way first assumed — only pushes this
+codebase itself initiates (crafter output, turtle deposit, deposit
+chest) are things it can route at all.
+
+**Stockpile Switch integration (built 2026-09-07), the other half of the
+line below that used to say "not wired up in phase 1."** An optional
+`job.fullSwitch: {"relay": "<name>", "side": "<side>"}` on a storage
+vault's own `peripherals.json` entry (same "physically dedicated, so a
+field not a top-level entry" reasoning as `job.aboveChest`/`belowChest`)
+wires a real Stockpile Switch (Advanced Peripherals) through a redstone
+relay. `ktoxLeastFullStorageVault` treats a vault whose switch currently
+reads "full" as a last-resort choice — preferred only if literally every
+candidate vault is switch-flagged full, rather than returning "MISSING"
+and stalling every push entirely. This is a genuine alternative signal
+to the slot-ratio check above, not a replacement for it — an unconfigured
+vault (no switch at all) is always a normal candidate, and even among
+switch-configured vaults the slot ratio still breaks ties/orders
+preference within the "not full" group. **UNVERIFIED IN-GAME, a judgment
+call flagged here rather than blocking on it** (same risk tolerance as
+the rest of this document's physical-turtle work): whether a HIGH
+redstone signal from a real Stockpile Switch actually means "this
+inventory is full" for a given player's threshold configuration — that's
+the switch's own configurable alarm convention, not something this
+system can introspect, so `ktoxStockpileSwitchIsFull` just assumes the
+common "signal on full" wiring. If a build's switch is configured the
+opposite way, flip the `result == true` comparison in that function.
 
 ## Farms
 
@@ -978,10 +1043,15 @@ short-circuits cleanly even with a malformed rest of the command line.
 
 - `list (--stocked|--craftable|--unavailable) (item-name-filter)` —
   aggregate counts across the storage pool; classify each item as
-  stocked (count > 0), craftable (not stocked, but a direct
-  `resource-tree.lua` conversion exists whose inputs *are* stocked), or
-  unavailable (neither). The optional trailing filter narrows to item
-  names containing that substring (e.g. `list --stocked iron`).
+  stocked (count > 0), craftable (not stocked, but reachable via its own
+  `resource-tree.lua` recipe chain within `MAX_LIST_CRAFT_DEPTH` hops —
+  see "Scope" above), or unavailable (neither). The optional trailing
+  filter narrows to item names containing that substring (e.g. `list
+  --stocked iron`). Results are sorted alphabetically by each item's name
+  with its mod namespace prefix ignored (`create:brass_ingot` sorts under
+  "b", not "c") — added since the catalog previously had no defined order
+  at all (whatever order items happened to be discovered in), which made
+  a long unfiltered list hard to scan.
 - `pull <name> <qty>` — straight withdrawal from the pool into a pickup
   location via `pullItems`, no job logic involved. See "Vaults" above
   for how the target pickup vault is resolved (self, then default).
@@ -1025,7 +1095,10 @@ short-circuits cleanly even with a malformed rest of the command line.
   feature (a player standing at a chest-adjacent terminal would usually
   just put items straight into a storage vault instead) but built the
   same way as everything else here since it's a natural extension of the
-  crafter's chest-based physical pattern.
+  crafter's chest-based physical pattern. **Not to be confused with a
+  `deposit_chest` vault (see "Vaults" above)** — that's an ordinary chest
+  a player loads by hand with no terminal/turtle involved at all, swept
+  automatically rather than via a typed command.
 
 **Literal `[`/`]` in a Kotlin string transpiles to invalid Lua** (ktox
 emits `\[`/`\]`, not a real Lua escape — confirmed via CraftOS-PC:
@@ -1354,9 +1427,15 @@ does.
   it anymore. `ktoxSelfPeripheralName()`'s `getID()`-matching approach,
   by contrast, IS confirmed working — `getID` is right there in the real
   `getMethods()` output above.
-- Storage-vault load balancing (push-to-emptiest, farm→vault preference
-  routing) — problem #3b territory, deferred.
-- Stockpile Switch integration for fast vault-fullness queries — deferred.
+- **Storage-vault load balancing (push-to-emptiest) and Stockpile Switch
+  integration are BUILT now (2026-09-07)** — see "Vaults" above for the
+  full design. Farm→vault preference routing (the other half of the
+  original #3b idea) is still not built and, on reflection, may not
+  apply to software at all — a farm's drop point is physical, not
+  software-routed. `ktoxLeastFullStorageVault`'s slot-ratio fullness
+  metric and the Stockpile Switch's assumed "HIGH = full" polarity are
+  both unverified in real gameplay — test with an actual overfull vault
+  and an actual Stockpile Switch before relying on either.
 - **External Monitor-peripheral dashboard — deferred, not the same thing
   as the touch dashboard that IS built.** The touch dashboard (see
   "Dashboard UI" above) is scoped to a terminal's own term/pocket screen

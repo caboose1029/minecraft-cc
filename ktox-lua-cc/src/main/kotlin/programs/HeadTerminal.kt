@@ -11,6 +11,7 @@ import lib.VAULT_CMD_PROTOCOL
 import lib.VAULT_ROLE_QUERY_PROTOCOL
 import lib.VAULT_ROLE_REPLY_PROTOCOL
 import lib.VAULT_RESULT_PROTOCOL
+import lib.drainDepositChests
 import lib.manageFarms
 import lib.queryForHead
 import lib.runCliCommand
@@ -55,6 +56,7 @@ fun main() {
         // lib/PassiveFeeder.kt for why.
         topUpPassiveFeeders()
         manageFarms()
+        drainDepositChests()
     }
 }
 

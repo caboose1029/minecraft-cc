@@ -485,6 +485,136 @@ function ktoxConfigStorageVaultNames()
     return table.concat(names, ",")
 end
 
+-- Comma-joined peripheral names whose job.type == "deposit_chest" - a
+-- plain chest/vault a player physically loads by hand, opportunistically
+-- swept into the storage pool by the head (see lib/DepositChest.kt) the
+-- same way passive feeders/farms are checked after each command.
+-- Deliberately a distinct job type from the turtle-only `deposit` CLI
+-- command (which sweeps a turtle's OWN inventory via job.aboveChest/
+-- belowChest) - this one has no turtle involved at all, just an ordinary
+-- vault-to-vault drain. Empty string if none configured.
+function ktoxConfigDepositVaults()
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config == nil then
+        return ""
+    end
+    local names = {}
+    for name, entry in pairs(config) do
+        if entry.type == "vault" and entry.job ~= nil and entry.job.type == "deposit_chest" then
+            names[#names + 1] = name
+        end
+    end
+    return table.concat(names, ",")
+end
+
+-- Optional Stockpile Switch (Advanced Peripherals) wired to a storage
+-- vault, packed as "relayName,side" - job.fullSwitch = {"relay": ...,
+-- "side": ...} on that vault's OWN peripherals.json entry (same
+-- "physically dedicated, so it's a field not a top-level entry" reasoning
+-- as job.aboveChest/belowChest). "MISSING" if not configured for this
+-- vault.
+function ktoxConfigFullSwitchFor(vaultName)
+    local config = ktoxReadJSONFile("config/peripherals.json")
+    if config ~= nil then
+        local entry = config[vaultName]
+        if entry ~= nil and entry.job ~= nil and entry.job.fullSwitch ~= nil
+            and entry.job.fullSwitch.relay ~= nil and entry.job.fullSwitch.side ~= nil then
+            return entry.job.fullSwitch.relay .. "," .. entry.job.fullSwitch.side
+        end
+    end
+    return "MISSING"
+end
+
+-- Reads `vaultName`'s configured Stockpile Switch (see
+-- ktoxConfigFullSwitchFor) through its redstone relay, if one is wired
+-- up. Returns true/false if a switch is configured and its relay
+-- answered, nil if no switch is configured (or the relay didn't answer)
+-- - nil is a real third state here (see ktoxLeastFullStorageVault: an
+-- unconfigured/unreachable vault is never treated as "full" just because
+-- we couldn't ask). ASSUMPTION, unverified in-game: a HIGH signal means
+-- the switch considers the vault full (its usual "sound an alarm/stop a
+-- belt when full" wiring convention) - flip this if a build's switch is
+-- configured to read the opposite way.
+function ktoxStockpileSwitchIsFull(vaultName)
+    local raw = ktoxConfigFullSwitchFor(vaultName)
+    if raw == "MISSING" then
+        return nil
+    end
+    local parts = {}
+    for piece in string.gmatch(raw, "[^,]+") do
+        parts[#parts + 1] = piece
+    end
+    local relay = peripheral.wrap(parts[1])
+    if relay == nil or relay.getInput == nil then
+        return nil
+    end
+    local ok, result = pcall(relay.getInput, parts[2])
+    if not ok then
+        return nil
+    end
+    return result == true
+end
+
+-- How full `vaultName` is, as a 0..1 fraction of occupied slots over its
+-- total slot count (inv.size()) - a slot-based proxy rather than raw item
+-- count, so a vault holding a few full stacks of a high-stack-size item
+-- doesn't read as "empty" next to one holding many stacks of a
+-- low-stack-size item. Returns 1 (treated as "full", so it's never
+-- preferred) for an unreachable peripheral or one reporting zero/no
+-- slots at all, rather than crashing or dividing by zero.
+function ktoxVaultFullFraction(vaultName)
+    local inv = peripheral.wrap(vaultName)
+    if inv == nil or inv.size == nil then
+        return 1
+    end
+    local total = inv.size()
+    if total == nil or total <= 0 then
+        return 1
+    end
+    local used = 0
+    for _ in pairs(inv.list()) do
+        used = used + 1
+    end
+    return used / total
+end
+
+-- Picks which of the given storage vaults (comma-joined peripheral
+-- names) a new push should land in - the load-balancing counterpart to
+-- always dumping into firstStorageVaultName() (see PLAN.md's "Vaults"
+-- section - "spreading pushes toward the emptiest vault" was flagged
+-- there and deferred). Prefers the least-full vault (ktoxVaultFullFraction)
+-- among whichever ones a configured Stockpile Switch does NOT report as
+-- full (ktoxStockpileSwitchIsFull); a vault with no switch configured is
+-- always a normal candidate (nil ~= true). Falls back to the overall
+-- least-full vault if every single one is switch-flagged full, rather
+-- than returning "MISSING" and stalling production entirely - a
+-- deliberate "somewhere is better than nowhere" choice. "MISSING" only
+-- when sourceNamesCsv names no reachable vault at all.
+function ktoxLeastFullStorageVault(sourceNamesCsv)
+    local best, bestFraction = nil, nil
+    local bestNonFull, bestNonFullFraction = nil, nil
+    for name in string.gmatch(sourceNamesCsv, "[^,]+") do
+        local fraction = ktoxVaultFullFraction(name)
+        if best == nil or fraction < bestFraction then
+            best = name
+            bestFraction = fraction
+        end
+        if ktoxStockpileSwitchIsFull(name) ~= true then
+            if bestNonFull == nil or fraction < bestNonFullFraction then
+                bestNonFull = name
+                bestNonFullFraction = fraction
+            end
+        end
+    end
+    if bestNonFull ~= nil then
+        return bestNonFull
+    end
+    if best ~= nil then
+        return best
+    end
+    return "MISSING"
+end
+
 -- The feeder vault's peripheral name for the given job/machine type.
 -- "MISSING" if none is configured (avoids returning Lua nil across the
 -- binding — see common/Peripheral.kt's ktoxPeripheralCall for the same
@@ -874,14 +1004,31 @@ function ktoxClearLastCrafterFailure()
     return true
 end
 
+-- The part of an item id after its "namespace:" prefix (e.g.
+-- "create:brass_ingot" -> "brass_ingot"), or the whole name unchanged if
+-- it has no colon. Used only for sort ordering (ktoxListCatalog) so
+-- items group alphabetically by their real name rather than by mod
+-- namespace - the namespace itself is still shown in the actual name.
+local function ktoxStrippedItemName(name)
+    local stripped = string.match(name, ":(.+)$")
+    if stripped ~= nil then
+        return stripped
+    end
+    return name
+end
+
 -- Builds the full item catalog for the `list` CLI command: every item
 -- either currently stocked in the pool, or mentioned anywhere in
 -- config/resource-tree.json, classified as "stocked" (count > 0 in the
--- pool), "craftable" (not stocked, but its direct conversion's input IS
--- stocked), or "unavailable" (neither). Optionally filtered to one
--- status ("" = all) and/or a substring of the item name ("" = no
--- filter). Returns newline-joined "status,name,count" rows (count is 0
--- for craftable/unavailable). Kotlin side: lib/Cli.kt.
+-- pool), "craftable" (its own recipe chain can reach a fully-stocked
+-- state within MAX_LIST_CRAFT_DEPTH hops - see canProduce below), or
+-- "unavailable" (neither). Optionally filtered to one status ("" = all)
+-- and/or a substring of the item name ("" = no filter). Returns
+-- newline-joined "status,name,count" rows (count is 0 for
+-- craftable/unavailable), sorted alphabetically by each item's name with
+-- its mod namespace prefix ignored (ktoxStrippedItemName) - ties (same
+-- stripped name in two namespaces) fall back to the full name so the
+-- order is still deterministic. Kotlin side: lib/Cli.kt.
 function ktoxListCatalog(sourceNamesCsv, filter, substring)
     local totals = {}
     local order = {}
@@ -916,19 +1063,6 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
         end
     end
 
-    -- "craftable" (one hop only - see PLAN.md's known gap) needs EVERY
-    -- input of the recipe to be stocked, not just one, now that recipes
-    -- can have multiple ingredients (brass: copper AND zinc).
-    local function allInputsStocked(recipe)
-        for _, input in pairs(recipe.inputs) do
-            local have = totals[input.item]
-            if have == nil or have <= 0 then
-                return false
-            end
-        end
-        return true
-    end
-
     -- Whether `jobType` actually has the peripheral it needs configured
     -- in peripherals.json - a "machine" job needs a feeder vault (a
     -- relay is optional, see lib/Executor.kt's runDirectJob - matches
@@ -947,6 +1081,67 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
         return ktoxConfigFeederForJob(jobType) ~= "MISSING"
     end
 
+    -- How many recipe hops "craftable" is willing to chase before giving
+    -- up - matches lib/Planner.kt's MAX_PLANNER_DEPTH so this classifier
+    -- never disagrees with what `craft` can actually produce. Previously
+    -- this only checked ONE hop (a documented gap in PLAN.md): an item
+    -- needing a 2+-level chain (raw copper -> ingot -> sheet) showed as
+    -- "unavailable" here even though `craft` could make it.
+    local MAX_LIST_CRAFT_DEPTH = 5
+
+    -- Whether `name` is reachable - already stocked, or producible via
+    -- its own recipe chain within the remaining depth budget. `memo`
+    -- caches a result per item name for the lifetime of one
+    -- ktoxListCatalog call (recipes share ingredients constantly, e.g.
+    -- copper_ingot feeds dozens of outputs) and doubles as cycle
+    -- protection: an item is marked "not yet known" (false) BEFORE
+    -- recursing into its own inputs, so a cyclic pair (a
+    -- compacting/decompacting recipe, see PLAN.md's brass incident)
+    -- resolves to false instead of looping - MAX_LIST_CRAFT_DEPTH is a
+    -- second, independent backstop for the same case.
+    local function canProduce(name, depth, memo)
+        local have = totals[name]
+        if have ~= nil and have > 0 then
+            return true
+        end
+        if memo[name] ~= nil then
+            return memo[name]
+        end
+        if depth > MAX_LIST_CRAFT_DEPTH then
+            return false
+        end
+        local recipe = recipeFor[name]
+        if recipe == nil or not jobIsConfigured(recipe.job) then
+            memo[name] = false
+            return false
+        end
+        memo[name] = false
+        local allReachable = true
+        for _, input in pairs(recipe.inputs) do
+            if not canProduce(input.item, depth + 1, memo) then
+                allReachable = false
+                break
+            end
+        end
+        memo[name] = allReachable
+        return allReachable
+    end
+
+    -- Alphabetical by mod-stripped name (see ktoxStrippedItemName above),
+    -- ties broken by the full name so two items with the same stripped
+    -- name in different namespaces still sort deterministically. table.sort
+    -- is not stable, hence the explicit tiebreak rather than relying on
+    -- `order`'s original insertion order to survive equal keys.
+    table.sort(order, function(a, b)
+        local strippedA = ktoxStrippedItemName(a)
+        local strippedB = ktoxStrippedItemName(b)
+        if strippedA == strippedB then
+            return a < b
+        end
+        return strippedA < strippedB
+    end)
+
+    local craftableMemo = {}
     local lines = {}
     for i = 1, #order do
         local name = order[i]
@@ -955,7 +1150,7 @@ function ktoxListCatalog(sourceNamesCsv, filter, substring)
             local status
             if count > 0 then
                 status = "stocked"
-            elseif recipeFor[name] ~= nil and allInputsStocked(recipeFor[name]) and jobIsConfigured(recipeFor[name].job) then
+            elseif recipeFor[name] ~= nil and jobIsConfigured(recipeFor[name].job) and canProduce(name, 1, craftableMemo) then
                 status = "craftable"
             else
                 status = "unavailable"

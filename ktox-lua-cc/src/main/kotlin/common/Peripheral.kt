@@ -34,6 +34,19 @@ fun ktoxPeripheralCallRaw(peripheralName: String, methodName: String, argsPacked
 @NativeName("ktoxConfigStorageVaultNames")
 fun ktoxConfigStorageVaultNames(): String = externalSource()
 
+// Comma-joined peripheral names whose job.type == "deposit_chest" - see
+// lib/DepositChest.kt.
+@NativeName("ktoxConfigDepositVaults")
+fun ktoxConfigDepositVaults(): String = externalSource()
+
+// Picks the least-full of the given (comma-joined) storage vaults,
+// preferring one not flagged full by an optional Stockpile Switch - see
+// lib/Inventory.kt's leastFullStorageVaultName and ktox-cc-shim.lua's
+// ktoxLeastFullStorageVault for the full selection logic (kept in Lua
+// since it needs real looping over each vault's own inventory contents).
+@NativeName("ktoxLeastFullStorageVault")
+fun ktoxLeastFullStorageVault(sourceNamesCsv: String): String = externalSource()
+
 @NativeName("ktoxConfigFeederForJob")
 fun ktoxConfigFeederForJob(jobType: String): String = externalSource()
 
