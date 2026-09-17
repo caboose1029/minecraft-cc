@@ -79,3 +79,17 @@ val wireProgramEntryPoints =
 tasks.named("assemble") {
     dependsOn(copyLuaRuntime, wireProgramEntryPoints)
 }
+
+// finalizedBy, not just assemble's dependsOn above: `./gradlew runLua` (the
+// ktox-lua plugin's own task) depends on transpileKotlinToLua directly and
+// runs outside `assemble` entirely, so it was overwriting every committed
+// entry-point file with UN-wired output (transpile alone never appends
+// main({...}) - see wireProgramEntryPoints above) and leaving it that way,
+// silently breaking every args-taking program until the next full build -
+// confirmed happening live. finalizedBy makes wireProgramEntryPoints (and
+// copyLuaRuntime, so a hand-written file is never briefly missing either)
+// run after ANY invocation of transpileKotlinToLua, not just when assemble
+// itself is the thing driving it.
+tasks.named("transpileKotlinToLua") {
+    finalizedBy(wireProgramEntryPoints, copyLuaRuntime)
+}
