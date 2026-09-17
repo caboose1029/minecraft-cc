@@ -108,8 +108,13 @@ anything you care about:
   actually reach chests placed there the way this assumes hasn't been
   confirmed against a real world either.
 - The same "double chest confuses it" and "a missing chest can eat your
-  items" warnings from `README.md`'s caveat-emptor section apply here too,
-  anywhere this system interacts with a physical chest.
+  items" warnings from `README.md`'s "Buyer beware" section apply here too,
+  anywhere this system interacts with a physical chest — and its "a
+  turtle dying/logging off/chunk unloading stops a program cold, with no
+  clean resume" warning applies doubly hard here: a crafter turtle or a
+  Head terminal is meant to sit there running indefinitely, so a silent
+  mid-job interruption is easier to miss than with a one-shot tool you're
+  actively watching.
 
 `PLAN.md`'s "Known open items" section has the complete, current list of
 what's built vs. what's still just a documented assumption — read it

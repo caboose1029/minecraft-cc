@@ -72,7 +72,7 @@ have in common:
   these programs fall back to tracking position by counting their own
   moves, which works fine as long as nothing interrupts them mid-run.
   DiamondFinder is the exception — see its own section below.
-- **They dig through obstructions automatically.** See "Caveat emptor"
+- **They dig through obstructions automatically.** See "Buyer beware"
   at the bottom before running any of these somewhere you care about.
 
 ### Digsite — excavate a shape
@@ -121,14 +121,19 @@ No chest, no config — put the wall's material in **slot 1** of the
 turtle's own inventory before running it, then just run `wall <length>
 <height>`. Only that exact item is ever placed, even if other slots hold
 different blocks (safe if the turtle's also carrying mined loot) — if it
-runs out of that material partway through, it stops, tells you how many
-blocks it managed to place, and returns to where it started.
+runs out of that material partway through, it stops and tells you how many
+blocks it managed to place.
+
+**It does not return to its starting position when it's done or when it
+stops early** — it just stops wherever it happens to be, whether that's
+because the wall finished or because it ran out of material or got
+blocked partway through. Expect to have to walk over and collect it.
 
 The turtle builds by walking the wall's own footprint and placing blocks
 straight down as it goes, climbing one level after each full pass — so it
 needs clear air above it for the full `height`, and the strip of ground
 along `length` shouldn't be blocked (though the turtle will dig through a
-blockage if it has to — see "Caveat emptor").
+blockage if it has to — see "Buyer beware").
 
 ### ExcavatePro — a proper mineshaft with stairs
 
@@ -172,8 +177,19 @@ don't know that, don't run it without GPS.
 overflow row to the right as Digsite — but this one expects **fuel only**,
 no torches or anything else mixed in.
 
-## Caveat emptor — read this before you run any of these unattended
+## Buyer beware — read this before you run any of these unattended
 
+- **A turtle dying, you logging off, or the game unloading its chunk will
+  stop a program dead, mid-action, with no way to resume cleanly.** None
+  of these programs save any progress — if the turtle stops moving for
+  any of those reasons partway through a dig, a wall, or a mining run,
+  the next time it starts up you're just running the command fresh
+  again from wherever it physically ended up, not picking up where it
+  left off. This matters most for anything long-running (a deep
+  ExcavatePro shaft, a long DiamondFinder session) — don't assume it's
+  still working just because you haven't checked on it in a while, and
+  don't count on it noticing and recovering from an interruption like
+  that on its own.
 - **A double chest where a single chest is expected will confuse the
   program.** The fuel/supply chest and the first overflow chest are two
   *separate* single-block positions as far as the code is concerned. If
