@@ -4,7 +4,7 @@ import common.ktoxConfigAllFarms
 import lib.setJobPower
 import lib.storagePoolCount
 
-// A farm (job-types.json entries with kind "farm" — see PLAN.md). This
+// A farm (job-types.lua entries with kind "farm" — see PLAN.md). This
 // system doesn't know or care HOW a farm works internally (chance-based
 // crushing/washing, mob farming, crop farming, whatever) — it's just a
 // relay toggle plus a list of outputs to watch in the storage pool. Same

@@ -3,7 +3,7 @@ package lib
 import common.ktoxConfigJobKind
 import common.ktoxConfigProducesLookup
 
-// A resource-tree.json recipe. `inputsRaw` is intentionally NOT parsed
+// A resource-tree.lua recipe. `inputsRaw` is intentionally NOT parsed
 // into a list of records here — ktox has no working MutableList/growable
 // collection (see AGENTS.md) to hold a variable number of parsed inputs,
 // so it stays as the packed "item,count,slot;item,count,slot" string and
@@ -22,7 +22,7 @@ data class Recipe(
 )
 
 // The single recipe that produces `outputName`, from
-// config/resource-tree.json. null if none exists.
+// config/resource-tree.lua. null if none exists.
 fun findRecipe(outputName: String): Recipe? {
     val raw = ktoxConfigProducesLookup(outputName)
     if (raw == "MISSING") {
@@ -68,7 +68,7 @@ fun recipeInputSlot(recipe: Recipe, index: Int): Int {
 }
 
 // "machine" (redstone relay + feeder vault) or "crafter" (turtle.craft) —
-// see PLAN.md. Defaults to "machine" when config/job-types.json doesn't
+// see PLAN.md. Defaults to "machine" when config/job-types.lua doesn't
 // specify one.
 fun jobKind(jobType: String): String {
     return ktoxConfigJobKind(jobType)

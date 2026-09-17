@@ -15,7 +15,7 @@ import lib.runCliCommand
 import lib.setJobPower
 import lib.storagePoolCount
 
-// Diagnostic for config/peripherals.json and config/resource-tree.json —
+// Diagnostic for config/peripherals.json and config/resource-tree.lua —
 // prints what the loaders actually found, so a player authoring those
 // files by hand can confirm they parsed correctly without needing the
 // full CLI built yet. See PLAN.md for the schemas.

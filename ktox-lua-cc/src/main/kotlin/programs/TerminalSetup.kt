@@ -12,7 +12,7 @@ import lib.queryForHead
 //
 // Usage: terminalsetup <head|secondary|crafter> [jobType]
 //   jobType is required for, and only meaningful with, "crafter" — the
-//   job type (from config/job-types.json) this crafty turtle handles.
+//   job type (from config/job-types.lua) this crafty turtle handles.
 
 fun main(args: Array<String>) {
     if (args.size < 1) {

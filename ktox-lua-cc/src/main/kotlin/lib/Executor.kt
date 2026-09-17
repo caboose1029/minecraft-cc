@@ -35,7 +35,7 @@ const val DEFAULT_JOB_TIMEOUT_SECONDS = 30
 const val FEEDER_EMPTY_TIMEOUT_SECONDS = 30
 
 // The configured per-job timeout, falling back to a sensible default
-// when config/job-types.json doesn't specify one — different machines
+// when config/job-types.lua doesn't specify one — different machines
 // have very different throughput, so this is meant to actually be tuned
 // per job type once real timing is known from in-game testing.
 fun jobTimeoutSeconds(jobType: String): Int {
