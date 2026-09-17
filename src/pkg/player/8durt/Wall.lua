@@ -1,7 +1,7 @@
 -- package: programs
 
 require("ktox-lib")
-ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Wall.kt", {["1-8"]=1,["9"]=45,["10"]=46,["11"]=47,["12"]=48,["13-18"]=49,["19"]=56,["20"]=57,["21"]=58,["22"]=59,["23"]=60,["24"]=61,["25-27"]=62,["28-29"]=65,["30-35"]=67,["36"]=74,["37"]=75,["38-39"]=76,["40"]=78,["41-49"]=79,["50"]=86,["51"]=87,["52-53"]=88,["54-58"]=90,["59"]=94,["60"]=95,["61-62"]=96,["63-67"]=98,["68"]=102,["69"]=103,["70-71"]=104,["72-76"]=106,["77"]=110,["78"]=111,["79-80"]=112,["81-84"]=114,["85"]=123,["86"]=124,["87"]=125,["88-90"]=126,["91"]=129,["92"]=130,["93"]=131,["94-96"]=132,["97"]=135,["98"]=136,["99"]=137,["100-102"]=138,["103"]=141,["104"]=142,["105"]=143,["106-112"]=144,["113"]=150,["114"]=151,["115-116"]=152,["117"]=154,["118"]=155,["119-120"]=156,["121"]=161,["122"]=162,["123"]=163,["124"]=164,["125-126"]=165,["127"]=168,["128"]=169,["129"]=170,["130-131"]=171,["132"]=174,["133"]=175,["134"]=176,["135-136"]=177,["137"]=180,["138"]=186,["139"]=187,["140-141"]=188,["142"]=191,["143"]=192,["144"]=193,["145"]=194,["146"]=195,["147"]=196,["148"]=197,["149-150"]=198,["151"]=200,["152-153"]=201,["154"]=203,["155"]=210,["156"]=211,["157-158"]=212,["159-160"]=214,["161"]=216,["162"]=217,["163-165"]=218,["166-167"]=221,["168-169"]=223,["170"]=226,["171"]=228,["172-173"]=229,["174-177"]=231}, "programs")
+ktox_sourcemap_traceback(debug and debug.getinfo and (debug.getinfo(1) or {}).short_src or "", "Wall.kt", {["1-8"]=1,["9"]=43,["10"]=44,["11"]=45,["12"]=46,["13-18"]=47,["19"]=54,["20"]=55,["21"]=56,["22"]=57,["23"]=58,["24"]=59,["25-27"]=60,["28-29"]=63,["30-35"]=65,["36"]=72,["37"]=73,["38-39"]=74,["40"]=76,["41-45"]=77,["46"]=81,["47"]=82,["48-49"]=83,["50"]=85,["51"]=86,["52-53"]=87,["54"]=92,["55"]=93,["56"]=94,["57"]=95,["58-59"]=96,["60"]=99,["61"]=100,["62"]=101,["63-64"]=102,["65"]=105,["66"]=106,["67"]=107,["68-69"]=108,["70"]=111,["71"]=117,["72"]=118,["73-74"]=119,["75"]=122,["76"]=123,["77"]=124,["78"]=125,["79"]=126,["80"]=127,["81"]=128,["82-83"]=129,["84"]=131,["85-86"]=132,["87"]=134,["88"]=141,["89"]=142,["90-91"]=143,["92-93"]=145,["94"]=147,["95"]=148,["96-98"]=149,["99-100"]=152,["101-102"]=154,["103"]=157,["104-105"]=158,["106-109"]=160}, "programs")
 
 WALL_FUEL_SAFETY_MARGIN = 10
 
@@ -41,73 +41,6 @@ function wallPlaceMaterialDown(materialName)
     return turtle.placeDown()
 end
 
-wallHorizontalOffset = 0
-
-wallVerticalOffset = 0
-
----@return boolean
-function wallStepForward()
-    if turtle.forward() then
-        wallHorizontalOffset = ktox_plusAssign(wallHorizontalOffset, 1)
-        return true
-    end
-    return false
-end
-
----@return boolean
-function wallStepBack()
-    if turtle.back() then
-        wallHorizontalOffset = ktox_minusAssign(wallHorizontalOffset, 1)
-        return true
-    end
-    return false
-end
-
----@return boolean
-function wallStepUp()
-    if turtle.up() then
-        wallVerticalOffset = ktox_plusAssign(wallVerticalOffset, 1)
-        return true
-    end
-    return false
-end
-
----@return boolean
-function wallStepDown()
-    if turtle.down() then
-        wallVerticalOffset = ktox_minusAssign(wallVerticalOffset, 1)
-        return true
-    end
-    return false
-end
-
-function wallReturnHome()
-    while wallVerticalOffset > 0 do
-        if not wallStepDown() then
-            println("Couldn\'t descend while returning home - manual recovery needed.")
-            return
-        end
-    end
-    while wallVerticalOffset < 0 do
-        if not wallStepUp() then
-            println("Couldn\'t ascend while returning home - manual recovery needed.")
-            return
-        end
-    end
-    while wallHorizontalOffset > 0 do
-        if not wallStepBack() then
-            println("Couldn\'t return home - manual recovery needed.")
-            return
-        end
-    end
-    while wallHorizontalOffset < 0 do
-        if not wallStepForward() then
-            println("Couldn\'t return home - manual recovery needed.")
-            return
-        end
-    end
-end
-
 ---@param args table
 function main(args)
     if #(args) < 2 then
@@ -135,7 +68,7 @@ function main(args)
         println("Warning: fuel may be too low (have " .. tostring(fuel) .. ", want ~" .. tostring(neededFuel) .. "). Continuing anyway.")
     end
     println("Building a " .. tostring(length) .. "x" .. tostring(height) .. " wall from " .. tostring(materialName) .. "...")
-    if not wallStepUp() then
+    if not turtle.up() then
         println("Couldn\'t get into position (blocked above) - aborting.")
         return
     end
@@ -154,9 +87,9 @@ function main(args)
             if col < length - 1 and not stoppedShort then
                 local moved = false
                 if row % 2 == 0 then
-                    moved = wallStepForward()
+                    moved = turtle.forward()
                 else
-                    moved = wallStepBack()
+                    moved = turtle.back()
                 end
                 if not moved then
                     println("Blocked partway along row " .. tostring(row + 1) .. " - stopping.")
@@ -167,7 +100,6 @@ function main(args)
         end
         row = ktox_plusAssign(row, 1)
     end
-    wallReturnHome()
     if stoppedShort then
         println("Stopped early - placed " .. tostring(placed) .. " of " .. tostring(length * height) .. " block(s).")
     else

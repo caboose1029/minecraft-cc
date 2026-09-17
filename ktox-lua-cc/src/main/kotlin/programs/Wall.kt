@@ -1,7 +1,6 @@
 package programs
 
 import common.turtleBack
-import common.turtleDown
 import common.turtleForward
 import common.turtleGetFuelLevel
 import common.turtleGetItemCount
@@ -32,12 +31,11 @@ import common.turtleUp
 // row 0, back across row 1, forward across row 2, ...) instead of turning
 // around at the end of every row - since placement is straight down, the
 // turtle's facing never matters, so there's nothing to gain by turning.
-// Every actual movement goes through wallStepForward/Back/Up/Down below,
-// which track net horizontal/vertical displacement from the start; wall
-// building can stop early (out of material, or a movement unexpectedly
-// blocked), and wallReturnHome() unwinds exactly whatever displacement
-// was actually accumulated, so it always finds its way back regardless of
-// where it stopped.
+//
+// Deliberately does NOT return to its starting position when done - it
+// just stops wherever it is, whether that's because the wall finished or
+// because it ran out of material/movement partway through. Nothing else
+// in this file depends on the turtle ending up back home.
 
 const val WALL_FUEL_SAFETY_MARGIN = 10
 
@@ -79,73 +77,6 @@ fun wallPlaceMaterialDown(materialName: String): Boolean {
     return turtlePlaceDown()
 }
 
-var wallHorizontalOffset = 0
-var wallVerticalOffset = 0
-
-fun wallStepForward(): Boolean {
-    if (turtleForward()) {
-        wallHorizontalOffset += 1
-        return true
-    }
-    return false
-}
-
-fun wallStepBack(): Boolean {
-    if (turtleBack()) {
-        wallHorizontalOffset -= 1
-        return true
-    }
-    return false
-}
-
-fun wallStepUp(): Boolean {
-    if (turtleUp()) {
-        wallVerticalOffset += 1
-        return true
-    }
-    return false
-}
-
-fun wallStepDown(): Boolean {
-    if (turtleDown()) {
-        wallVerticalOffset -= 1
-        return true
-    }
-    return false
-}
-
-// Unwinds whatever net displacement wallHorizontalOffset/wallVerticalOffset
-// actually accumulated, so this works the same whether the build finished
-// cleanly or stopped early. Prints a clear message and gives up (rather
-// than looping forever) if a step back home is itself blocked - genuinely
-// stuck needs a player, not a retry loop.
-fun wallReturnHome() {
-    while (wallVerticalOffset > 0) {
-        if (!wallStepDown()) {
-            println("Couldn't descend while returning home - manual recovery needed.")
-            return
-        }
-    }
-    while (wallVerticalOffset < 0) {
-        if (!wallStepUp()) {
-            println("Couldn't ascend while returning home - manual recovery needed.")
-            return
-        }
-    }
-    while (wallHorizontalOffset > 0) {
-        if (!wallStepBack()) {
-            println("Couldn't return home - manual recovery needed.")
-            return
-        }
-    }
-    while (wallHorizontalOffset < 0) {
-        if (!wallStepForward()) {
-            println("Couldn't return home - manual recovery needed.")
-            return
-        }
-    }
-}
-
 fun main(args: Array<String>) {
     if (args.size < 2) {
         wallPrintUsage()
@@ -183,7 +114,7 @@ fun main(args: Array<String>) {
     // wall's bottom row, so placeDown() would otherwise target the
     // ground it's already standing on (occupied, so it'd just fail).
     // One turtleUp() puts the base row directly beneath it instead.
-    if (!wallStepUp()) {
+    if (!turtleUp()) {
         println("Couldn't get into position (blocked above) - aborting.")
         return
     }
@@ -209,9 +140,9 @@ fun main(args: Array<String>) {
                 // real if/else block avoids it.
                 var moved = false
                 if (row % 2 == 0) {
-                    moved = wallStepForward()
+                    moved = turtleForward()
                 } else {
-                    moved = wallStepBack()
+                    moved = turtleBack()
                 }
                 if (!moved) {
                     println("Blocked partway along row ${row + 1} - stopping.")
@@ -222,8 +153,6 @@ fun main(args: Array<String>) {
         }
         row += 1
     }
-
-    wallReturnHome()
 
     if (stoppedShort) {
         println("Stopped early - placed ${placed} of ${length * height} block(s).")
