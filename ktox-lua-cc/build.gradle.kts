@@ -41,9 +41,16 @@ kotlinToLua {
 }
 
 // Hand-written (not ktox-generated) Lua support files: the multi-return
-// native-binding shim and the startup script that loads it. See AGENTS.md.
+// native-binding shim, the startup script that loads it, and GhFetch (see
+// AGENTS.md). Must run AFTER transpileKotlinToLua, not just be unordered
+// relative to it: ktox's own transpile step deletes output files that no
+// longer correspond to a Kotlin source (e.g. right after GhFetch.kt was
+// removed in favor of a hand-written GhFetch.lua) - running this copy
+// first, only for transpile to then delete the very file it just placed,
+// silently produced a missing GhFetch.lua with no error anywhere.
 val copyLuaRuntime =
     tasks.register<Copy>("copyLuaRuntime") {
+        dependsOn("transpileKotlinToLua")
         from("src/main/lua")
         into(luaOutputDir)
     }

@@ -534,18 +534,79 @@ committing generated Lua just to update a list of strings. It now
 fetches `files.manifest` (source: `ktox-lua-cc/src/main/lua/
 files.manifest`, hand-written like `startup.lua`, copied into the output
 tree by the same Gradle `copyLuaRuntime` task — see AGENTS.md) and
-downloads whatever that lists, one path per line, via a new
-`ktoxDownloadFileText` (fetches a URL's body as a string, rather than
-`ktoxDownloadFile`'s write-straight-to-disk). This doesn't remove the
+downloads whatever that lists, one path per line. This doesn't remove the
 "every new file needs a manual list update" requirement entirely —
 nothing here derives the manifest from the actual file tree — it just
 turns that update into a one-line plain-text edit instead of a Kotlin
-change requiring a full rebuild. `GhFetch.kt` itself now hardcodes
-exactly one thing: `files.manifest`'s own path, the unavoidable
-bootstrap problem (something has to be the fixed starting point). The
-manifest format is deliberately minimal — bare paths, one per line, no
-comments — so a stray `#`-prefixed "comment" line would just be treated
+change requiring a full rebuild. `GhFetch` itself hardcodes exactly one
+thing: `files.manifest`'s own path, the unavoidable bootstrap problem
+(something has to be the fixed starting point). The manifest format is
+deliberately minimal — bare paths, one per line, no comments — so a stray
+`#`-prefixed "comment" line would just be treated
 as a literal (failing) file path, not parsed specially.
+
+**GhFetch rewritten as hand-written pure Lua (2026-09-17), not ktox-generated
+Kotlin anymore.** The manifest-driven design above already meant one
+`GhFetch` run could fetch everything — but only once GhFetch itself could
+actually run, and the old ktox-generated version couldn't, standalone:
+its `require("ktox-lib")` and calls through `ktoxDownloadFile`/
+`ktoxDownloadFileText` (defined in `ktox-cc-shim.lua`) needed
+`ktox-lib.lua`/`ktox-cc-shim.lua` already dofile'd into real `_G` by
+`startup.lua` (see AGENTS.md's `ktox_sourcemap_traceback` writeup), which
+itself only runs at boot. So bootstrapping a genuinely fresh
+turtle/computer meant: wget `ktox-lib.lua`, `ktox-cc-shim.lua`,
+`startup.lua`, AND `GhFetch.lua` by hand (four files, since GhFetch
+couldn't fetch its own prerequisites before it could run), reboot to
+load them, then run `ghfetch` once to pull everything else. Rewriting
+`GhFetch.lua` as plain, dependency-free Lua — talking to `http`/`fs`
+directly instead of through the ktox shim — collapses that to one wget
+(this one file) + one `ghfetch` run, since it fetches its own
+`ktox-lib.lua`/`ktox-cc-shim.lua`/`startup.lua` (and its own up-to-date
+self) through the exact same manifest-driven pass as everything else,
+needing none of them present first. A reboot is still needed once
+afterward for `startup.lua` to actually load what just got fetched — but
+that's the normal end of setup, not a mid-process prerequisite, and only
+one `ghfetch` call is ever needed, never two. See AGENTS.md for why this
+lives in `src/main/lua/` (hand-written) rather than `src/main/kotlin/
+programs/` now, and for the `copyLuaRuntime` Gradle task-ordering fix
+this required (it must run after `transpileKotlinToLua`, or ktox's own
+"delete outputs with no matching Kotlin source" step deletes the
+hand-copied file right back out).
+
+**Best-effort commit-version reporting, added the same session.**
+`GhFetch` now also calls GitHub's commit API
+(`api.github.com/repos/.../commits/<branch>`, needs a `User-Agent`
+header or GitHub 403s — confirmed live, `raw.githubusercontent.com`
+needs no such header) and prints the branch's latest commit short-SHA,
+message, and date before fetching any files — a way to actually confirm
+a run pulled the real current tip, rather than trusting that it did. A
+git post-commit hook (writing a version stamp into the manifest at
+commit time) was considered and rejected: hooks live outside the
+repository under `.git/hooks/`, so they don't travel with a clone and
+would need separate manual installation on every dev machine, an easy
+thing to forget and silently have go stale. Asking GitHub directly
+instead needs no build-time step at all and can never disagree with
+what's actually on the branch. Deliberately best-effort, not
+load-bearing: this is a second, independent network call from the raw
+file fetches below it (a small window where the two could disagree if
+someone pushes mid-run — acceptable for a personal server), and a
+failed/blocked API call (rate limit, no network, this specific domain
+blocked by the server's CC:Tweaked HTTP allowlist even though
+`raw.githubusercontent.com` is allowed) just prints one skip line and
+lets the real fetch continue regardless. **Confirmed working against the
+real GitHub API via CraftOS-PC** (`scripts/validate.sh GhFetch.lua`,
+which does have real internet access unlike an actual in-game
+CC:Tweaked computer) — correctly printed the branch's true latest commit,
+then correctly aborted with a clear message when that commit didn't yet
+have a `files.manifest` at the expected path (expected: this was tested
+before the branch was pushed to GitHub, so the remote tip was stale
+relative to local work — not a bug, a real end-to-end proof the
+fetch/error-handling path works). **Unverified in-game**, same caveat as
+the rest of this document's physical/network work: whether the target
+Minecraft server's CC:Tweaked HTTP allowlist permits `api.github.com`
+the same way it evidently permits `raw.githubusercontent.com` — if not,
+every run just prints the skip line and fetches normally, no functional
+loss, only the version line is missing.
 
 **1. `peripherals.json`** — maps peripheral name → type/job. Example
 shape:
