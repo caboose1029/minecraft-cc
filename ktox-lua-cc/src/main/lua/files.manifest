@@ -40,4 +40,5 @@ HeadTerminal.lua
 SecondaryTerminal.lua
 Crafter.lua
 TerminalSetup.lua
+Wall.lua
 GhFetch.lua
