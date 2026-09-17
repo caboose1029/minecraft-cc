@@ -1113,9 +1113,12 @@ short-circuits cleanly even with a malformed rest of the command line.
   "b", not "c") — added since the catalog previously had no defined order
   at all (whatever order items happened to be discovered in), which made
   a long unfiltered list hard to scan.
-- `pull <name> <qty>` — straight withdrawal from the pool into a pickup
-  location via `pullItems`, no job logic involved. See "Vaults" above
-  for how the target pickup vault is resolved (self, then default).
+- `pull <name> <qty> (--location=<name>)` — straight withdrawal from the
+  pool into a pickup location via `pullItems`, no job logic involved. Same
+  `--location=`/self-then-default resolution as `craft` below (see
+  `resolvePickupLocation`) — this used to be `craft`-only, extended to
+  `pull` for parity since nothing about the resolution logic is
+  craft-specific.
 - `craft <name> <qty> (--location=<name>) (--fetch=false)` — **combined
   craft+pull, chained** (phase 2's planner is live — see "Scope" above):
   pulls whatever's already stocked toward the requested quantity, and for
@@ -1142,10 +1145,9 @@ short-circuits cleanly even with a malformed rest of the command line.
   `peripherals.json`; without it, this terminal's own inventory if
   it's itself configured as a pickup location (see `ktoxSelfPeripheralName`
   in "Vaults" above), otherwise whichever pickup vault is marked
-  `"default": true`. `pull` uses the same self-then-default resolution
-  but has no `--location=` override yet — only `craft` was asked for
-  one; extend `pull` the same way if that gap turns out to matter in
-  practice.
+  `"default": true`. `pull` shares this exact resolution and its own
+  `--location=` flag (see above) — the two commands' flag-parsing is
+  literally the same shared helper (`parseLocationFlag`).
 - `trash <name> <qty>` — permanently destroys items via the trash vault.
   Its own explicit command on purpose; nothing else ever routes here.
 - `deposit` — sweeps everything currently in THIS terminal's own
