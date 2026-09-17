@@ -1,0 +1,138 @@
+package common
+
+import com.isycat.ktox.annotations.NativeName
+import com.isycat.ktox.annotations.externalSource
+
+// Generic peripheral dispatch — see ktox-cc-shim.lua's ktoxPeripheralCall
+// and PLAN.md ("Generic peripheral-call shim") for why this exists.
+// argsPacked is "<tag>:<value>" pairs joined by "|" (tag: S/B/N for
+// string/boolean/number — e.g. "S:right|B:true"), pass "" for no
+// arguments. NOT JSON array syntax: a Kotlin string literal containing
+// `[`/`]` transpiles to invalid Lua (confirmed ktox bug, see AGENTS.md),
+// so call sites must never build "[...]" text. The result is JSON-
+// encoded, or the sentinel "MISSING" (peripheral/method not found) or
+// "null" (call returned nothing).
+//
+// These sentinels are compared against as literal Kotlin strings at each
+// call site ("MISSING"/"null"), not shared `const val`s — a top-level
+// const defined in a `common/` file is never a real Lua global unless
+// that file is `dofile`'d, which common/*.lua files aren't (by design,
+// see AGENTS.md: they're native-binding declarations that normally
+// generate no code at all). Confirmed live: with a shared const here, a
+// missing-peripheral comparison silently compared against Lua `nil`
+// instead of the string "MISSING" and reported success for a peripheral
+// that was never found.
+
+@NativeName("ktoxPeripheralCall")
+fun ktoxPeripheralCallRaw(peripheralName: String, methodName: String, argsPacked: String): String = externalSource()
+
+// Config loaders (ktox-cc-shim.lua) — see PLAN.md for the config schemas.
+// These return the sentinel above when nothing matches, since ktox
+// natives can't express a nullable String round-trip reliably untested;
+// see lib/Config.kt for the idiomatic wrapper.
+
+@NativeName("ktoxConfigStorageVaultNames")
+fun ktoxConfigStorageVaultNames(): String = externalSource()
+
+// Comma-joined peripheral names whose job.type == "deposit_chest" - see
+// lib/DepositChest.kt.
+@NativeName("ktoxConfigDepositVaults")
+fun ktoxConfigDepositVaults(): String = externalSource()
+
+// Picks the least-full of the given (comma-joined) storage vaults,
+// preferring one not flagged full by an optional Stockpile Switch - see
+// lib/Inventory.kt's leastFullStorageVaultName and ktox-cc-shim.lua's
+// ktoxLeastFullStorageVault for the full selection logic (kept in Lua
+// since it needs real looping over each vault's own inventory contents).
+@NativeName("ktoxLeastFullStorageVault")
+fun ktoxLeastFullStorageVault(sourceNamesCsv: String): String = externalSource()
+
+@NativeName("ktoxConfigFeederForJob")
+fun ktoxConfigFeederForJob(jobType: String): String = externalSource()
+
+@NativeName("ktoxConfigRelayForJob")
+fun ktoxConfigRelayForJob(jobType: String): String = externalSource()
+
+@NativeName("ktoxConfigProducesLookup")
+fun ktoxConfigProducesLookup(outputName: String): String = externalSource()
+
+@NativeName("ktoxConfigPickupVaultByName")
+fun ktoxConfigPickupVaultByName(locationName: String): String = externalSource()
+
+@NativeName("ktoxConfigPickupVaultDefault")
+fun ktoxConfigPickupVaultDefault(): String = externalSource()
+
+@NativeName("ktoxConfigPickupVaultNames")
+fun ktoxConfigPickupVaultNames(): String = externalSource()
+
+@NativeName("ktoxIsConfiguredPickupLocation")
+fun ktoxIsConfiguredPickupLocation(peripheralName: String): Boolean = externalSource()
+
+@NativeName("ktoxSelfPeripheralName")
+fun ktoxSelfPeripheralName(): String = externalSource()
+
+@NativeName("ktoxConfigTrashVault")
+fun ktoxConfigTrashVault(): String = externalSource()
+
+@NativeName("ktoxConfigCrafterForJob")
+fun ktoxConfigCrafterForJob(jobType: String): String = externalSource()
+
+// aboveChest/belowChest are read off ANY peripherals.json entry by name
+// (job.aboveChest/job.belowChest), shared by the crafter (see
+// programs/Crafter.kt) and by a turtle-based pickup terminal's
+// self-suckUp/self-deposit path (lib/Cli.kt) — same schema either way.
+@NativeName("ktoxConfigChestsFor")
+fun ktoxConfigChestsFor(peripheralName: String): String = externalSource()
+
+// True only when this computer itself is a turtle (global `turtle` is
+// non-nil) — guards any physical turtle.* call site (self-pickup,
+// deposit) so it's never reached on a plain computer head, which would
+// otherwise crash with "attempt to index global 'turtle' (a nil value)".
+@NativeName("ktoxIsTurtle")
+fun ktoxIsTurtle(): Boolean = externalSource()
+
+@NativeName("ktoxInventoryDrainAll")
+fun ktoxInventoryDrainAll(fromName: String, toName: String): Int = externalSource()
+
+@NativeName("ktoxSetLastCrafterFailure")
+fun ktoxSetLastCrafterFailure(reason: String): Boolean = externalSource()
+
+@NativeName("ktoxGetLastCrafterFailure")
+fun ktoxGetLastCrafterFailure(): String = externalSource()
+
+@NativeName("ktoxClearLastCrafterFailure")
+fun ktoxClearLastCrafterFailure(): Boolean = externalSource()
+
+@NativeName("ktoxConfigPassiveFeeders")
+fun ktoxConfigPassiveFeeders(): String = externalSource()
+
+@NativeName("ktoxConfigAllFarms")
+fun ktoxConfigAllFarms(): String = externalSource()
+
+@NativeName("ktoxListCatalog")
+fun ktoxListCatalog(sourceNamesCsv: String, filter: String, substring: String): String = externalSource()
+
+@NativeName("ktoxConfigJobTimeoutSeconds")
+fun ktoxConfigJobTimeoutSecondsRaw(jobType: String): Int = externalSource()
+
+@NativeName("ktoxConfigJobKind")
+fun ktoxConfigJobKind(jobType: String): String = externalSource()
+
+@NativeName("ktoxItemStackSize")
+fun ktoxItemStackSize(itemName: String): Int = externalSource()
+
+@NativeName("ktoxInventoryIsEmpty")
+fun ktoxInventoryIsEmpty(vaultName: String): Boolean = externalSource()
+
+// Inventory helpers (ktox-cc-shim.lua) — see lib/Inventory.kt for the
+// idiomatic wrapper.
+
+@NativeName("ktoxInventoryCountNamed")
+fun ktoxInventoryCountNamed(sourceNamesCsv: String, itemName: String): Int = externalSource()
+
+@NativeName("ktoxInventoryPullNamedFromPool")
+fun ktoxInventoryPullNamedFromPool(toName: String, sourceNamesCsv: String, itemName: String, desired: Int): Int =
+    externalSource()
+
+@NativeName("ktoxInventoryListPooled")
+fun ktoxInventoryListPooled(sourceNamesCsv: String): String = externalSource()

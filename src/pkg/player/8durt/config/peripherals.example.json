@@ -1,0 +1,252 @@
+{
+  "create:item_vault_0": {
+    "type": "vault",
+    "job": {
+      "type": "storage",
+      "fullSwitch": { "relay": "computercraft:redstone_relay_3", "side": "top" }
+    }
+  },
+  "create:item_vault_1": { "type": "vault", "job": { "type": "storage" } },
+  "create:item_vault_32": { "type": "vault", "job": { "type": "deposit_chest" } },
+  "create:item_vault_2": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "pressing" }
+    }
+  },
+  "create:item_vault_3": { "type": "vault", "job": { "type": "pickup", "name": "main", "default": true } },
+  "computercraft:turtle_advanced_1": {
+    "type": "vault",
+    "job": {
+      "type": "pickup",
+      "name": "workshop",
+      "aboveChest": "minecraft:chest_40",
+      "belowChest": "minecraft:chest_41"
+    }
+  },
+  "create:item_vault_6": { "type": "vault", "job": { "type": "trash" } },
+  "create:item_vault_4": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "smelter" }
+    }
+  },
+  "create:item_vault_5": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "mixing_heated" }
+    }
+  },
+  "computercraft:redstone_relay_0": {
+    "type": "relay",
+    "connections": {
+      "right": { "job": { "type": "smelter" } },
+      "left": { "job": { "type": "pressing" } }
+    }
+  },
+  "computercraft:redstone_relay_1": {
+    "type": "relay",
+    "connections": {
+      "right": { "job": { "type": "mixing_heated" } }
+    }
+  },
+  "computercraft:turtle_advanced_0": {
+    "type": "crafter",
+    "job": {
+      "type": "crafter",
+      "aboveChest": "minecraft:chest_12",
+      "belowChest": "minecraft:chest_13"
+    }
+  },
+  "create:item_vault_7": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:golden_sheet",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_8": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "crushing" }
+    }
+  },
+  "create:item_vault_9": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "mixing_unheated" }
+    }
+  },
+  "create:item_vault_10": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_andesite" }
+    }
+  },
+  "create:item_vault_25": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_brass" }
+    }
+  },
+  "create:item_vault_26": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_copper" }
+    }
+  },
+  "create:item_vault_27": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "deploying_railway" }
+    }
+  },
+  "create:item_vault_28": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:andesite_alloy",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_29": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:brass_ingot",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_30": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:copper_ingot",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_31": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "create:sturdy_sheet",
+      "lowWatermark": 8,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_13": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "cutting" }
+    }
+  },
+  "create:item_vault_18": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "cutting_board" }
+    }
+  },
+  "create:item_vault_14": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "cooking_pot" }
+    }
+  },
+  "create:item_vault_15": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "splashing" }
+    }
+  },
+  "create:item_vault_16": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:charcoal",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
+  },
+  "computercraft:redstone_relay_2": {
+    "type": "relay",
+    "connections": {
+      "right": { "job": { "type": "wood_farm" } },
+      "left": { "job": { "type": "kelp_farm" } },
+      "top": { "job": { "type": "iron_andesite_farm" } },
+      "bottom": { "job": { "type": "copper_farm" } }
+    }
+  },
+  "create:item_vault_17": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "smoker" }
+    }
+  },
+  "create:item_vault_19": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "filling" }
+    }
+  },
+  "create:item_vault_20": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:bucket",
+      "lowWatermark": 4,
+      "highWatermark": 16
+    }
+  },
+  "create:item_vault_21": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:dried_kelp_block",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_22": {
+    "type": "vault",
+    "job": {
+      "type": "passive",
+      "item": "minecraft:coal",
+      "lowWatermark": 16,
+      "highWatermark": 64
+    }
+  },
+  "create:item_vault_23": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "milling" }
+    }
+  },
+  "create:item_vault_24": {
+    "type": "vault",
+    "job": {
+      "type": "feeder",
+      "job": { "type": "compacting" }
+    }
+  }
+}
