@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "generated_at": "2026-09-03T04:03:35+00:00",
+  "generated_at": "2026-11-17T10:57:48+00:00",
   "source": {
     "repo": "caboose1029/minecraft-cc",
     "ref": "main",
@@ -108,6 +108,14 @@
       {
         "source": "moonman/domain/source.lua",
         "target": "moonman/domain/source.lua"
+      },
+      {
+        "source": "moonman/internal/delivery/disk.lua",
+        "target": "moonman/internal/delivery/disk.lua"
+      },
+      {
+        "source": "moonman/internal/delivery/web.lua",
+        "target": "moonman/internal/delivery/web.lua"
       },
       {
         "source": "moonman/platform/fs.lua",
